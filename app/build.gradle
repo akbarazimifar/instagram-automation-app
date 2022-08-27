@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "in.semibit.instadp"
-        minSdk 21
+        minSdk 28
         targetSdk 31
         versionCode 1
         versionName "1.0"
@@ -43,7 +43,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-crashlytics'
     implementation 'com.google.firebase:firebase-config'
     implementation 'com.amitshekhar.android:android-networking:1.0.2'
-
+    implementation 'com.github.instagram4j:instagram4j:2.0.7'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
