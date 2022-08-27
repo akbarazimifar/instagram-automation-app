@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<defaultsMap>
+    <entry>
+        <key>ad_freq_inters</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>ad_freq_native</key>
+        <value>5</value>
+    </entry>
+    <entry>
+        <key>ad_gem_awards</key>
+        <value>3</value>
+    </entry>
+    <entry>
+        <key>shouldIShowNativeAd</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>shouldIShowInterstitialAdOnNext</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>shouldIShowInterstitialAdBack</key>
+        <value>false</value>
+    </entry>
+
+    <entry>
+        <key>original</key>
+        <vale>ca-app-pub-1192734194936989/3382115034</vale>
+    </entry>
+
+
+    <entry>
+        <key>REWARDED_AD_ID</key>
+        <vale>ca-app-pub-3940256099942544/5224354917</vale>
+    </entry>
+</defaultsMap>

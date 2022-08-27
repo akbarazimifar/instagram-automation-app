@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "925445179118",
+    "project_id": "semibit",
+    "storage_bucket": "semibit.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925445179118:android:0b1402835d631a6fe195ff",
+        "android_client_info": {
+          "package_name": "com.semibit.jigsawme"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "925445179118-2dks6oags7li2qjst4fei2orq5uc2ird.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHXGrKE_8L9mFd2pNznCRoWTo7LBCLj6c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "925445179118-2dks6oags7li2qjst4fei2orq5uc2ird.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      },
+      "admob_app_id": "ca-app-pub-1192734194936989~2289236315"
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925445179118:android:ca8ce0494fec8d16e195ff",
+        "android_client_info": {
+          "package_name": "in.semibit.instadp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "925445179118-2dks6oags7li2qjst4fei2orq5uc2ird.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHXGrKE_8L9mFd2pNznCRoWTo7LBCLj6c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "925445179118-2dks6oags7li2qjst4fei2orq5uc2ird.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
