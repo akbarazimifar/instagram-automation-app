@@ -1,0 +1,29 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.InstaDPDownloader.AppWidget.Container"
+    android:layout_width="100dp"
+    android:layout_height="40dp"
+    android:background="@color/purple_500"
+    android:theme="@style/Theme.InstaDPDownloader.AppWidgetContainer">
+
+    <TextView
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:text="Hello world"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+    </TextView>
+    <in.semibit.instadp.common.AdvancedWebView
+        android:visibility="gone"
+        android:id="@+id/appwidget_text"
+        style="@style/Widget.InstaDPDownloader.AppWidget.InnerView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_margin="8dp"
+        android:contentDescription="@string/appwidget_text"
+        android:text="@string/appwidget_text"
+        android:textSize="24sp"
+        android:textStyle="bold|italic" />
+</RelativeLayout>

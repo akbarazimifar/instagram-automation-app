@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         AndroidNetworking.initialize(getApplicationContext());
         context = getApplicationContext();
-        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1234);
+        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.SYSTEM_ALERT_WINDOW}, 1234);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         driver();
@@ -328,7 +328,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onDownloadComplete() {
                         File file = new File(tmpDir, fileName);
                         if (file.exists()) {
-                            postInBackground(file, text, media_type,post);
+                            postInBackground(file, text, media_type, post);
                         } else {
                             Toast.makeText(MainActivity.this, "Unable to get file", Toast.LENGTH_LONG).show();
                         }
@@ -356,7 +356,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static void toast(Context context, String st) {
-        if(context == null){
+        if (context == null) {
             context = MainActivity.context;
         }
         try {
