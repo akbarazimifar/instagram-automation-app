@@ -6,71 +6,46 @@ import android.content.ClipboardManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.androidnetworking.AndroidNetworking;
 import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.DownloadListener;
 import com.androidnetworking.interfaces.StringRequestListener;
-import com.google.android.gms.ads.MobileAds;
-import com.google.android.gms.ads.initialization.InitializationStatus;
-import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
 import com.google.android.gms.common.util.Strings;
-import com.google.firebase.FirebaseApp;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.Map;
 
+import in.semibit.instadp.common.AdvancedWebView;
+import in.semibit.instadp.contentcreation.BackgroundWorkerService;
 import in.semibit.instadp.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "MainActivity";
 
     static Context context;
-    private Button watchAdButton;
-    private TextView mLevelTextView;
-
     private ActivityMainBinding binding;
-    private AdService adService;
-    private DownloadState curDownloadState = DownloadState.WAITING_FOR_INPUT;
-    private boolean rewardsLoaded = false;
-    InstagramPoster poster;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,8 +56,6 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         driver();
-        watchAdButton = binding.watchAd;
-
 
         binding.searchButton.setOnClickListener(v -> {
 
@@ -472,78 +445,4 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void processScrapedData(ScrappedData processedData) {
-
-        binding.watchAd.setOnClickListener(v -> {
-            if (adService.isRewardedAdReady()) {
-                curDownloadState = DownloadState.READY_TO_SHOW_AD;
-                adService.showRewardedAd(() -> showDownloadAndShare(processedData));
-            } else {
-                curDownloadState = DownloadState.WAITING_FOR_AD;
-                adService.onRewardLoaded = () -> adService.showRewardedAd(() -> showDownloadAndShare(processedData));
-                if (!adService.init) {
-                    showDownloadAndShare(processedData);
-                    return;
-                }
-                adService.initializeRewardedAd();
-            }
-        });
-    }
-
-    File downloadedFile;
-
-    public void showDownloadAndShare(ScrappedData processedData) {
-        curDownloadState = DownloadState.READY;
-        binding.watchAd.setText("Save to Gallery");
-        binding.share.setVisibility(View.VISIBLE);
-
-
-        binding.share.setOnClickListener(c -> {
-            shareImage(downloadedFile);
-        });
-        binding.watchAd.setOnClickListener(v -> {
-            checkPermission();
-        });
-
-    }
-
-    public void checkPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            saveToGallery(downloadedFile);
-
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 12312);
-            }
-        }
-    }
-
-    private void shareImage(File file) {
-
-    }
-
-    private void saveToGallery(File file) {
-        File picsDir = (getExternalFilesDir(Environment.DIRECTORY_PICTURES));
-        Toast.makeText(this, "Saved to " + picsDir.getAbsolutePath(), Toast.LENGTH_LONG).show();
-        binding.watchAd.setText("VIEW");
-        binding.watchAd.setOnClickListener(v -> {
-
-        });
-
-    }
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 12312) {
-            if (grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                saveToGallery(downloadedFile);
-            } else {
-                Toast.makeText(MainActivity.this, "Permission denied to read your External storage. Please retry again.", Toast.LENGTH_SHORT)
-                        .show();
-            }
-        }
-    }
 }

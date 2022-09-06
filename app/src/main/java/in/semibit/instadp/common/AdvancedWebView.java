@@ -1,4 +1,4 @@
-package in.semibit.instadp;
+package in.semibit.instadp.common;
 
 
 import android.annotation.SuppressLint;

@@ -1,4 +1,4 @@
-package in.semibit.instadp;
+package in.semibit.instadp.contentcreation;
 
 
 import android.app.Notification;
@@ -17,18 +17,18 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import com.google.android.gms.common.internal.ResourceUtils;
-
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
+import in.semibit.instadp.common.GenricDataCallback;
+import in.semibit.instadp.R;
+
 public class BackgroundWorkerService extends Service {
-    InstagramPoster client;
+    public InstagramPoster client;
     public Context context;
     File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
 
@@ -44,7 +44,7 @@ public class BackgroundWorkerService extends Service {
     }
 
 
-    private void copyAssets() {
+    public void copyAssets() {
         AssetManager assetManager = context.getAssets();
         String[] files = null;
         try {
@@ -74,7 +74,7 @@ public class BackgroundWorkerService extends Service {
         }
     }
 
-    private void copyFile(InputStream in, OutputStream out) throws IOException {
+    public void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
         int read;
         while ((read = in.read(buffer)) != -1) {
@@ -159,10 +159,10 @@ public class BackgroundWorkerService extends Service {
     }
 
 
-    private static  int NOTIF_ID = 1;
+    public static  int NOTIF_ID = 1;
 
 
-    private void startForeground(Intent intent) {
+    public void startForeground(Intent intent) {
         startForeground(NOTIF_ID, getMyActivityNotification(""));
         new Thread(
                 () -> {
@@ -176,7 +176,7 @@ public class BackgroundWorkerService extends Service {
         ).start();
     }
 
-    private Notification getMyActivityNotification(String text) {
+    public Notification getMyActivityNotification(String text) {
 
         final String CHANNELID = "instagram-poster";
         NotificationChannel channel = new NotificationChannel(
@@ -203,7 +203,7 @@ public class BackgroundWorkerService extends Service {
     /**
      * This is the method that can be called to update the Notification
      */
-    private void updateNotification(String text) {
+    public void updateNotification(String text) {
 
         Notification notification = getMyActivityNotification(text);
 

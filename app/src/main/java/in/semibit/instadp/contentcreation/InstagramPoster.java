@@ -1,36 +1,29 @@
-package in.semibit.instadp;
+package in.semibit.instadp.contentcreation;
 
 import android.os.Environment;
-import android.widget.Toast;
 
 import com.androidnetworking.AndroidNetworking;
 import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.StringRequestListener;
 import com.github.instagram4j.instagram4j.IGClient;
-import com.github.instagram4j.instagram4j.actions.media.MediaAction;
-import com.github.instagram4j.instagram4j.exceptions.IGLoginException;
-import com.github.instagram4j.instagram4j.models.media.UploadParameters;
 import com.github.instagram4j.instagram4j.requests.media.MediaConfigureTimelineRequest;
-import com.github.instagram4j.instagram4j.utils.IGUtils;
 import com.google.gson.Gson;
-import com.google.gson.JsonParser;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 
+import in.semibit.instadp.common.GenricDataCallback;
+
 public class InstagramPoster {
 
-    IGClient client;
-    GenricDataCallback callback;
-    GenricDataCallback onCompleted;
+    public IGClient client;
+    public GenricDataCallback callback;
 
     String last = "";
     File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
