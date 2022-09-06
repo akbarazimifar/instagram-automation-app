@@ -37,12 +37,14 @@ public class FollowerBotActivity extends AppCompatActivity {
 
         }
         binding.searchButton.setOnClickListener(c -> {
-//            Intent intent = new Intent(context, FollowerBotService.class);
-//            startForegroundService(intent);
-            FollowerBotService s = new FollowerBotService();
+            FollowerBotService s = new FollowerBotService(context);
             s.generateAlert(context);
         });
         binding.searchButton.callOnClick();
 
+    }
+    @Override
+    public void onBackPressed() {
+        this.moveTaskToBack(true);
     }
 }

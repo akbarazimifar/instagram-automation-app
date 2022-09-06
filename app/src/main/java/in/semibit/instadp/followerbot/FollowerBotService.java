@@ -1,6 +1,7 @@
 package in.semibit.instadp.followerbot;
 
-import android.app.AlertDialog;
+import static android.content.Context.WINDOW_SERVICE;
+
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
@@ -10,42 +11,19 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import in.semibit.instadp.R;
-import in.semibit.instadp.common.BGService;
 
-public class FollowerBotService extends BGService {
+public class FollowerBotService {
 
-    @Override
-    public void work(Intent intent) {
 
-        generateWebView("https://instagram.com");
+    Context context;
+
+    public FollowerBotService(Context context) {
+        this.context = context;
     }
 
-    @Override
-    public int getNotificationId() {
-        return 13248;
-    }
-
-    @Override
-    public String getActionStopId() {
-        return "6436";
-    }
-
-    @Override
-    protected Class<?> getOverriddenClass() {
-        return getClass();
-    }
-
-    WindowManager windowManager;
-    WebView webView;
-
-    public void generateAlert(Context context) {
+    public void generateAlert(final Context context) {
         int layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -55,32 +33,48 @@ public class FollowerBotService extends BGService {
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 0;   // Initial Position of window
-        params.y = 100; // Initial Position of window
+        params.x = 0;
+        params.y = 100;
 
-        View mFloatingWidget =  LayoutInflater.from(context).inflate(R.layout.follower_bot, null);
+        View mFloatingWidget = LayoutInflater.from(context).inflate(R.layout.follower_bot, null);
 
         WindowManager mWindowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mFloatingWidget, params);
 
+        mFloatingWidget.setOnClickListener(c -> {
+            Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        });
+        int MAX_X_MOVE = 10;
+        int MAX_Y_MOVE = 10;
         mFloatingWidget.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
             private int initialY;
             private float initialTouchX;
             private float initialTouchY;
+            float mX = params.x;
+            float mY = params.y;
+
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                Log.d("AD","Action E" + event);
+                Log.d("AD", "Action E" + event);
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        Log.d("AD","Action Down");
+                        Log.d("AD", "Action Down");
                         initialX = params.x;
                         initialY = params.y;
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
+                        if (Math.abs(event.getX() - mX) < MAX_X_MOVE || Math.abs(event.getY() - mY) < MAX_Y_MOVE) {
+                            v.performClick();
+                        }
+                        mX = event.getX();
+                        mY = event.getY();
+
                         return true;
                     case MotionEvent.ACTION_UP:
-                        Log.d("AD","Action Up");
+                        Log.d("AD", "Action Up");
                         int Xdiff = (int) (event.getRawX() - initialTouchX);
                         int Ydiff = (int) (event.getRawY() - initialTouchY);
                         if (Xdiff < 10 && Ydiff < 10) {
@@ -91,7 +85,7 @@ public class FollowerBotService extends BGService {
                         }
                         return true;
                     case MotionEvent.ACTION_MOVE:
-                        Log.d("AD","Action Move");
+                        Log.d("AD", "Action Move");
                         params.x = initialX + (int) (event.getRawX() - initialTouchX);
                         params.y = initialY + (int) (event.getRawY() - initialTouchY);
                         mWindowManager.updateViewLayout(mFloatingWidget, params);
@@ -103,55 +97,4 @@ public class FollowerBotService extends BGService {
 
     }
 
-    public WebView generateWebView(String bgsUrl) {
-
-//        AlertDialog alertDialog = generateAlert(getApplicationContext());
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
-                PixelFormat.TRANSLUCENT
-        );
-
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 0;
-        params.y = 0;
-        params.width = 0;
-        params.height = 0;
-
-        final WebView wv = new WebView(getApplicationContext());
-
-        wv.setWebViewClient(new WebViewClient() {
-
-            @Override
-            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                Log.d("Error", "loading web view: request: " + request + " error: " + error);
-            }
-
-            @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                return null;
-            }
-        });
-
-
-        wv.loadUrl(bgsUrl);
-        windowManager.addView(wv, params);
-        webView = wv;
-        return wv;
-
-    }
-
-    private void killWebView() {
-        windowManager.removeView(webView);
-        webView.post(new Runnable() {
-            @Override
-            public void run() {
-                webView.destroy();
-            }
-        });
-    }
 }

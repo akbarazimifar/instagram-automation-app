@@ -1,19 +1,26 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.InstaDPDownloader.AppWidget.Container"
-    android:layout_width="100dp"
-    android:layout_height="40dp"
-    android:background="@color/purple_500"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#7F000000"
     android:theme="@style/Theme.InstaDPDownloader.AppWidgetContainer">
 
     <TextView
+        android:textColor="@color/white"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:padding="5dp"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:text="Hello world"
+        android:text="Instabot"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
     </TextView>
     <in.semibit.instadp.common.AdvancedWebView
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         android:visibility="gone"
         android:id="@+id/appwidget_text"
         style="@style/Widget.InstaDPDownloader.AppWidget.InnerView"
@@ -26,4 +33,4 @@
         android:text="@string/appwidget_text"
         android:textSize="24sp"
         android:textStyle="bold|italic" />
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
