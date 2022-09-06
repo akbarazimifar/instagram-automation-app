@@ -32,7 +32,7 @@ public class FollowerBotWindow {
         this.context = context;
     }
 
-    public void generateAlert(final Activity context) {
+    public void generateAlert(final Activity context,String user) {
         int layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -63,7 +63,9 @@ public class FollowerBotWindow {
                     e.printStackTrace();
                 }
             });
-            followerBot.follow("btwits_zeeshan_909__",webView,context);
+            followerBot.follow(user, webView, context, s -> {
+                // follow completed
+            });
 
         });
 

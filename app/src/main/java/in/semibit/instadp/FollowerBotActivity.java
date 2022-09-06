@@ -36,7 +36,7 @@ public class FollowerBotActivity extends AppCompatActivity {
         }
         binding.searchButton.setOnClickListener(c -> {
             FollowerBotWindow s = new FollowerBotWindow(context);
-            s.generateAlert(context);
+            s.generateAlert(context,binding.urlOrUsername.getText().toString());
         });
         binding.searchButton.callOnClick();
 
