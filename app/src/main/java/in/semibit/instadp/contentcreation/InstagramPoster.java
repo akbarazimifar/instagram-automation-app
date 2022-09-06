@@ -26,57 +26,16 @@ public class InstagramPoster {
     public GenricDataCallback callback;
 
     String last = "";
-    File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
 
-    public InstagramPoster(String username, String passwd, GenricDataCallback callback) {
+    public InstagramPoster(IGClient client) {
 
         if (callback != null)
             this.callback = callback;
         else
             this.callback = System.out::println;
-        try {
-            if (!root.exists()) {
-                root.mkdir();
-            }
-            File file = new File(root.getAbsoluteFile(), "instagram.txt");
-            if (file.exists()) {
-                String split = Files.readAllBytes(Paths.get(file.getPath())).toString();
-                username = split.split(",")[0].trim();
-                passwd = split.split(",")[1].trim();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
+        this.client = client;
 
-        try {
-            File sessionFile = new File(root, "instagram_session.json");
-            Path sessionFilePath = Paths.get(sessionFile.toURI());
-
-            File fileClient = new File(root, "instagram_client.json");
-            Path cientFile = Paths.get(fileClient.toURI());
-
-            try {
-                if (fileClient.exists() && sessionFile.exists()) {
-                    client = IGClient.deserialize(fileClient, sessionFile);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            if (client == null) {
-                client = IGClient.builder()
-                        .username(username)
-                        .password(passwd)
-                        .login();
-
-                client.serialize(fileClient, sessionFile);
-
-            }
-            this.callback.onStart("Logged In");
-        } catch (Exception e) {
-            e.printStackTrace();
-            this.callback.onStart(e.getMessage());
-        }
     }
 
 

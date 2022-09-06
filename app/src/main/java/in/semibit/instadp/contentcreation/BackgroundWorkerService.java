@@ -26,15 +26,20 @@ import java.util.ArrayList;
 
 import in.semibit.instadp.common.GenricDataCallback;
 import in.semibit.instadp.R;
+import in.semibit.instadp.common.Insta4jClient;
 
 public class BackgroundWorkerService extends Service {
     public InstagramPoster client;
     public Context context;
     File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
+    public String ACTION_STOP_SERVICE = "199213";
+    public static  int NOTIF_ID = 1;
 
     public BackgroundWorkerService() {
-        if (client == null)
-            client = new InstagramPoster(context.getString(R.string.username), context.getString(R.string.password), null);
+        if (client == null) {
+//            client = new InstagramPoster(Insta4jClient.getClient(context.getString(R.string.username),
+//                    context.getString(R.string.password), null));
+        }
 
         try {
             context = this;
@@ -44,7 +49,7 @@ public class BackgroundWorkerService extends Service {
     }
 
 
-    public void copyAssets() {
+    private void copyAssets() {
         AssetManager assetManager = context.getAssets();
         String[] files = null;
         try {
@@ -74,7 +79,7 @@ public class BackgroundWorkerService extends Service {
         }
     }
 
-    public void copyFile(InputStream in, OutputStream out) throws IOException {
+    private void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
         int read;
         while ((read = in.read(buffer)) != -1) {
@@ -82,7 +87,7 @@ public class BackgroundWorkerService extends Service {
         }
     }
 
-    public File getCover(File video) throws Exception {
+    private File getCover(File video) throws Exception {
         File cover = new File(root, "cover_" + System.currentTimeMillis() + ".jpg");
         ArrayList<Bitmap> frameList;
         int numeroFrameCaptured = 0;
@@ -139,7 +144,6 @@ public class BackgroundWorkerService extends Service {
                 intent.getStringExtra("mediaType"),intent.getStringExtra("post"));
     }
 
-    String ACTION_STOP_SERVICE = "199213";
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -157,9 +161,6 @@ public class BackgroundWorkerService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-
-
-    public static  int NOTIF_ID = 1;
 
 
     public void startForeground(Intent intent) {
