@@ -2,28 +2,37 @@ package in.semibit.instadp.followerbot;
 
 import static android.content.Context.WINDOW_SERVICE;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebView;
+import android.widget.TextView;
+
+import com.github.instagram4j.instagram4j.IGClient;
 
 import in.semibit.instadp.R;
+import in.semibit.instadp.common.AdvancedWebView;
+import in.semibit.instadp.common.GenricDataCallback;
+import in.semibit.instadp.common.Insta4jClient;
 
-public class FollowerBotService {
+public class FollowerBotWindow {
 
 
     Context context;
 
-    public FollowerBotService(Context context) {
+    public FollowerBotWindow(Context context) {
         this.context = context;
     }
 
-    public void generateAlert(final Context context) {
+    public void generateAlert(final Activity context) {
         int layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -41,6 +50,27 @@ public class FollowerBotService {
         WindowManager mWindowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
         mWindowManager.addView(mFloatingWidget, params);
 
+        final TextView label = mFloatingWidget.findViewById(R.id.label);
+        final AdvancedWebView webView = mFloatingWidget.findViewById(R.id.webView);
+        new Handler(mFloatingWidget.getContext().getMainLooper()).post(()->{
+
+            final IGClient client = Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), null);
+            FollowerBot followerBot = new FollowerBot(client, s -> {
+                Log.e("FollowerBot",""+s);
+                try {
+                    label.setText(s);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+            followerBot.follow("btwits_zeeshan_909__",webView,context);
+
+        });
+
+        mFloatingWidget.setOnLongClickListener((v)->{
+            mWindowManager.removeView(mFloatingWidget);
+            return true;
+        });
         mFloatingWidget.setOnClickListener(c -> {
             Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

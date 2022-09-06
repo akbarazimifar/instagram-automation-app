@@ -1,12 +1,16 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.InstaDPDownloader.AppWidget.Container"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:gravity="center"
     android:background="#7F000000"
+    android:orientation="vertical"
     android:theme="@style/Theme.InstaDPDownloader.AppWidgetContainer">
 
     <TextView
+        android:id="@+id/label"
         android:textColor="@color/white"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -21,16 +25,7 @@
     <in.semibit.instadp.common.AdvancedWebView
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:visibility="gone"
-        android:id="@+id/appwidget_text"
-        style="@style/Widget.InstaDPDownloader.AppWidget.InnerView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_margin="8dp"
-        android:contentDescription="@string/appwidget_text"
-        android:text="@string/appwidget_text"
-        android:textSize="24sp"
-        android:textStyle="bold|italic" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="300dp" />
+</LinearLayout>
