@@ -13,14 +13,12 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.webkit.WebView;
 import android.widget.TextView;
 
 import com.github.instagram4j.instagram4j.IGClient;
 
 import in.semibit.instadp.R;
 import in.semibit.instadp.common.AdvancedWebView;
-import in.semibit.instadp.common.GenricDataCallback;
 import in.semibit.instadp.common.Insta4jClient;
 
 public class FollowerBotWindow {
@@ -63,10 +61,10 @@ public class FollowerBotWindow {
                     e.printStackTrace();
                 }
             });
-            followerBot.follow(user, webView, context, s -> {
+            followerBot.followUnfollow(user, webView, context, s -> {
                 // follow completed
-            });
 
+            });
         });
 
         mFloatingWidget.setOnLongClickListener((v)->{

@@ -6,8 +6,10 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.webkit.ConsoleMessage;
+import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebView;
 
 import com.github.instagram4j.instagram4j.IGClient;
 
@@ -31,15 +33,6 @@ public class FollowerBot {
 
     public void initializeWebView(AdvancedWebView webview, Activity context) {
 
-        webview.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-                Log.d("FollowerBot", consoleMessage.message() + " -- From line "
-                        + consoleMessage.lineNumber() + " of "
-                        + consoleMessage.sourceId());
-                return super.onConsoleMessage(consoleMessage);
-            }
-        });
         webview.setListener(context, new AdvancedWebView.Listener() {
             @Override
             public void onPageStarted(String url, Bitmap favicon) {
@@ -77,7 +70,7 @@ public class FollowerBot {
         });
     }
 
-    public void follow(String igUser, AdvancedWebView webview, Activity context, GenricDataCallback onFollowCompleted) {
+    public void followUnfollow(String igUser,boolean isDoUnfollow, AdvancedWebView webview, Activity context, GenricDataCallback onFollowCompleted) {
 
         String url = "https://www.instagram.com/" + igUser + "/";
         // initializing following of user
@@ -88,57 +81,112 @@ public class FollowerBot {
             @Override
             public void onStart(String s) {
                 if (s.contains(url)) {
-                    pressFollowButton(igUser, webview, onFollowCompleted);
+                    pressFollowButton(igUser,isDoUnfollow, webview, onFollowCompleted);
                 }
             }
         };
         webview.loadUrl(url);
     }
 
-    public void pressFollowButton(String username, AdvancedWebView webview, GenricDataCallback onFollowCompleted) {
+    public void pressFollowButton(String username,boolean isDoUnfollow, AdvancedWebView webview, GenricDataCallback onFollowCompleted) {
+        WebView.setWebContentsDebuggingEnabled(true);
 
         logger.onStart("WAT FLW " + username);
         String clickOnFollow = "\n" +
                 "function find() {\n" +
-                "  var aTags = document.getElementsByTagName(\"button\");\n" +
-                "  var searchText = \"Follow\";\n" +
-                "  var found;\n" +
-                "  console.log('Found matching ' + aTags.length);" +
-                "  for (var i = 0; i < aTags.length; i) {\n" +
-                "    let text=aTags[i].textContent;" +
-                "    console.log(text);" +
-                "    if (text == searchText) {\n" +
-                "      found = aTags[i];\n" +
-                "      found.click();\n" +
-                "      android.callback(found); \n" +
-                "      break;\n" +
-                "    }\n" +
-                "  }\n" +
-                "  if (!found)\n" +
-                "    console.log('not found');\n" +
-                "  else\n" +
-                "    console.log('Found')\n" +
+                "  let btns = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Follow');" +
+                "  " +
+                "   " +
+                "if(btns){" +
+                "btns.click();" +
+//                "clearInterval(timer);" +
+//                "setTimeout(()=>{console.log('followcompleted');},5000);" +
+                "" +
+                "}" +
+                "" +
+                "  let msgs = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Message');" +
+                "  " +
+                "   " +
+                "if(msgs){" +
+//                "msgs.click();" +
+                "clearInterval(timer);" +
+                "console.log('followcompleted');" +
+                "" +
+                "}" +
                 "}";
-        clickOnFollow = clickOnFollow + "\n\nvar vvv=0;;setInterval(()=>{console.log('Searching... '+(vvv++));" +
+
+        if(isDoUnfollow){
+            clickOnFollow = "\n" +
+                    "function find() {\n" +
+                    "  let btns = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Unfollow');" +
+                    "  " +
+                    "   " +
+                    "if(btns){" +
+                    "btns.click();" +
+//                "clearInterval(timer);" +
+//                "setTimeout(()=>{console.log('followcompleted');},5000);" +
+                    "" +
+                    "}" +
+                    "  let confirm = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Unfollow');" +
+                    "  " +
+                    "   " +
+                    "if(confirm){" +
+                    "confirm.click();" +
+//                "clearInterval(timer);" +
+//                "setTimeout(()=>{console.log('followcompleted');},5000);" +
+                    "" +
+                    "}" +
+                    "" +
+                    "  let folowbtn = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Follow');" +
+                    "  " +
+                    "   " +
+                    "if(folowbtn){" +
+//                "msgs.click();" +
+                    "clearInterval(timer);" +
+                    "console.log('unconnectcompleted');" +
+                    "" +
+                    "}" +
+                    "}";
+        }
+        clickOnFollow = clickOnFollow + "\n\nvar vvv=0;let timer = setInterval(()=>{console.log('Searching... '+(vvv++));" +
                 "try{find();}catch(e){console.log(e);};" +
-                ";},3000)";
-        webview.addJavascriptInterface(new JSInterface() {
+                ";},1000)";
+
+        webview.setWebChromeClient(new WebChromeClient() {
             @Override
-            public void callback(String body) {
-                if (body.contains("done")) {
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                Log.d("FollowerBot", consoleMessage.message() + " -- From line "
+                        + consoleMessage.lineNumber() + " of "
+                        + consoleMessage.sourceId());
+                if (consoleMessage.message().contains("followcompleted")) {
                     try {
-                        new Handler(webview.getWebViewLooper()).postDelayed(() -> {
-                            onFollowCompleted.onStart(username);
-                        }, 5000);
+                        logger.onStart("FLW COMPLETE");
+                        onFollowCompleted.onStart(username);
                     } catch (Exception e) {
                         logger.onStart("ERR " + e.getMessage());
                     }
                 }
+                if (consoleMessage.message().contains("unconnectcompleted")) {
+                    try {
+                        logger.onStart("UFW COMPLETE");
+                        onFollowCompleted.onStart(username);
+                    } catch (Exception e) {
+                        logger.onStart("ERR " + e.getMessage());
+                    }
+                }
+                return super.onConsoleMessage(consoleMessage);
             }
-        }, "android");
+        });
+        webview.evaluateJavascript(clickOnFollow, s -> {
+        });
+    }
 
-        webview.evaluateJavascript(clickOnFollow,s->{});
-//        webview.loadUrl("javascript:(function(){document.getElementById('password').value = 'sb14november';})()");
+    public static class JSIFollowListener {
+        GenricDataCallback callback;
 
+        @JavascriptInterface
+        public void callback(String body) {
+            callback.onStart(body);
+        }
     }
 }
