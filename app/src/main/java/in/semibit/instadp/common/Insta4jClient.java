@@ -3,11 +3,16 @@ package in.semibit.instadp.common;
 import android.os.Environment;
 
 import com.github.instagram4j.instagram4j.IGClient;
+import com.github.instagram4j.instagram4j.utils.IGUtils;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
+import okhttp3.OkHttpClient;
 
 public class Insta4jClient {
 
@@ -37,6 +42,8 @@ public class Insta4jClient {
             try {
                 File sessionFile = new File(root, "instagram_session.json");
                 File fileClient = new File(root, "instagram_client.json");
+//                sessionFile.delete();
+//                fileClient.delete();
 
                 try {
                     if (fileClient.exists() && sessionFile.exists()) {
@@ -46,7 +53,16 @@ public class Insta4jClient {
                     e.printStackTrace();
                 }
                 if (client == null) {
+
+                    Duration duration = Duration.of(60000, ChronoUnit.SECONDS);
+                    OkHttpClient okHttpClient = IGUtils.defaultHttpClientBuilder()
+                            .callTimeout(duration)
+                            .readTimeout(duration)
+                            .writeTimeout(duration)
+                            .connectTimeout(duration).build();
+
                     client = IGClient.builder()
+                            .client(okHttpClient)
                             .username(username)
                             .password(passwd)
                             .login();
@@ -54,6 +70,7 @@ public class Insta4jClient {
                     client.serialize(fileClient, sessionFile);
 
                 }
+
                 callback.onStart("Logged In");
             } catch (Exception e) {
                 e.printStackTrace();

@@ -7,6 +7,7 @@ import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.StringRequestListener;
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.requests.media.MediaConfigureTimelineRequest;
+import com.github.instagram4j.instagram4j.utils.IGUtils;
 import com.google.gson.Gson;
 
 import org.json.JSONException;
@@ -16,9 +17,14 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 import in.semibit.instadp.common.GenricDataCallback;
+import okhttp3.OkHttpClient;
 
 public class InstagramPoster {
 
@@ -43,6 +49,7 @@ public class InstagramPoster {
 
     public void post(File file, File cover, String caption, String mediaType, String bboy) {
 
+        long startTime = System.currentTimeMillis();
         if (last.equals(file.getAbsolutePath())) {
             System.out.println("Skip reption !");
             this.callback.onStart("skipping repetition");
@@ -80,8 +87,16 @@ public class InstagramPoster {
                             }
                             return;
                         }
-                        System.out.println("response of uploaded photo! " + response.getStatus());
-                        this.callback.onStart("stop: upload status code " + response.getStatus());
+                        try {
+                            long endTime = System.currentTimeMillis();
+                            long totalTimeSecs = (endTime - startTime)/1000;
+                            System.out.println("response of uploaded photo! " + response.getStatus());
+                            this.callback.onStart("stop: upload status code " + response.getStatus()+" ("+totalTimeSecs+" secs)");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            this.callback.onStart("stop: error . Empty response");
+
+                        }
 
                     })
                     .join();
@@ -90,7 +105,7 @@ public class InstagramPoster {
                 client.actions()
                         .timeline()
                         .uploadVideoWithTimeout(Files.readAllBytes(Paths.get(file.toURI())), Files.readAllBytes(Paths.get(cover.toURI())),
-                                new MediaConfigureTimelineRequest.MediaConfigurePayload().caption(caption), 20L)
+                                new MediaConfigureTimelineRequest.MediaConfigurePayload().caption(caption), 50L)
                         .exceptionally(throwable -> {
                             this.callback.onStart("stop: error in upload " + throwable.getMessage());
                             throwable.printStackTrace();
@@ -114,8 +129,10 @@ public class InstagramPoster {
                                 }
                                 return;
                             }
+                            long endTime = System.currentTimeMillis();
+                            long totalTimeSecs = (endTime - startTime)/1000;
                             System.out.println("response of uploaded video! " + response.getStatus());
-                            this.callback.onStart("stop: upload status code " + response.getStatus());
+                            this.callback.onStart("stop: upload status code " + response.getStatus()+" ("+totalTimeSecs+" secs)");
 
                         })
                         .join();
