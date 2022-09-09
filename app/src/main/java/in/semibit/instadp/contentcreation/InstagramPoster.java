@@ -70,11 +70,13 @@ public class InstagramPoster {
                         return null;
                     })
                     .thenAccept(response -> {
+                        long endTime = System.currentTimeMillis();
+                        long totalTimeSecs = (endTime - startTime)/1000;
                         if (response != null && response.getStatusCode() == 200) {
                             String code = response.getMedia().getCode();
                             //MainActivity.toast(null,"Successfully uploaded photo! " + code);
                             System.out.println("Successfully uploaded photo! " + code);
-                            this.callback.onStart("stop: upload status code " + response.getStatus());
+                            this.callback.onStart("stop: upload status code " + response.getStatus()+" ("+totalTimeSecs+" secs)");
                             JSONObject bo = null;
                             try {
                                 bo = new JSONObject(bboy);
@@ -88,8 +90,7 @@ public class InstagramPoster {
                             return;
                         }
                         try {
-                            long endTime = System.currentTimeMillis();
-                            long totalTimeSecs = (endTime - startTime)/1000;
+
                             System.out.println("response of uploaded photo! " + response.getStatus());
                             this.callback.onStart("stop: upload status code " + response.getStatus()+" ("+totalTimeSecs+" secs)");
                         } catch (Exception e) {
@@ -112,11 +113,13 @@ public class InstagramPoster {
                             return null;
                         })
                         .thenAccept(response -> {
+                            long endTime = System.currentTimeMillis();
+                            long totalTimeSecs = (endTime - startTime)/1000;
                             if (response != null && response.getStatusCode() == 200) {
                                 String code = response.getMedia().getCode();
                                 //MainActivity.toast(null,"Successfully uploaded photo! " + code);
                                 System.out.println("Successfully uploaded video! " + code);
-                                this.callback.onStart("stop: upload status code " + response.getStatus());
+                                this.callback.onStart("stop: upload status code " + response.getStatus()+" ("+totalTimeSecs+" secs)");
                                 JSONObject bo = null;
                                 try {
                                     bo = new JSONObject(bboy);
@@ -129,8 +132,6 @@ public class InstagramPoster {
                                 }
                                 return;
                             }
-                            long endTime = System.currentTimeMillis();
-                            long totalTimeSecs = (endTime - startTime)/1000;
                             System.out.println("response of uploaded video! " + response.getStatus());
                             this.callback.onStart("stop: upload status code " + response.getStatus()+" ("+totalTimeSecs+" secs)");
 
