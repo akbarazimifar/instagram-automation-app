@@ -1,0 +1,62 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:1962134811913397024",
+      "lastPropertyId": "7:9076245589003140014",
+      "name": "FollowUserModel",
+      "properties": [
+        {
+          "id": "1:109525084757488263",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2613871761905582893",
+          "name": "userName",
+          "type": 9
+        },
+        {
+          "id": "3:7625199971816574968",
+          "name": "followUserState",
+          "type": 5
+        },
+        {
+          "id": "4:7821048555006858238",
+          "name": "isUserFollowingMe",
+          "type": 1
+        },
+        {
+          "id": "5:7874624571543073028",
+          "name": "followDate",
+          "type": 6
+        },
+        {
+          "id": "6:286880770169893332",
+          "name": "unfollowDate",
+          "type": 6
+        },
+        {
+          "id": "7:9076245589003140014",
+          "name": "waitTillFollowBackDate",
+          "type": 6
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "1:1962134811913397024",
+  "lastIndexId": "0:0",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}

@@ -13,24 +13,36 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.TextView;
 
 import com.github.instagram4j.instagram4j.IGClient;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+
 import in.semibit.instadp.R;
 import in.semibit.instadp.common.AdvancedWebView;
 import in.semibit.instadp.common.Insta4jClient;
+import io.objectbox.android.ObjectBoxDataSource;
 
-public class FollowerBotWindow {
+public class FollowerBotService {
 
 
-    Context context;
+    Activity context;
+    List<FollowUserModel> userToFollow;
 
-    public FollowerBotWindow(Context context) {
+    public FollowerBotService(Activity context) {
         this.context = context;
+
     }
 
-    public void generateAlert(final Activity context, String user) {
+    private IGClient getIgClient() {
+        return Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), null);
+    }
+
+    public AdvancedWebView generateAlert(final Activity context) {
         int layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
@@ -50,21 +62,7 @@ public class FollowerBotWindow {
 
         final TextView label = mFloatingWidget.findViewById(R.id.label);
         final AdvancedWebView webView = mFloatingWidget.findViewById(R.id.webView);
-        new Handler(mFloatingWidget.getContext().getMainLooper()).post(() -> {
 
-            final IGClient client = Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), null);
-            FollowerBot followerBot = new FollowerBot(client, s -> {
-                Log.e("FollowerBot", "" + s);
-                try {
-                    label.setText(s);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-            followerBot.followUnfollow(user, false, webView, context, s -> {
-                Log.e("FollowerBot", "Follow Completed" );
-            });
-        });
 
         mFloatingWidget.setOnLongClickListener((v) -> {
             mWindowManager.removeView(mFloatingWidget);
@@ -124,6 +122,54 @@ public class FollowerBotWindow {
             }
         });
 
+        return webView;
+
+    }
+
+
+    public boolean canIFollowNextUser() {
+        return true;
+    }
+
+    public String getNextUserToFollow() {
+        return "true";
+    }
+
+    public void startFollowingUsers(AdvancedWebView webView, TextView label) {
+        new Handler(webView.getContext().getMainLooper()).post(() -> {
+
+            final IGClient client = getIgClient();
+            FollowerBot followerBot = new FollowerBot(client, s -> {
+                Log.e("FollowerBot", "" + s);
+                try {
+                    label.setText(s);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+            followSingleUser(followerBot, getNextUserToFollow(), webView, context);
+
+        });
+
+    }
+
+    public void followSingleUser(FollowerBot followerBot, String user, AdvancedWebView webView, Activity context) {
+        if (user != null || !canIFollowNextUser()) {
+            return;
+        }
+        followerBot.followUnfollow(user, false, webView, context, s -> {
+            Log.e("FollowerBot", "Follow Completed");
+            String nextUser = getNextUserToFollow();
+            followSingleUser(followerBot, nextUser, webView, context);
+        });
+    }
+
+    public void markUsersToFollow(AdvancedWebView webView, Activity context) {
+        IGClient client = getIgClient();
+        Handler handler = new Handler();
+        handler.post(() -> {
+            client.actions().timeline().feed();
+        });
     }
 
 }

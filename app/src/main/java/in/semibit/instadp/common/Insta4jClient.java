@@ -38,6 +38,7 @@ public class Insta4jClient {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            Duration duration = Duration.of(60000, ChronoUnit.SECONDS);
 
             try {
                 File sessionFile = new File(root, "instagram_session.json");
@@ -47,14 +48,18 @@ public class Insta4jClient {
 
                 try {
                     if (fileClient.exists() && sessionFile.exists()) {
-                        client = IGClient.deserialize(fileClient, sessionFile);
+                        client = IGClient.deserialize(fileClient, sessionFile,
+                                IGUtils.defaultHttpClientBuilder()
+                                .callTimeout(duration)
+                                .readTimeout(duration)
+                                .writeTimeout(duration)
+                                .connectTimeout(duration));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 if (client == null) {
 
-                    Duration duration = Duration.of(60000, ChronoUnit.SECONDS);
                     OkHttpClient okHttpClient = IGUtils.defaultHttpClientBuilder()
                             .callTimeout(duration)
                             .readTimeout(duration)
@@ -77,6 +82,7 @@ public class Insta4jClient {
                 callback.onStart(e.getMessage());
             }
         }
+
         return client;
     }
 
