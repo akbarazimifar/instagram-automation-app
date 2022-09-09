@@ -58,7 +58,7 @@
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/urlOrUsername"
-                android:text="btwits_zeeshan_909__"
+                android:text="_.sabarni._"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 

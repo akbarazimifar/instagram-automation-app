@@ -104,7 +104,7 @@ public class FollowerBot {
                 "" +
                 "}" +
                 "" +
-                "  let msgs = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Message');" +
+                "  let msgs = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Requested' || el.textContent === 'Message');" +
                 "  " +
                 "   " +
                 "if(msgs){" +
@@ -118,7 +118,7 @@ public class FollowerBot {
         if(isDoUnfollow){
             clickOnFollow = "\n" +
                     "function find() {\n" +
-                    "  let btns = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Unfollow');" +
+                    "  let btns = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Requested' || el.textContent === 'Unfollow');" +
                     "  " +
                     "   " +
                     "if(btns){" +

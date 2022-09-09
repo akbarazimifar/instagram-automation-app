@@ -30,10 +30,10 @@ public class FollowerBotWindow {
         this.context = context;
     }
 
-    public void generateAlert(final Activity context,String user) {
+    public void generateAlert(final Activity context, String user) {
         int layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutType,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,   // REMOVE FLAG_NOT_FOCUSABLE
@@ -50,24 +50,23 @@ public class FollowerBotWindow {
 
         final TextView label = mFloatingWidget.findViewById(R.id.label);
         final AdvancedWebView webView = mFloatingWidget.findViewById(R.id.webView);
-        new Handler(mFloatingWidget.getContext().getMainLooper()).post(()->{
+        new Handler(mFloatingWidget.getContext().getMainLooper()).post(() -> {
 
             final IGClient client = Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), null);
             FollowerBot followerBot = new FollowerBot(client, s -> {
-                Log.e("FollowerBot",""+s);
+                Log.e("FollowerBot", "" + s);
                 try {
                     label.setText(s);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             });
-            followerBot.followUnfollow(user, webView, context, s -> {
-                // follow completed
-
+            followerBot.followUnfollow(user, false, webView, context, s -> {
+                Log.e("FollowerBot", "Follow Completed" );
             });
         });
 
-        mFloatingWidget.setOnLongClickListener((v)->{
+        mFloatingWidget.setOnLongClickListener((v) -> {
             mWindowManager.removeView(mFloatingWidget);
             return true;
         });
