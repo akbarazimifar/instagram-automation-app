@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="in.semibit.instadp">
+    package="in.semibit.media">
 
     <!-- Include required permissions for Google Mobile Ads to run. -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -32,7 +32,7 @@
 
         <activity
             android:launchMode="singleInstance"
-            android:name=".FollowerBotActivity"
+            android:name="in.semibit.media.FollowerBotActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -41,13 +41,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name="in.semibit.media.MainActivity"
             android:exported="true"
             android:label="@string/app_name">
 
         </activity>
 
-        <service android:name=".contentcreation.BackgroundWorkerService" />
+        <service android:name="in.semibit.media.contentcreation.BackgroundWorkerService" />
     </application>
 
 </manifest>

@@ -22,7 +22,7 @@
         android:layout_height="wrap_content">
 
     </TextView>
-    <in.semibit.instadp.common.AdvancedWebView
+    <in.semibit.media.common.AdvancedWebView
         android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"

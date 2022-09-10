@@ -93,7 +93,7 @@
                android:layout_height="match_parent"/>
 
        </androidx.core.widget.NestedScrollView>
-        <in.semibit.instadp.common.AdvancedWebView
+        <in.semibit.media.common.AdvancedWebView
             android:id="@+id/webview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
