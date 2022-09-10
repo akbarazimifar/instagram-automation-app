@@ -58,7 +58,7 @@
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/urlOrUsername"
-                android:text="_.sabarni._"
+                android:text="https://www.instagram.com/the_engineer_bro/"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 

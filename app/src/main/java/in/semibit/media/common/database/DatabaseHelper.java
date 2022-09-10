@@ -50,15 +50,12 @@ public class DatabaseHelper {
 
     public <T> GenericCompletableFuture<T> taskWrapper(Task<T> job) {
         GenericCompletableFuture<T> completableFuture = new GenericCompletableFuture<>();
-        job.addOnCompleteListener(new OnCompleteListener<T>() {
-            @Override
-            public void onComplete(@NonNull Task<T> task) {
-                if (!task.isSuccessful()) {
-                    completableFuture.completeExceptionally(task.getException());
-                    return;
-                }
-                completableFuture.complete(job.getResult());
+        job.addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                completableFuture.completeExceptionally(task.getException());
+                return;
             }
+            completableFuture.complete(job.getResult());
         });
         return completableFuture;
     }

@@ -1,5 +1,6 @@
 package in.semibit.media.common.igclientext;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -8,7 +9,7 @@ import in.semibit.media.common.database.IdentifiedModel;
 
 public class FollowersList implements IdentifiedModel {
     String id = "to_be_follow"; //ig_followers,ig_following,to_be_unfollow,to_be_follow
-    Set<String> followIds = new HashSet<>();
+    List<String> followIds = new ArrayList<>();
 
 
     @Override
@@ -20,11 +21,11 @@ public class FollowersList implements IdentifiedModel {
         this.id = id;
     }
 
-    public Set<String> getFollowIds() {
+    public List<String> getFollowIds() {
         return followIds;
     }
 
-    public void setFollowIds(Set<String> followIds) {
+    public void setFollowIds(List<String> followIds) {
         this.followIds = followIds;
     }
 }

@@ -19,17 +19,12 @@ import com.google.firebase.firestore.Source;
 import com.google.firebase.firestore.core.Filter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import in.semibit.media.common.database.GenericCompletableFuture;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import in.semibit.media.R;
@@ -196,12 +191,11 @@ public class FollowerBotService {
         });
     }
 
-    public void markUsersToFollowFromPost(String postId, GenricDataCallback cb) {
+    public void markUsersToFollowFromPost(String shortCode, GenricDataCallback cb) {
 
         Handler handler = new Handler();
         handler.post(() -> {
             IGClient client = getIgClient();
-            String shortCode = "CiSkqKwrTWu";
             CompletableFuture<LikeInfoResponse> completableFuture = new LikeInfoRequest(shortCode).execute(client);
             try {
                 LikeInfoResponse postInfoResponse = completableFuture.get();
@@ -235,6 +229,10 @@ public class FollowerBotService {
                     CompletableFuture<FollowerInfoResponse> completableFuture =
                             new FollowerInfoRequest(String.valueOf(pk), 5, nextMaxId).execute(client);
                     FollowerInfoResponse followerInfoResponse = completableFuture.get();
+                    if(followerInfoResponse.getFollowerModel() == null){
+                        cb.onStart("error . no followers found. is the profile public ?");
+                        return;
+                    }
                     hasMoreFollowers = followerInfoResponse.getFollowerModel().getBigList();
                     nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
                     users.addAll(followerInfoResponse.getFollowers());
@@ -270,18 +268,20 @@ public class FollowerBotService {
                 followersLists.add(new FollowersList());
             }
             FollowersList alreadyToBeFollow = followersLists.get(0);
-            logger.onStart("258");
             String listCsvFollowers = String.join(",", alreadyToBeFollow.getFollowIds());
-            logger.onStart("260");
-
-            List<FollowUserModel> newUsers = users.stream().filter(user -> !listCsvFollowers.contains(String.valueOf(user.getPk()))).map(u -> FollowUserModel.fromUserToBeFollowed(u)).collect(Collectors.toList());
-            logger.onStart("263");
+            List<FollowUserModel> newUsers = users.stream()
+                    .filter(user -> !listCsvFollowers.contains(String.valueOf(user.getPk())))
+                    .filter(new OffensiveWordFilter(logger))
+                    .map(FollowUserModel::fromUserToBeFollowed).collect(Collectors.toList());
 
             try {
                 alreadyToBeFollow.getFollowIds().addAll(newUsers.stream().map(u -> u.id).collect(Collectors.toList()));
                 GenericCompletableFuture<Void> onSave = serverDb.save(TableNames.FOLLOW_DATA, new ArrayList<>(newUsers));
                 onSave.thenAccept(v -> {
                     logger.onStart("Saved new followers to process " + newUsers.size());
+                });
+                serverDb.save(TableNames.FOLLOW_META, alreadyToBeFollow).thenAccept(v -> {
+                    logger.onStart("Saved meta of new followers to process " + newUsers.size());
                 });
             } catch (Exception e) {
                 e.printStackTrace();

@@ -36,13 +36,42 @@ public class FollowerBotActivity extends AppCompatActivity {
             initBot();
         }
         binding.searchButton.setOnClickListener(c -> {
-            if (followerBotService != null)
-                followerBotService.markUsersToFollowFromFollowers("the_engineer_bro", new GenricDataCallback() {
-                    @Override
-                    public void onStart(String s) {
+            if (followerBotService != null) {
+                String urlOrUname = binding.urlOrUsername.getText().toString();
+                String split[] = urlOrUname.replace("https://", "").split("/");
 
+                if (urlOrUname.contains("/p/") && urlOrUname.contains("instagram.com")) {
+                    if (split.length > 2) {
+                        String shortCode = split[2];
+                        followerBotService.markUsersToFollowFromPost(shortCode, new GenricDataCallback() {
+                            @Override
+                            public void onStart(String s) {
+                                MainActivity.toast(context, "Completed: " + s);
+                            }
+                        });
+                        binding.conturlOrUsername.setError(null);
+                        return;
                     }
-                });
+                } else {
+                    String userName = urlOrUname;
+                    if (urlOrUname.contains("instagram.com") && split.length > 1) {
+                        userName = split[1];
+                    }
+                    followerBotService.markUsersToFollowFromFollowers(userName, new GenricDataCallback() {
+                        @Override
+                        public void onStart(String s) {
+                            MainActivity.toast(context, "Completed: " + s);
+                        }
+                    });
+                    binding.conturlOrUsername.setError(null);
+                    return;
+                }
+                binding.conturlOrUsername.setError("Invalid Input");
+
+            } else {
+                MainActivity.toast(context, "FollowBotService Not initialized. Wait a min...");
+                initBot();
+            }
         });
         binding.searchButton.callOnClick();
 
