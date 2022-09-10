@@ -1,19 +1,17 @@
 package in.semibit.media.followerbot;
 
-import io.objectbox.annotation.Entity;
-import io.objectbox.annotation.Id;
+import in.semibit.media.common.database.IdentifiedModel;
+import in.semibit.media.common.igclientext.post.model.User;
 
-@Entity
-public class FollowUserModel {
+public class FollowUserModel implements IdentifiedModel {
 
-    @Id
-    public long id;
+    public String  id;
 
     public String userName;
 
-    public int followUserState;
+    public FollowUserState followUserState;
 
-    public boolean isUserFollowingMe;
+    public FollowUserState isUserFollowingMeState;
 
     public long followDate;
 
@@ -21,4 +19,22 @@ public class FollowUserModel {
 
     public long waitTillFollowBackDate;
 
+
+    public static FollowUserModel fromUserToBeFollowed(User user){
+        FollowUserModel followUserModel = new FollowUserModel();
+        followUserModel.id = String.valueOf(user.getPk());
+        followUserModel.userName = user.getUsername();
+        followUserModel.followDate = 0;
+        followUserModel.unfollowDate = 0;
+        followUserModel.waitTillFollowBackDate = 0;
+        followUserModel.isUserFollowingMeState = FollowUserState.UNKNOWN;
+        followUserModel.followUserState = FollowUserState.TO_BE_FOLLOWED;
+
+        return followUserModel;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
 }

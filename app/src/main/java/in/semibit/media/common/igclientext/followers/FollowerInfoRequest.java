@@ -9,7 +9,7 @@ import okhttp3.Response;
 
 public class FollowerInfoRequest extends IGGetRequest<FollowerInfoResponse> {
 
-    private final int count;
+    protected final int count;
     String pk;
     String maxId;
     Gson gson = new Gson();

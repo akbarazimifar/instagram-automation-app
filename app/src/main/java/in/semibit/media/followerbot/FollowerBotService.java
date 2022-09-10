@@ -15,15 +15,27 @@ import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.github.instagram4j.instagram4j.IGClient;
+import com.google.firebase.firestore.Source;
+import com.google.firebase.firestore.core.Filter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import in.semibit.media.R;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.Insta4jClient;
+import in.semibit.media.common.database.DatabaseHelper;
+import in.semibit.media.common.database.TableNames;
+import in.semibit.media.common.database.WhereClause;
+import in.semibit.media.common.igclientext.FollowersList;
 import in.semibit.media.common.igclientext.followers.FollowerInfoRequest;
 import in.semibit.media.common.igclientext.followers.FollowerInfoResponse;
 import in.semibit.media.common.igclientext.likes.LikeInfoRequest;
@@ -34,11 +46,14 @@ public class FollowerBotService {
 
 
     Activity context;
+    DatabaseHelper serverDb;
+    DatabaseHelper localDb;
     List<FollowUserModel> userToFollow;
 
     public FollowerBotService(Activity context) {
         this.context = context;
-
+        serverDb = new DatabaseHelper(Source.SERVER);
+        localDb = new DatabaseHelper(Source.CACHE);
     }
 
     private IGClient getIgClient() {
@@ -187,12 +202,12 @@ public class FollowerBotService {
             try {
                 LikeInfoResponse postInfoResponse = completableFuture.get();
                 List<User> users = postInfoResponse.getLikers();
-                cb.onStart("done saved "+users.size());
+                cb.onStart("done saved " + users.size());
                 saveUsersToBeFollowed(users);
 
             } catch (Exception e) {
                 e.printStackTrace();
-                cb.onStart("error "+e.getMessage());
+                cb.onStart("error " + e.getMessage());
 
             }
         });
@@ -211,33 +226,50 @@ public class FollowerBotService {
                 List<User> users = new ArrayList<>();
                 String nextMaxId = "";
                 boolean hasMoreFollowers = true;
-                while (users.size() < maxFollowersToLoad && hasMoreFollowers && nextMaxId != null){
+                while (users.size() < maxFollowersToLoad && hasMoreFollowers && nextMaxId != null) {
 
                     CompletableFuture<FollowerInfoResponse> completableFuture =
-                            new FollowerInfoRequest(String.valueOf(pk),100,nextMaxId).execute(client);
+                            new FollowerInfoRequest(String.valueOf(pk), 100, nextMaxId).execute(client);
                     FollowerInfoResponse followerInfoResponse = completableFuture.get();
                     hasMoreFollowers = followerInfoResponse.getFollowerModel().getBigList();
                     nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
                     users.addAll(followerInfoResponse.getFollowers());
-                    Log.d("FollowerBot","Total Follower Size = "+users.size());
+                    Log.d("FollowerBot", "Total Follower Size = " + users.size());
 
                 }
                 saveUsersToBeFollowed(users);
-                if(users.isEmpty()){
+                if (users.isEmpty()) {
                     cb.onStart("error . empty response");
-                }
-                else {
-                    cb.onStart("done saved "+users.size());
+                } else {
+                    cb.onStart("done saved " + users.size());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                cb.onStart("error "+e.getMessage());
+                cb.onStart("error " + e.getMessage());
             }
         });
     }
 
-    public void saveUsersToBeFollowed(List<User> users){
+    public void saveUsersToBeFollowed(List<User> users) {
+        CompletableFuture<List<FollowersList>> completableFuture = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", Filter.Operator.EQUAL, "to_be_follow")), FollowersList.class);
+        completableFuture.exceptionally(throwable -> new ArrayList<>()).thenAccept(followersLists -> {
 
+            FollowersList toBeFollow = followersLists.get(0);
+            String listCsvFollowers = String.join(",", toBeFollow.getFollowIds());
+            List<FollowUserModel> newUsers = users.stream().filter(user -> !listCsvFollowers.contains(String.valueOf(user.getPk()))).map(u -> FollowUserModel.fromUserToBeFollowed(u)).collect(Collectors.toList());
+
+            try {
+                toBeFollow.getFollowIds().addAll(newUsers.stream().map(u -> u.id).collect(Collectors.toList()));
+                CompletableFuture<Void> onSave = serverDb.save(TableNames.FOLLOW_DATA, new ArrayList<>(newUsers));
+                onSave.thenAccept(v->{
+                    logger.onStart("Saved new followers to process "+newUsers.size());
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.onStart("Error Saving" +e.getMessage());
+            }
+        });
     }
 
+    GenricDataCallback logger = s -> Log.e("FollowerBot",s);
 }

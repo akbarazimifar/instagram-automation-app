@@ -9,7 +9,7 @@ android {
     compileSdk 32
 
     defaultConfig {
-        applicationId "in.semibit.instadp"
+        applicationId "in.semibit.media"
         minSdk 28
         targetSdk 31
         versionCode 1
