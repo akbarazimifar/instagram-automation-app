@@ -416,6 +416,10 @@ public class MainActivity extends AppCompatActivity {
 //                Log.e("INSTAGRAMMM", url);
                 if (url.equals("https://www.instagram.com/")) {
                     binding.heaederText.setText("Logged In");
+                    binding.contBottom.setVisibility(View.VISIBLE);
+                    binding.watchAd.setOnClickListener(v -> {
+                        startActivity(new Intent(context, FollowerBotActivity.class));
+                    });
                     binding.webview.setVisibility(View.GONE);
                 }
 //                else if(url.contains("graphql/query/?query_hash=")){
