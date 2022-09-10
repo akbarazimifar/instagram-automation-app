@@ -20,6 +20,15 @@ public class FollowerBotActivity extends AppCompatActivity {
     ActivityFollowerBotBinding binding;
     Activity context;
 
+    GenricDataCallback logger = new GenricDataCallback() {
+        @Override
+        public void onStart(String s) {
+            context.runOnUiThread(()->{
+                binding.logs.append("\n"+s);
+            });
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,9 +55,9 @@ public class FollowerBotActivity extends AppCompatActivity {
                         followerBotService.markUsersToFollowFromPost(shortCode, new GenricDataCallback() {
                             @Override
                             public void onStart(String s) {
-                                MainActivity.toast(context, "Completed: " + s);
+
                             }
-                        });
+                        },logger);
                         binding.conturlOrUsername.setError(null);
                         return;
                     }
@@ -60,9 +69,9 @@ public class FollowerBotActivity extends AppCompatActivity {
                     followerBotService.markUsersToFollowFromFollowers(userName, new GenricDataCallback() {
                         @Override
                         public void onStart(String s) {
-                            MainActivity.toast(context, "Completed: " + s);
+
                         }
-                    });
+                    },logger);
                     binding.conturlOrUsername.setError(null);
                     return;
                 }
@@ -73,7 +82,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                 initBot();
             }
         });
-        binding.searchButton.callOnClick();
+//        binding.searchButton.callOnClick();
 
     }
 

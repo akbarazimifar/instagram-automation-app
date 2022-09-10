@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    android:id="@+id/root"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".FollowerBotActivity">
 
 
@@ -58,9 +58,9 @@
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/urlOrUsername"
-                android:text="https://www.instagram.com/the_engineer_bro/"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:text="https://www.instagram.com/the_engineer_bro/" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -75,4 +75,16 @@
             app:layout_constraintTop_toBottomOf="@+id/conturlOrUsername" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/logs"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="vertical" />
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

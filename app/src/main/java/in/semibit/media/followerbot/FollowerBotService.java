@@ -191,104 +191,135 @@ public class FollowerBotService {
         });
     }
 
-    public void markUsersToFollowFromPost(String shortCode, GenricDataCallback cb) {
+    public void markUsersToFollowFromPost(String shortCode, GenricDataCallback cb, GenricDataCallback onUILog) {
 
         Handler handler = new Handler();
         handler.post(() -> {
             IGClient client = getIgClient();
             CompletableFuture<LikeInfoResponse> completableFuture = new LikeInfoRequest(shortCode).execute(client);
-            try {
-                LikeInfoResponse postInfoResponse = completableFuture.get();
-                List<User> users = postInfoResponse.getLikers();
-                cb.onStart("done saved " + users.size());
-                saveUsersToBeFollowed(users);
-
-            } catch (Exception e) {
+            GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", Filter.Operator.EQUAL, "to_be_follow")), FollowersList.class);
+            onLoadedFollowMeta.exceptionally((e) -> {
                 e.printStackTrace();
-                cb.onStart("error " + e.getMessage());
+                return new ArrayList<>();
+            }).thenAccept(followersLists -> {
+                if (followersLists == null) {
+                    followersLists = new ArrayList<>();
+                }
+                if (followersLists.size() == 0) {
+                    followersLists.add(new FollowersList());
+                }
+                FollowersList alreadyToBeFollow = followersLists.get(0);
+                try {
+                    String listCsvFollowers = String.join(",", alreadyToBeFollow.getFollowIds());
 
-            }
+                    LikeInfoResponse postInfoResponse = completableFuture.get();
+                    List<User> users = postInfoResponse.getLikers();
+                    users = users.stream().filter(user -> !listCsvFollowers.contains(String.valueOf(user.getPk())))
+                            .filter(new OffensiveWordFilter(logger)).collect(Collectors.toList());
+                    cb.onStart("done saved " + users.size());
+                    saveUsersToBeFollowed(users, alreadyToBeFollow, onUILog);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    cb.onStart("error " + e.getMessage());
+
+                }
+            });
+
+
         });
     }
 
 
-    public void markUsersToFollowFromFollowers(String userName, GenricDataCallback cb) {
+    public void markUsersToFollowFromFollowers(String userName, GenricDataCallback cb, GenricDataCallback onUILog) {
 
-        int maxFollowersToLoad = 5;
+        int maxFollowersToLoad = 300;
         Handler handler = new Handler();
         handler.post(() -> {
             IGClient client = getIgClient();
-            try {
-                com.github.instagram4j.instagram4j.models.user.User user = client.getActions().users().findByUsername(userName).get().getUser();
-                Long pk = user.getPk();
-                List<User> users = new ArrayList<>();
-                String nextMaxId = "";
-                boolean hasMoreFollowers = true;
-                while (users.size() < maxFollowersToLoad && hasMoreFollowers && nextMaxId != null) {
 
-                    CompletableFuture<FollowerInfoResponse> completableFuture =
-                            new FollowerInfoRequest(String.valueOf(pk), 5, nextMaxId).execute(client);
-                    FollowerInfoResponse followerInfoResponse = completableFuture.get();
-                    if(followerInfoResponse.getFollowerModel() == null){
-                        cb.onStart("error . no followers found. is the profile public ?");
-                        return;
+            GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", Filter.Operator.EQUAL, "to_be_follow")), FollowersList.class);
+            onLoadedFollowMeta.exceptionally((e) -> {
+                e.printStackTrace();
+                return new ArrayList<>();
+            }).thenAccept(followersLists -> {
+                if (followersLists == null) {
+                    followersLists = new ArrayList<>();
+                }
+                if (followersLists.size() == 0) {
+                    followersLists.add(new FollowersList());
+                }
+                FollowersList alreadyToBeFollow = followersLists.get(0);
+                try {
+
+                    com.github.instagram4j.instagram4j.models.user.User user = client.getActions().users().findByUsername(userName).get().getUser();
+                    Long pk = user.getPk();
+                    List<User> users = new ArrayList<>();
+                    String nextMaxId = "";
+                    boolean hasMoreFollowers = true;
+                    String listCsvFollowers = String.join(",", alreadyToBeFollow.getFollowIds());
+
+                    while (users.size() < maxFollowersToLoad && hasMoreFollowers && nextMaxId != null) {
+
+                        CompletableFuture<FollowerInfoResponse> completableFuture =
+                                new FollowerInfoRequest(String.valueOf(pk), 5, nextMaxId).execute(client);
+                        FollowerInfoResponse followerInfoResponse = completableFuture.get();
+                        if (followerInfoResponse.getFollowerModel() == null) {
+                            cb.onStart("error . no followers found. is the profile public ?");
+                            return;
+                        }
+                        hasMoreFollowers = followerInfoResponse.getFollowerModel().getBigList();
+                        nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
+
+                        users = followerInfoResponse.getFollowers();
+                        users = users.stream().filter(us -> !listCsvFollowers.contains(String.valueOf(us.getPk())))
+                                .filter(new OffensiveWordFilter(logger)).collect(Collectors.toList());
+
+                        users.addAll(users);
+                        Log.d("FollowerBot", "Total Follower Size = " + users.size());
+
                     }
-                    hasMoreFollowers = followerInfoResponse.getFollowerModel().getBigList();
-                    nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
-                    users.addAll(followerInfoResponse.getFollowers());
-                    Log.d("FollowerBot", "Total Follower Size = " + users.size());
+                    saveUsersToBeFollowed(users, alreadyToBeFollow, onUILog);
 
+                    if (users.isEmpty()) {
+                        cb.onStart("error . empty response");
+                    } else {
+                        cb.onStart("done saved " + users.size());
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    cb.onStart("error " + e.getMessage());
+                    onUILog.onStart(e.getMessage());
                 }
-                saveUsersToBeFollowed(users);
-                if (users.isEmpty()) {
-                    cb.onStart("error . empty response");
-                } else {
-                    cb.onStart("done saved " + users.size());
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                cb.onStart("error " + e.getMessage());
-            }
+
+            });
+
         });
     }
 
-    public void saveUsersToBeFollowed(List<User> users) {
-        GenericCompletableFuture<List<FollowersList>> completableFuture = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", Filter.Operator.EQUAL, "to_be_follow")), FollowersList.class);
+    public void saveUsersToBeFollowed(List<User> users, FollowersList alreadyToBeFollow, GenricDataCallback onUILog) {
 
 
-        completableFuture.exceptionally((e) -> {
+        List<FollowUserModel> newUsers = users.stream()
+                .map(FollowUserModel::fromUserToBeFollowed).collect(Collectors.toList());
+
+        try {
+            alreadyToBeFollow.getFollowIds().addAll(newUsers.stream().map(u -> u.id).collect(Collectors.toList()));
+            GenericCompletableFuture<Void> onSave = serverDb.save(TableNames.FOLLOW_DATA, new ArrayList<>(newUsers));
+            onSave.thenAccept(v -> {
+                onUILog.onStart("Completed marking users");
+                String newUserNames = newUsers.stream().map(u -> u.userName).collect(Collectors.joining("\n"));
+                onUILog.onStart(newUserNames);
+                onUILog.onStart("Saved new followers to process " + newUsers.size());
+            });
+            serverDb.save(TableNames.FOLLOW_META, alreadyToBeFollow).thenAccept(v -> {
+                onUILog.onStart("Saved meta of new followers to process " + newUsers.size());
+            });
+        } catch (Exception e) {
             e.printStackTrace();
-            return new ArrayList<>();
-        }).thenAccept(followersLists -> {
-
-            if (followersLists == null) {
-                followersLists = new ArrayList<>();
-            }
-            if(followersLists.size() == 0){
-                followersLists.add(new FollowersList());
-            }
-            FollowersList alreadyToBeFollow = followersLists.get(0);
-            String listCsvFollowers = String.join(",", alreadyToBeFollow.getFollowIds());
-            List<FollowUserModel> newUsers = users.stream()
-                    .filter(user -> !listCsvFollowers.contains(String.valueOf(user.getPk())))
-                    .filter(new OffensiveWordFilter(logger))
-                    .map(FollowUserModel::fromUserToBeFollowed).collect(Collectors.toList());
-
-            try {
-                alreadyToBeFollow.getFollowIds().addAll(newUsers.stream().map(u -> u.id).collect(Collectors.toList()));
-                GenericCompletableFuture<Void> onSave = serverDb.save(TableNames.FOLLOW_DATA, new ArrayList<>(newUsers));
-                onSave.thenAccept(v -> {
-                    logger.onStart("Saved new followers to process " + newUsers.size());
-                });
-                serverDb.save(TableNames.FOLLOW_META, alreadyToBeFollow).thenAccept(v -> {
-                    logger.onStart("Saved meta of new followers to process " + newUsers.size());
-                });
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.onStart("Error Saving" + e.getMessage());
-            }
-        });
+            logger.onStart("Error Saving" + e.getMessage());
+        }
     }
+
 
     GenricDataCallback logger = s -> Log.e("FollowerBot", s);
 }
