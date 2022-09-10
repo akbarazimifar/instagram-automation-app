@@ -3,7 +3,6 @@ package in.semibit.instadp.followerbot;
 import static android.content.Context.WINDOW_SERVICE;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Handler;
@@ -13,19 +12,19 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.webkit.WebView;
 import android.widget.TextView;
 
 import com.github.instagram4j.instagram4j.IGClient;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.CompletableFuture;
 
 import in.semibit.instadp.R;
 import in.semibit.instadp.common.AdvancedWebView;
 import in.semibit.instadp.common.Insta4jClient;
-import io.objectbox.android.ObjectBoxDataSource;
+import in.semibit.instadp.common.igclientext.post.PostInfoRequest;
+import in.semibit.instadp.common.igclientext.post.PostInfoResponse;
+import in.semibit.instadp.common.igclientext.post.model.PostItem;
 
 public class FollowerBotService {
 
@@ -42,10 +41,13 @@ public class FollowerBotService {
         return Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), null);
     }
 
+    View mFloatingWidget;
+
     public AdvancedWebView generateAlert(final Activity context) {
+
         int layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutType,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,   // REMOVE FLAG_NOT_FOCUSABLE
@@ -55,10 +57,18 @@ public class FollowerBotService {
         params.x = 0;
         params.y = 100;
 
-        View mFloatingWidget = LayoutInflater.from(context).inflate(R.layout.follower_bot, null);
 
         WindowManager mWindowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
+        if (mFloatingWidget != null) {
+            try {
+                mWindowManager.removeView(mFloatingWidget);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        mFloatingWidget = LayoutInflater.from(context).inflate(R.layout.follower_bot, null);
         mWindowManager.addView(mFloatingWidget, params);
+
 
         final TextView label = mFloatingWidget.findViewById(R.id.label);
         final AdvancedWebView webView = mFloatingWidget.findViewById(R.id.webView);
@@ -150,7 +160,6 @@ public class FollowerBotService {
             followSingleUser(followerBot, getNextUserToFollow(), webView, context);
 
         });
-
     }
 
     public void followSingleUser(FollowerBot followerBot, String user, AdvancedWebView webView, Activity context) {
@@ -165,10 +174,19 @@ public class FollowerBotService {
     }
 
     public void markUsersToFollow(AdvancedWebView webView, Activity context) {
-        IGClient client = getIgClient();
+
         Handler handler = new Handler();
         handler.post(() -> {
-            client.actions().timeline().feed();
+            IGClient client = getIgClient();
+            String shortCode = "CiSkqKwrTWu";
+            CompletableFuture<PostInfoResponse> completableFuture = new PostInfoRequest(shortCode).execute(client);
+            try {
+                PostInfoResponse postInfoResponse = completableFuture.get();
+                PostItem postItem = postInfoResponse.getFirstPost();
+                Log.e("FollowerBot", "Reqpo ");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
     }
 

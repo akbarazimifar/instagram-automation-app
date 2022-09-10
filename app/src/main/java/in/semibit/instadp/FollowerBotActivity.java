@@ -1,5 +1,6 @@
 package in.semibit.instadp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
@@ -24,7 +25,6 @@ public class FollowerBotActivity extends AppCompatActivity {
         setContentView(R.layout.activity_follower_bot);
         binding = ActivityFollowerBotBinding.bind(findViewById(R.id.root));
         context = this;
-        initBot();
         requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.SYSTEM_ALERT_WINDOW}, 1234);
         if (!Settings.canDrawOverlays(this)) {
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -32,24 +32,33 @@ public class FollowerBotActivity extends AppCompatActivity {
             startActivityForResult(intent, 1112);
 
         } else {
-
+            initBot();
         }
         binding.searchButton.setOnClickListener(c -> {
-            followerBotService.markUsersToFollow(advancedWebView,context);
+            if (followerBotService != null)
+                followerBotService.markUsersToFollow(advancedWebView, context);
         });
         binding.searchButton.callOnClick();
 
     }
 
-    AdvancedWebView advancedWebView ;
+    AdvancedWebView advancedWebView;
     FollowerBotService followerBotService;
-    public void initBot(){
+
+    public void initBot() {
 
         followerBotService = new FollowerBotService(context);
-        advancedWebView =  followerBotService.generateAlert(context);
+        advancedWebView = followerBotService.generateAlert(context);
     }
+
     @Override
     public void onBackPressed() {
         this.moveTaskToBack(true);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        initBot();
     }
 }

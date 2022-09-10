@@ -171,4 +171,10 @@ public class InstagramPoster {
 
     }
 
+
+
+    public void getPost(IGClient client,String postUrl){
+
+    }
+
 }
