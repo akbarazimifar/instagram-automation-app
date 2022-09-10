@@ -10,6 +10,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 
+import com.semibit.ezandroidutils.EzUtils;
+
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.databinding.ActivityFollowerBotBinding;
@@ -23,8 +25,8 @@ public class FollowerBotActivity extends AppCompatActivity {
     GenricDataCallback logger = new GenricDataCallback() {
         @Override
         public void onStart(String s) {
-            context.runOnUiThread(()->{
-                binding.logs.append("\n"+s);
+            context.runOnUiThread(() -> {
+                binding.logs.append("\n" + s);
             });
         }
     };
@@ -44,6 +46,37 @@ public class FollowerBotActivity extends AppCompatActivity {
         } else {
             initBot();
         }
+
+        binding.refresh.setOnLongClickListener(c -> {
+            EzUtils.toast(context, "Sync followers from Instagram");
+            return true;
+        });
+        binding.refresh.setOnClickListener(v -> {
+            binding.refresh.setEnabled(false);
+            followerBotService.getAllFollowersForUser(context.getString(R.string.username), false, new GenricDataCallback() {
+                @Override
+                public void onStart(String s) {
+                    context.runOnUiThread(() -> binding.refresh.setEnabled(true));
+                }
+            }, logger);
+
+            followerBotService.getAllFollowersForUser(context.getString(R.string.username), true, new GenricDataCallback() {
+                @Override
+                public void onStart(String s) {
+                    context.runOnUiThread(() -> binding.refresh.setEnabled(true));
+                }
+            }, logger);
+        });
+
+        binding.clearLogs.setOnLongClickListener(c -> {
+            EzUtils.toast(context, "Clear Logs");
+            return true;
+        });
+        binding.startBot.setOnLongClickListener(c -> {
+            EzUtils.toast(context, "Start/Stop FollowerBot");
+            return true;
+        });
+
         binding.searchButton.setOnClickListener(c -> {
             if (followerBotService != null) {
                 String urlOrUname = binding.urlOrUsername.getText().toString();
@@ -57,7 +90,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                             public void onStart(String s) {
 
                             }
-                        },logger);
+                        }, logger);
                         binding.conturlOrUsername.setError(null);
                         return;
                     }
@@ -71,7 +104,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                         public void onStart(String s) {
 
                         }
-                    },logger);
+                    }, logger);
                     binding.conturlOrUsername.setError(null);
                     return;
                 }

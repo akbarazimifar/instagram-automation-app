@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root"
@@ -70,16 +70,18 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/font_style"
             android:minHeight="60dp"
-            android:text="REPOST"
+            android:text="MARK USERS"
             app:cornerRadius="8dp"
             app:layout_constraintTop_toBottomOf="@+id/conturlOrUsername" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
     <androidx.core.widget.NestedScrollView
+        app:layout_constraintTop_toBottomOf="@+id/contTop"
+        app:layout_constraintBottom_toTopOf="@+id/contBottom"
         android:padding="5dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp">
 
         <TextView
             android:id="@+id/logs"
@@ -88,4 +90,60 @@
             android:scrollbars="vertical" />
     </androidx.core.widget.NestedScrollView>
 
-</LinearLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:padding="5dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:id="@+id/contBottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+
+        <com.google.android.material.button.MaterialButton
+            android:backgroundTint="@color/material_orange_500"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@+id/startBot"
+            android:id="@+id/clearLogs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/font_style"
+            android:minHeight="60dp"
+            android:text="CLEAR"
+            app:cornerRadius="8dp"
+            />
+
+
+        <com.google.android.material.button.MaterialButton
+            android:backgroundTint="@color/material_green_500"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toRightOf="@+id/clearLogs"
+            app:layout_constraintRight_toLeftOf="@+id/refresh"
+            android:id="@+id/startBot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/font_style"
+            android:minHeight="60dp"
+            android:text="START"
+            app:cornerRadius="8dp"
+            />
+
+
+        <com.google.android.material.button.MaterialButton
+            android:backgroundTint="@color/material_teal_700"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toRightOf="@+id/startBot"
+            app:layout_constraintRight_toRightOf="parent"
+            android:id="@+id/refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/font_style"
+            android:minHeight="60dp"
+            android:text="REFRESH"
+            app:cornerRadius="8dp"
+            />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

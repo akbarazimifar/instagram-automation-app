@@ -5,6 +5,7 @@ import static android.content.Context.WINDOW_SERVICE;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
@@ -37,6 +38,7 @@ import in.semibit.media.common.database.WhereClause;
 import in.semibit.media.common.igclientext.FollowersList;
 import in.semibit.media.common.igclientext.followers.FollowerInfoRequest;
 import in.semibit.media.common.igclientext.followers.FollowerInfoResponse;
+import in.semibit.media.common.igclientext.followers.FollowingInfoRequest;
 import in.semibit.media.common.igclientext.likes.LikeInfoRequest;
 import in.semibit.media.common.igclientext.likes.LikeInfoResponse;
 import in.semibit.media.common.igclientext.post.model.User;
@@ -193,8 +195,7 @@ public class FollowerBotService {
 
     public void markUsersToFollowFromPost(String shortCode, GenricDataCallback cb, GenricDataCallback onUILog) {
 
-        Handler handler = new Handler();
-        handler.post(() -> {
+        AsyncTask.execute(() -> {
             IGClient client = getIgClient();
             CompletableFuture<LikeInfoResponse> completableFuture = new LikeInfoRequest(shortCode).execute(client);
             GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", Filter.Operator.EQUAL, "to_be_follow")), FollowersList.class);
@@ -229,12 +230,73 @@ public class FollowerBotService {
         });
     }
 
+    public void getAllFollowersForUser(String userName, boolean isFollowingRequest, GenricDataCallback cb, GenricDataCallback onUILog) {
 
-    public void markUsersToFollowFromFollowers(String userName, GenricDataCallback cb, GenricDataCallback onUILog) {
+        AsyncTask.execute(() -> {
+            try {
+                IGClient client = getIgClient();
+                String connections = isFollowingRequest ? "Followings" : "Followers";
+                onUILog.onStart("Syncing " + connections + " from IG");
+
+                com.github.instagram4j.instagram4j.models.user.User user = client.getActions().users().findByUsername(userName).get().getUser();
+                Long pk = user.getPk();
+                List<User> users = new ArrayList<>();
+                String nextMaxId = "";
+                boolean hasMoreFollowers = true;
+
+                while (hasMoreFollowers && nextMaxId != null) {
+
+                    CompletableFuture<FollowerInfoResponse> completableFuture =
+                            (isFollowingRequest ? new FollowingInfoRequest(String.valueOf(pk), 100, nextMaxId)
+                                    : new FollowerInfoRequest(String.valueOf(pk), 100, nextMaxId)).execute(client);
+                    FollowerInfoResponse followerInfoResponse = completableFuture.get();
+                    if (followerInfoResponse.getFollowerModel() == null) {
+                        cb.onStart("error . no followers found. is this profile public ?");
+                        return;
+                    }
+                    hasMoreFollowers = followerInfoResponse.getFollowerModel().getBigList();
+                    nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
+
+                    users.addAll(followerInfoResponse.getFollowers());
+                    Log.d("FollowerBot", "Total " + connections + " Size = " + users.size());
+
+                }
+
+                List<FollowUserModel> newUsers = users.stream()
+                        .map(FollowUserModel::fromUserToBeFollowed).collect(Collectors.toList());
+
+                GenericCompletableFuture<Void> onSave = serverDb.save(
+                        isFollowingRequest ? TableNames.MY_FOLLOWING_DATA : TableNames.MY_FOLLOWERS_DATA
+                        , new ArrayList<>(newUsers));
+                onSave.thenAccept(v -> {
+                    onUILog.onStart("Completed syncing IG " + connections + " " + newUsers.size());
+                });
+
+                if (isFollowingRequest) {
+                    serverDb.save(TableNames.COUNTER, new FollowerCounter(DatabaseHelper.tablePrefix("following_count"), users.size()));
+                } else {
+                    serverDb.save(TableNames.COUNTER, new FollowerCounter(DatabaseHelper.tablePrefix("follower_count"), users.size()));
+                }
+
+
+                if (users.isEmpty()) {
+                    cb.onStart("error . empty response");
+                } else {
+                    cb.onStart("done saved " + users.size());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                cb.onStart("error " + e.getMessage());
+                onUILog.onStart(e.getMessage());
+            }
+        });
+    }
+
+    public void markUsersToFollowFromFollowers(String userName, GenricDataCallback
+            cb, GenricDataCallback onUILog) {
 
         int maxFollowersToLoad = 300;
-        Handler handler = new Handler();
-        handler.post(() -> {
+        AsyncTask.execute(() -> {
             IGClient client = getIgClient();
 
             GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", Filter.Operator.EQUAL, "to_be_follow")), FollowersList.class);
@@ -261,7 +323,7 @@ public class FollowerBotService {
                     while (users.size() < maxFollowersToLoad && hasMoreFollowers && nextMaxId != null) {
 
                         CompletableFuture<FollowerInfoResponse> completableFuture =
-                                new FollowerInfoRequest(String.valueOf(pk), 5, nextMaxId).execute(client);
+                                new FollowerInfoRequest(String.valueOf(pk), 100, nextMaxId).execute(client);
                         FollowerInfoResponse followerInfoResponse = completableFuture.get();
                         if (followerInfoResponse.getFollowerModel() == null) {
                             cb.onStart("error . no followers found. is the profile public ?");
@@ -270,11 +332,11 @@ public class FollowerBotService {
                         hasMoreFollowers = followerInfoResponse.getFollowerModel().getBigList();
                         nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
 
-                        users = followerInfoResponse.getFollowers();
-                        users = users.stream().filter(us -> !listCsvFollowers.contains(String.valueOf(us.getPk())))
+                        List<User> localUsers = followerInfoResponse.getFollowers();
+                        localUsers = localUsers.stream().filter(us -> !listCsvFollowers.contains(String.valueOf(us.getPk())))
                                 .filter(new OffensiveWordFilter(logger)).collect(Collectors.toList());
 
-                        users.addAll(users);
+                        users.addAll(localUsers);
                         Log.d("FollowerBot", "Total Follower Size = " + users.size());
 
                     }
@@ -296,7 +358,8 @@ public class FollowerBotService {
         });
     }
 
-    public void saveUsersToBeFollowed(List<User> users, FollowersList alreadyToBeFollow, GenricDataCallback onUILog) {
+    public void saveUsersToBeFollowed(List<User> users, FollowersList
+            alreadyToBeFollow, GenricDataCallback onUILog) {
 
 
         List<FollowUserModel> newUsers = users.stream()

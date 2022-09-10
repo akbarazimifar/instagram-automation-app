@@ -44,7 +44,7 @@ public class DatabaseHelper {
         return db.enableNetwork();
     }
 
-    public String tablePrefix(String tab) {
+    public static String tablePrefix(String tab) {
         return "smauto_" + tab;
     }
 
