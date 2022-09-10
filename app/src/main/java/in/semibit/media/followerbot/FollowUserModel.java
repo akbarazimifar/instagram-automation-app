@@ -5,6 +5,8 @@ import in.semibit.media.common.igclientext.post.model.User;
 
 public class FollowUserModel implements IdentifiedModel {
 
+    public String tenant = "semibitmedia";
+
     public String  id;
 
     public String userName;

@@ -54,7 +54,7 @@ public class FollowerBotActivity extends AppCompatActivity {
     public void initBot() {
 
         followerBotService = new FollowerBotService(context);
-        advancedWebView = followerBotService.generateAlert(context);
+//        advancedWebView = followerBotService.generateAlert(context);
     }
 
     @Override

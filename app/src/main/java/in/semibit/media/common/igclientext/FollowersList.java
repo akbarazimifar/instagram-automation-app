@@ -1,5 +1,6 @@
 package in.semibit.media.common.igclientext;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -7,7 +8,7 @@ import in.semibit.media.common.database.IdentifiedModel;
 
 public class FollowersList implements IdentifiedModel {
     String id = "to_be_follow"; //ig_followers,ig_following,to_be_unfollow,to_be_follow
-    Set<String> followIds;
+    Set<String> followIds = new HashSet<>();
 
 
     @Override

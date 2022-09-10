@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import in.semibit.media.common.database.GenericCompletableFuture;
+
 public class DatabaseHelper {
 
     FirebaseFirestore db;
@@ -46,27 +48,27 @@ public class DatabaseHelper {
         return "smauto_" + tab;
     }
 
-    public <T> CompletableFuture<T> taskWrapper(Task<T> job) {
-        CompletableFuture<T> completableFuture = new CompletableFuture<>();
-        CompletableFuture.supplyAsync(() -> {
-            try {
-                Tasks.await(job);
+    public <T> GenericCompletableFuture<T> taskWrapper(Task<T> job) {
+        GenericCompletableFuture<T> completableFuture = new GenericCompletableFuture<>();
+        job.addOnCompleteListener(new OnCompleteListener<T>() {
+            @Override
+            public void onComplete(@NonNull Task<T> task) {
+                if (!task.isSuccessful()) {
+                    completableFuture.completeExceptionally(task.getException());
+                    return;
+                }
                 completableFuture.complete(job.getResult());
-            } catch (Exception e) {
-                e.printStackTrace();
-                completableFuture.completeExceptionally(e);
             }
-            return null;
         });
         return completableFuture;
     }
 
-    public CompletableFuture<Void> save(String tableName, IdentifiedModel model) throws Exception {
+    public GenericCompletableFuture<Void> save(String tableName, IdentifiedModel model) throws Exception {
         Task<Void> task = db.collection(tablePrefix(tableName)).document(model.getId()).set(model);
         return taskWrapper(task);
     }
 
-    public CompletableFuture<Void> save(String tableName, List<IdentifiedModel> model) throws Exception {
+    public GenericCompletableFuture<Void> save(String tableName, List<IdentifiedModel> model) throws Exception {
         WriteBatch batch = db.batch();
         for (IdentifiedModel data : model) {
             DocumentReference ref = db.collection(tablePrefix(tableName)).document(data.getId());
@@ -76,7 +78,7 @@ public class DatabaseHelper {
     }
 
 
-    public CompletableFuture<Void> updateOne(String tableName, IdentifiedModel model) throws Exception {
+    public GenericCompletableFuture<Void> updateOne(String tableName, IdentifiedModel model) throws Exception {
         Task<Void> task = null;
         try {
             if (model.getId() == null) {
@@ -88,13 +90,13 @@ public class DatabaseHelper {
             return taskWrapper(task);
         } catch (Exception e) {
             e.printStackTrace();
-            CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+            GenericCompletableFuture<Void> completableFuture = new GenericCompletableFuture<>();
             completableFuture.completeExceptionally(e);
             return completableFuture;
         }
     }
 
-    public CompletableFuture<Void> deleteOne(String tableName, IdentifiedModel model) throws Exception {
+    public GenericCompletableFuture<Void> deleteOne(String tableName, IdentifiedModel model) throws Exception {
         Task<Void> task = null;
         try {
             if (model.getId() == null) {
@@ -106,7 +108,7 @@ public class DatabaseHelper {
             return taskWrapper(task);
         } catch (Exception e) {
             e.printStackTrace();
-            CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+            GenericCompletableFuture<Void> completableFuture = new GenericCompletableFuture<>();
             completableFuture.completeExceptionally(e);
             return completableFuture;
         }
@@ -134,11 +136,11 @@ public class DatabaseHelper {
         return query;
     }
 
-    public <T extends IdentifiedModel> CompletableFuture<List<T>> query(String tableName, List<WhereClause> clause, Class<T> type) {
+    public <T extends IdentifiedModel> GenericCompletableFuture<List<T>> query(String tableName, List<WhereClause> clause, Class<T> type) {
         Query query = db.collection(tablePrefix(tableName));
         query = fromWhere(query, clause);
 
-        CompletableFuture<List<T>> completableFuture = new CompletableFuture<>();
+        GenericCompletableFuture<List<T>> completableFuture = new GenericCompletableFuture<>();
 
         query.get(source).addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override

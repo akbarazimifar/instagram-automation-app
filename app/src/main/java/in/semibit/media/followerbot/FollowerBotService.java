@@ -22,7 +22,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import in.semibit.media.common.database.GenericCompletableFuture;
+
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -216,7 +220,7 @@ public class FollowerBotService {
 
     public void markUsersToFollowFromFollowers(String userName, GenricDataCallback cb) {
 
-        int maxFollowersToLoad = 300;
+        int maxFollowersToLoad = 5;
         Handler handler = new Handler();
         handler.post(() -> {
             IGClient client = getIgClient();
@@ -229,7 +233,7 @@ public class FollowerBotService {
                 while (users.size() < maxFollowersToLoad && hasMoreFollowers && nextMaxId != null) {
 
                     CompletableFuture<FollowerInfoResponse> completableFuture =
-                            new FollowerInfoRequest(String.valueOf(pk), 100, nextMaxId).execute(client);
+                            new FollowerInfoRequest(String.valueOf(pk), 5, nextMaxId).execute(client);
                     FollowerInfoResponse followerInfoResponse = completableFuture.get();
                     hasMoreFollowers = followerInfoResponse.getFollowerModel().getBigList();
                     nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
@@ -251,25 +255,40 @@ public class FollowerBotService {
     }
 
     public void saveUsersToBeFollowed(List<User> users) {
-        CompletableFuture<List<FollowersList>> completableFuture = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", Filter.Operator.EQUAL, "to_be_follow")), FollowersList.class);
-        completableFuture.exceptionally(throwable -> new ArrayList<>()).thenAccept(followersLists -> {
+        GenericCompletableFuture<List<FollowersList>> completableFuture = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", Filter.Operator.EQUAL, "to_be_follow")), FollowersList.class);
 
-            FollowersList toBeFollow = followersLists.get(0);
-            String listCsvFollowers = String.join(",", toBeFollow.getFollowIds());
+
+        completableFuture.exceptionally((e) -> {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }).thenAccept(followersLists -> {
+
+            if (followersLists == null) {
+                followersLists = new ArrayList<>();
+            }
+            if(followersLists.size() == 0){
+                followersLists.add(new FollowersList());
+            }
+            FollowersList alreadyToBeFollow = followersLists.get(0);
+            logger.onStart("258");
+            String listCsvFollowers = String.join(",", alreadyToBeFollow.getFollowIds());
+            logger.onStart("260");
+
             List<FollowUserModel> newUsers = users.stream().filter(user -> !listCsvFollowers.contains(String.valueOf(user.getPk()))).map(u -> FollowUserModel.fromUserToBeFollowed(u)).collect(Collectors.toList());
+            logger.onStart("263");
 
             try {
-                toBeFollow.getFollowIds().addAll(newUsers.stream().map(u -> u.id).collect(Collectors.toList()));
-                CompletableFuture<Void> onSave = serverDb.save(TableNames.FOLLOW_DATA, new ArrayList<>(newUsers));
-                onSave.thenAccept(v->{
-                    logger.onStart("Saved new followers to process "+newUsers.size());
+                alreadyToBeFollow.getFollowIds().addAll(newUsers.stream().map(u -> u.id).collect(Collectors.toList()));
+                GenericCompletableFuture<Void> onSave = serverDb.save(TableNames.FOLLOW_DATA, new ArrayList<>(newUsers));
+                onSave.thenAccept(v -> {
+                    logger.onStart("Saved new followers to process " + newUsers.size());
                 });
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.onStart("Error Saving" +e.getMessage());
+                logger.onStart("Error Saving" + e.getMessage());
             }
         });
     }
 
-    GenricDataCallback logger = s -> Log.e("FollowerBot",s);
+    GenricDataCallback logger = s -> Log.e("FollowerBot", s);
 }
