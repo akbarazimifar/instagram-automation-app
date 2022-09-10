@@ -72,6 +72,10 @@ public class FollowerBotActivity extends AppCompatActivity {
             EzUtils.toast(context, "Clear Logs");
             return true;
         });
+
+        binding.clearLogs.setOnClickListener(c -> {
+            binding.logs.setText("");
+        });
         binding.startBot.setOnLongClickListener(c -> {
             EzUtils.toast(context, "Start/Stop FollowerBot");
             return true;
