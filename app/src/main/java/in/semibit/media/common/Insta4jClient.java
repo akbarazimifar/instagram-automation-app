@@ -18,11 +18,12 @@ public class Insta4jClient {
     private static IGClient client;
     public static File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
 
-    public static IGClient getClient(String username, String passwd,GenricDataCallback callback) {
-        if(callback == null){
-            callback =  (s)->{};
+    public static IGClient getClient(String username, String passwd, GenricDataCallback callback) {
+        if (callback == null) {
+            callback = (s) -> {
+            };
         }
-        if(client == null){
+        if (client == null) {
 
             try {
                 if (!root.exists()) {
@@ -30,7 +31,7 @@ public class Insta4jClient {
                 }
                 File file = new File(root.getAbsoluteFile(), "instagram.txt");
                 if (file.exists()) {
-                    String split = Files.readAllBytes(Paths.get(file.getPath())).toString();
+                    String split = new String(Files.readAllBytes(Paths.get(file.getPath())));
                     username = split.split(",")[0].trim();
                     passwd = split.split(",")[1].trim();
                 }
@@ -49,10 +50,10 @@ public class Insta4jClient {
                     if (fileClient.exists() && sessionFile.exists()) {
                         client = IGClient.deserialize(fileClient, sessionFile,
                                 IGUtils.defaultHttpClientBuilder()
-                                .callTimeout(duration)
-                                .readTimeout(duration)
-                                .writeTimeout(duration)
-                                .connectTimeout(duration));
+                                        .callTimeout(duration)
+                                        .readTimeout(duration)
+                                        .writeTimeout(duration)
+                                        .connectTimeout(duration));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

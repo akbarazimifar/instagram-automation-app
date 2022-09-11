@@ -7,6 +7,8 @@ import androidx.core.util.Pair;
 import com.semibit.ezandroidutils.EzUtils;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Timer;
@@ -35,14 +37,15 @@ public class UnFollowerTimerTask extends TimerTask {
         }
 
         uiLogger.onStart("Scheduled task started");
-        boolean canIFollowUsers = followerBotService.canIFollowNextUser(true,uiLogger);
+        boolean canIFollowUsers = followerBotService.canIFollowNextUser(true, uiLogger);
         if (canIFollowUsers) {
             followerBotService.getUsersToBeUnFollowed(uiLogger, true);
             followerBotService.startUnFollowingUsers(webViewPair.second, webViewPair.first, uiLogger);
-        } else {
+        }
+        if (followerBotService.isRunning()) {
             int nextMins = EzUtils.randomInt(40, 80);
             Instant nextExecInstant = Instant.now().plus(nextMins, ChronoUnit.MINUTES);
-            uiLogger.onStart("Next UnFollowerTimerTask execution after " + nextMins + " mins at " + nextExecInstant.toString());
+            uiLogger.onStart("Next UnFollowerTimerTask execution after " + nextMins + " mins at " +  (ZonedDateTime.ofInstant(nextExecInstant, ZoneOffset.systemDefault())).toString());
             Date nextExecution = Date.from(nextExecInstant);
             followerBotService.cancelFollowTimer();
             followerBotService.unFollowTimer = new Timer();

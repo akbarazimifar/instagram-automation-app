@@ -28,4 +28,8 @@ public class FollowersList implements IdentifiedModel {
     public void setFollowIds(List<String> followIds) {
         this.followIds = followIds;
     }
+
+    public String readJoinedFollowerIds(){
+        return String.join(",",""+getFollowIds());
+    }
 }

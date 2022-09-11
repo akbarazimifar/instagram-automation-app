@@ -18,6 +18,7 @@ import androidx.core.util.Pair;
 
 import com.github.instagram4j.instagram4j.IGClient;
 import com.google.firebase.firestore.Source;
+import com.semibit.ezandroidutils.EzUtils;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -306,9 +307,10 @@ public class FollowerBotService {
     AtomicInteger unfollowHourlySlots = new AtomicInteger(0);
 
     public boolean canIFollowNextUser(boolean isDoUnfollow) {
-        return canIFollowNextUser(isDoUnfollow,logger);
+        return canIFollowNextUser(isDoUnfollow, logger);
     }
-        public boolean canIFollowNextUser(boolean isDoUnfollow,GenricDataCallback logger) {
+
+    public boolean canIFollowNextUser(boolean isDoUnfollow, GenricDataCallback logger) {
 
         RateLimiter semaphore = isDoUnfollow ? unfollowSemaphore : followSemaphore;
         Queue<FollowUserModel> queue = isDoUnfollow ? toBeUnFollowedQueue : toBeFollowedQueue;
@@ -428,9 +430,9 @@ public class FollowerBotService {
             if (followersLists.size() == 0) {
                 followersLists.add(new FollowersList());
             }
-            FollowersList alreadyToBeFollow = followersLists.get(0);
             try {
-                String listCsvFollowers = String.join(",", alreadyToBeFollow.getFollowIds());
+
+                List<String> followeIds = followersLists.stream().flatMap(e -> e.getFollowIds().stream()).collect(Collectors.toList());
 
 
                 if (fromFirebase) {
@@ -442,7 +444,7 @@ public class FollowerBotService {
                                 toBeUnFollowedQueue.clear();
                                 // filter to unfollow only automatically followed users
                                 toBeUnFollowedQueue.addAll(toBeBanished.stream().filter(
-                                        user -> listCsvFollowers.contains(String.valueOf(user.getId()))
+                                        user -> followeIds.contains(String.valueOf(user.getId()))
                                 ).collect(Collectors.toList()));
                                 uiLogger.onStart("Added " + toBeUnFollowedQueue.size() + " from firebase to unfollow queue. Total = " + toBeUnFollowedQueue.size());
                             });
@@ -463,7 +465,7 @@ public class FollowerBotService {
                         toBeUnFollowedQueue.clear();
                         // filter to unfollow only automatically followed users
                         toBeUnFollowedQueue.addAll(toBeBanished.stream().filter(
-                                user -> listCsvFollowers.contains(String.valueOf(user.getId()))
+                                user -> followeIds.contains(String.valueOf(user.getId()))
                         ).collect(Collectors.toList()));
                         uiLogger.onStart("Added " + toBeUnFollowedQueue.size() + " to unfollow queue. Total = " + toBeUnFollowedQueue.size());
 
@@ -503,9 +505,9 @@ public class FollowerBotService {
 
         AsyncTask.execute(() -> {
             IGClient client = getIgClient();
-            onUILog.onStart("Started marking users from post "+shortCode);
+            onUILog.onStart("Started marking users from post " + shortCode);
             CompletableFuture<LikeInfoResponse> completableFuture = new LikeInfoRequest(shortCode).execute(client);
-            GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
+            GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("type", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
             onLoadedFollowMeta.exceptionally((e) -> {
                 e.printStackTrace();
                 return new ArrayList<>();
@@ -516,16 +518,19 @@ public class FollowerBotService {
                 if (followersLists.size() == 0) {
                     followersLists.add(new FollowersList());
                 }
-                FollowersList alreadyToBeFollow = followersLists.get(0);
                 try {
-                    String listCsvFollowers = String.join(",", alreadyToBeFollow.getFollowIds());
+
+                    List<String> followeIds = followersLists.stream().flatMap(e -> e.getFollowIds().stream()).collect(Collectors.toList());
 
                     LikeInfoResponse postInfoResponse = completableFuture.get();
                     List<User> users = postInfoResponse.getLikers();
-                    users = users.stream().filter(user -> !listCsvFollowers.contains(String.valueOf(user.getPk())))
-                            .filter(new OffensiveWordFilter(logger)).collect(Collectors.toList());
+                    users = users.stream().filter(us -> {
+                        boolean isNotAlreadyPresent = !followeIds.contains(String.valueOf(us.getPk()));
+                        return isNotAlreadyPresent;
+                    }).filter(new OffensiveWordFilter(logger,context)).collect(Collectors.toList());
+
                     cb.onStart("done saved " + users.size());
-                    saveUsersToBeFollowed(users, alreadyToBeFollow, onUILog);
+                    saveUsersToBeFollowed(users, followersLists, onUILog);
                 } catch (Exception e) {
                     e.printStackTrace();
                     cb.onStart("error " + e.getMessage());
@@ -599,6 +604,7 @@ public class FollowerBotService {
                         isIncomingConnection ? TableNames.MY_FOLLOWING_DATA : TableNames.MY_FOLLOWERS_DATA
                         , new ArrayList<>(newUsers));
                 onSave.thenAccept(v -> {
+                    getUsersToBeUnFollowed(onUILog,true);
                     onUILog.onStart("Completed syncing IG " + connections + " " + newUsers.size());
                 });
 
@@ -631,8 +637,8 @@ public class FollowerBotService {
         int maxFollowersToLoad = 300;
         AsyncTask.execute(() -> {
             IGClient client = getIgClient();
-            onUILog.onStart("Started marking users from user "+userName);
-            GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
+            onUILog.onStart("Started marking users from user " + userName);
+            GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("type", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
             onLoadedFollowMeta.exceptionally((e) -> {
                 e.printStackTrace();
                 return new ArrayList<>();
@@ -643,7 +649,6 @@ public class FollowerBotService {
                 if (followersLists.size() == 0) {
                     followersLists.add(new FollowersList());
                 }
-                FollowersList alreadyToBeFollow = followersLists.get(0);
                 try {
 
                     com.github.instagram4j.instagram4j.models.user.User user = client.getActions().users().findByUsername(userName).get().getUser();
@@ -651,7 +656,6 @@ public class FollowerBotService {
                     List<User> users = new ArrayList<>();
                     String nextMaxId = "";
                     boolean hasMoreFollowers = true;
-                    String listCsvFollowers = String.join(",", alreadyToBeFollow.getFollowIds());
 
                     while (users.size() < maxFollowersToLoad && hasMoreFollowers && nextMaxId != null) {
 
@@ -665,15 +669,19 @@ public class FollowerBotService {
                         hasMoreFollowers = followerInfoResponse.getFollowerModel().getBigList();
                         nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
 
+                        List<String> followeIds = followersLists.stream().flatMap(e -> e.getFollowIds().stream()).collect(Collectors.toList());
+
                         List<User> localUsers = followerInfoResponse.getFollowers();
-                        localUsers = localUsers.stream().filter(us -> !listCsvFollowers.contains(String.valueOf(us.getPk())))
-                                .filter(new OffensiveWordFilter(logger)).collect(Collectors.toList());
+                        localUsers = localUsers.stream().filter(us -> {
+                            boolean isNotAlreadyPresent = !followeIds.contains(String.valueOf(us.getPk()));
+                            return isNotAlreadyPresent;
+                        }).filter(new OffensiveWordFilter(logger,context)).collect(Collectors.toList());
 
                         users.addAll(localUsers);
                         Log.d("FollowerBot", "Total Follower Size = " + users.size());
 
                     }
-                    saveUsersToBeFollowed(users, alreadyToBeFollow, onUILog);
+                    saveUsersToBeFollowed(users, followersLists, onUILog);
 
                     if (users.isEmpty()) {
                         cb.onStart("error . empty response");
@@ -691,15 +699,16 @@ public class FollowerBotService {
         });
     }
 
-    public void saveUsersToBeFollowed(List<User> users, FollowersList
-            alreadyToBeFollow, GenricDataCallback onUILog) {
+    public void saveUsersToBeFollowed(List<User> users, List<FollowersList>
+            followeIdList, GenricDataCallback onUILog) {
 
 
         List<FollowUserModel> newUsers = users.stream()
                 .map(FollowUserModel::fromUserToBeFollowed).collect(Collectors.toList());
 
         try {
-            alreadyToBeFollow.getFollowIds().addAll(newUsers.stream().map(u -> u.id).collect(Collectors.toList()));
+            FollowersList addTO = followeIdList.get(EzUtils.randomInt(0, followeIdList.size() - 1));
+            addTO.getFollowIds().addAll(newUsers.stream().map(u -> u.id).collect(Collectors.toList()));
             GenericCompletableFuture<Void> onSave = serverDb.save(TableNames.FOLLOW_DATA, new ArrayList<>(newUsers));
             onSave.thenAccept(v -> {
                 onUILog.onStart("Completed marking users");
@@ -707,8 +716,8 @@ public class FollowerBotService {
                 onUILog.onStart(newUserNames);
                 onUILog.onStart("Saved new followers to process " + newUsers.size());
             });
-            serverDb.save(TableNames.FOLLOW_META, alreadyToBeFollow).thenAccept(v -> {
-                onUILog.onStart("Saved meta of new followers to process " + newUsers.size());
+            serverDb.save(TableNames.FOLLOW_META, addTO).thenAccept(v -> {
+                onUILog.onStart("Saved meta of new followers to " + addTO.getId() + " partition " + newUsers.size());
             });
         } catch (Exception e) {
             e.printStackTrace();
