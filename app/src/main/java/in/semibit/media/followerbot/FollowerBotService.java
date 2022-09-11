@@ -188,7 +188,7 @@ public class FollowerBotService {
             where.add(new WhereClause<FollowUserState>("followUserState", GenericOperator.EQUAL, followUserState));
         where.add(new WhereClause<String>("tenant", GenericOperator.EQUAL, tenant));
         where.add(new WhereClause<Integer>(null, GenericOperator.LIMIT, MAX_USERS_TO_BE_FOLLOWED_PER_HOUR));
-        return serverDb.query(TableNames.FOLLOW_DATA, where, FollowUserModel.class);
+        return serverDb.query(table, where, FollowUserModel.class);
     }
 
 
@@ -436,12 +436,23 @@ public class FollowerBotService {
 
 
                 if (fromFirebase) {
+                    long graceTime = System.currentTimeMillis();
                     serverDb.query(TableNames.MY_FOLLOWING_DATA,
                             Arrays.asList(new WhereClause("tenant", GenericOperator.EQUAL, SemibitMediaApp.CURRENT_TENANT),
+                                    new WhereClause("waitTillFollowBackDate", GenericOperator.LESS_THAN, graceTime),
+                                    new WhereClause("waitTillFollowBackDate", GenericOperator.GREATER_THAN, 0),
                                     new WhereClause("followUserState", GenericOperator.EQUAL, FollowUserState.FOLLOWED)),
                             FollowUserModel.class)
+                            .exceptionally(e->{
+                                e.printStackTrace();
+                                uiLogger.onStart("Error fetching unfollow list "+e.getMessage());
+                                return null;
+                            })
                             .thenAccept(toBeBanished -> {
                                 toBeUnFollowedQueue.clear();
+                                if(toBeBanished == null){
+                                    return;
+                                }
                                 // filter to unfollow only automatically followed users
                                 toBeUnFollowedQueue.addAll(toBeBanished.stream().filter(
                                         user -> followeIds.contains(String.valueOf(user.getId()))
