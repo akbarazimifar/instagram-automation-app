@@ -152,7 +152,10 @@ public class FollowerBot {
                     "}";
         }
         clickOnFollow = clickOnFollow + "\n\nvar vvv=0;let timer = setInterval(()=>{console.log('Searching... '+(vvv++));" +
-                "try{find();}catch(e){console.log(e);};" +
+                "try{find();" +
+                "if(vvv > 20) { clearInterval(timer);console.log('unabletocomplete');}" +
+                "" +
+                "}catch(e){console.log(e);};" +
                 ";},1000)";
 
         webview.setWebChromeClient(new WebChromeClient() {
@@ -173,6 +176,14 @@ public class FollowerBot {
                     try {
                         logger.onStart("UFW COMPLETE");
                         onFollowCompleted.onStart(username);
+                    } catch (Exception e) {
+                        logger.onStart("ERR " + e.getMessage());
+                    }
+                }
+                if (consoleMessage.message().contains("unabletocomplete")) {
+                    try {
+                        logger.onStart("UFW ERROR");
+                        onFollowCompleted.onStart("unabletocomplete");
                     } catch (Exception e) {
                         logger.onStart("ERR " + e.getMessage());
                     }

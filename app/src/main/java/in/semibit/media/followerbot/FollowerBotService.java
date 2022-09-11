@@ -380,16 +380,24 @@ public class FollowerBotService {
             uiLogger.onStart("Paused " + action + "ing users");
             return;
         }
+        GenricCallback nextUserCb = ()->{
+            FollowUserModel nextUser = isDoUnfollow ? getNextUserUnToFollow() : getNextUserToFollow();
+            followSingleUser(followerBot, isDoUnfollow, nextUser, webView, context, uiLogger);
+        };
         uiLogger.onStart("Trying to " + action + " " + user.userName);
         followerBot.followUnfollow(user.userName, isDoUnfollow, webView, context, s -> {
             Log.e("FollowerBot", "Follow Completed");
+            if(s.contains("unabletocomplete")){
+                uiLogger.onStart("Error Following "+user.userName+". Timeout or some other issue");
+                nextUserCb.onStart();
+                return;
+            }
             (isDoUnfollow ? setUserAsUnFollowed(user) : setUserAsFollowed(user)).exceptionally(e -> {
                 uiLogger.onStart("Error saving after " + action + " " + user.userName + " " + e.getMessage());
                 return null;
             }).thenAccept(e -> {
                 uiLogger.onStart("Successfully " + action + " " + user.userName);
-                FollowUserModel nextUser = isDoUnfollow ? getNextUserUnToFollow() : getNextUserToFollow();
-                followSingleUser(followerBot, isDoUnfollow, nextUser, webView, context, uiLogger);
+                nextUserCb.onStart();
             });
         });
     }
