@@ -309,11 +309,11 @@ public class FollowerBotService {
     AtomicInteger followHourlySlots = new AtomicInteger(0);
     AtomicInteger unfollowHourlySlots = new AtomicInteger(0);
 
-    public boolean canIFollowNextUser(boolean isDoUnfollow) {
-        return canIFollowNextUser(isDoUnfollow, logger);
+    public boolean canIFollowNextUser(boolean isDoUnfollow, FollowUserModel user) {
+        return canIFollowNextUser(isDoUnfollow,logger, user);
     }
 
-    public boolean canIFollowNextUser(boolean isDoUnfollow, GenricDataCallback logger) {
+    public boolean canIFollowNextUser(boolean isDoUnfollow, GenricDataCallback logger, FollowUserModel user) {
 
         RateLimiter semaphore = isDoUnfollow ? unfollowSemaphore : followSemaphore;
         Queue<FollowUserModel> queue = isDoUnfollow ? toBeUnFollowedQueue : toBeFollowedQueue;
@@ -333,7 +333,7 @@ public class FollowerBotService {
                 logger.onStart("Cannot follow next user since no slots available. ");
             }
         }
-        if (queue.isEmpty()) {
+        if (queue.isEmpty() && user == null) {
             canIFollow = false;
             logger.onStart("Cannot follow next user since queue is empty.");
         }
@@ -342,6 +342,9 @@ public class FollowerBotService {
 
     ////////////// FOLLOW /////////////////////////
     public FollowUserModel getNextUserToFollow() {
+        if(toBeFollowedQueue.isEmpty()){
+            return null;
+        }
         return toBeFollowedQueue.remove();
     }
 
@@ -373,7 +376,7 @@ public class FollowerBotService {
 
     public void followSingleUser(FollowerBot followerBot, boolean isDoUnfollow, FollowUserModel user, AdvancedWebView webView, Activity context, GenricDataCallback uiLogger) {
         String action = isDoUnfollow ? "Unfollow" : "Follow";
-        if (user == null || !canIFollowNextUser(isDoUnfollow) || !isRunning()) {
+        if (user == null || !canIFollowNextUser(isDoUnfollow, user) || !isRunning()) {
             uiLogger.onStart("Paused " + action + "ing users");
             return;
         }
@@ -406,14 +409,17 @@ public class FollowerBotService {
     //////////////// UNFOLLOW ///////////////////////
     public CompletableFuture<Void> setUserAsUnFollowed(FollowUserModel userModel) {
         Map map = new HashMap<>();
-        map.put("followUserState",FollowUserState.UNFOLLOWED);
-        map.put("id",userModel.getId());
+        map.put("followUserState", FollowUserState.UNFOLLOWED);
+        map.put("id", userModel.getId());
         map.put("unfollowDate", System.currentTimeMillis());
         serverDb.updateOne((TableNames.MY_FOLLOWING_DATA), map);
         return serverDb.updateOne((TableNames.FOLLOW_DATA), map);
     }
 
     public FollowUserModel getNextUserUnToFollow() {
+        if (toBeUnFollowedQueue.isEmpty()) {
+            return null;
+        }
         return toBeUnFollowedQueue.remove();
     }
 
@@ -600,10 +606,10 @@ public class FollowerBotService {
                     nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
 
                     users.addAll(followerInfoResponse.getFollowers());
-                    onUILog.onStart("Retrieved new "+connections+" in batch = " + users.size());
+                    onUILog.onStart("Retrieved new " + connections + " in batch = " + users.size());
                     Log.d("FollowerBot", "Total " + connections + " Size = " + users.size());
                 }
-                onUILog.onStart("Total "+connections+" retrieved " + users.size());
+                onUILog.onStart("Total " + connections + " retrieved " + users.size());
 
                 List<FollowUserModel> newUsers = users.stream()
                         .map(FollowUserModel::fromUserToBeFollowed)
@@ -653,7 +659,7 @@ public class FollowerBotService {
                                 .thenAccept(chunk -> {
 
                                     userListIntersectionFollowedAutomatically.addAll(chunk);
-                                    onUILog.onStart("Retrieved chunk " + chunk.size()+" ("+(completedBatches.incrementAndGet())+"/"+batches.size()+") from input of size "+singleBatch.size());
+                                    onUILog.onStart("Retrieved chunk " + chunk.size() + " (" + (completedBatches.incrementAndGet()) + "/" + batches.size() + ") from input of size " + singleBatch.size());
                                     if (completedBatches.get() == batches.size()) {
                                         batchReadAll.complete(userListIntersectionFollowedAutomatically);
                                     }
@@ -675,7 +681,7 @@ public class FollowerBotService {
                                 newUser.followDate = fromAuto.get().followDate;
                             }
                         });
-                        onUILog.onStart("Completed correlating actual and automated following. Users accepted my follow request = "+completedBatches.get());
+                        onUILog.onStart("Completed correlating actual and automated following. Users accepted my follow request = " + completedBatches.get());
                         continueToSaveCB.onStart();
                     });
 

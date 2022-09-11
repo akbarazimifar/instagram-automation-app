@@ -36,7 +36,7 @@ public class FollowerTimerTask extends TimerTask {
             return;
         }
         uiLogger.onStart("Scheduled task started");
-        boolean canIFollowUsers = followerBotService.canIFollowNextUser(false,uiLogger);
+        boolean canIFollowUsers = followerBotService.canIFollowNextUser(false,uiLogger,null);
         followerBotService.getUsersToBeFollowed(uiLogger);
 
         if (canIFollowUsers) {

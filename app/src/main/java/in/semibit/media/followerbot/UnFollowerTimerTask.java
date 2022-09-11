@@ -37,7 +37,7 @@ public class UnFollowerTimerTask extends TimerTask {
         }
 
         uiLogger.onStart("Scheduled task started");
-        boolean canIFollowUsers = followerBotService.canIFollowNextUser(true, uiLogger);
+        boolean canIFollowUsers = followerBotService.canIFollowNextUser(true, uiLogger,null);
         if (canIFollowUsers) {
             followerBotService.getUsersToBeUnFollowed(uiLogger, true);
             followerBotService.startUnFollowingUsers(webViewPair.second, webViewPair.first, uiLogger);
