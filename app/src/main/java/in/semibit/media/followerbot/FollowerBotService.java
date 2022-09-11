@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -443,14 +444,14 @@ public class FollowerBotService {
                                     new WhereClause("waitTillFollowBackDate", GenericOperator.GREATER_THAN, 0),
                                     new WhereClause("followUserState", GenericOperator.EQUAL, FollowUserState.FOLLOWED)),
                             FollowUserModel.class)
-                            .exceptionally(e->{
+                            .exceptionally(e -> {
                                 e.printStackTrace();
-                                uiLogger.onStart("Error fetching unfollow list "+e.getMessage());
+                                uiLogger.onStart("Error fetching unfollow list " + e.getMessage());
                                 return null;
                             })
                             .thenAccept(toBeBanished -> {
                                 toBeUnFollowedQueue.clear();
-                                if(toBeBanished == null){
+                                if (toBeBanished == null) {
                                     return;
                                 }
                                 // filter to unfollow only automatically followed users
@@ -462,12 +463,12 @@ public class FollowerBotService {
                     return;
                 }
                 GenericCompletableFuture<List<FollowUserModel>> usersFollowingMeFuture =
-                        getConnectionsForUser(context.getString(R.string.username),
+                        syncConnectionsForUserToFirebase(context.getString(R.string.username),
                                 false, (onDone) -> {
                                 }, logger);
                 usersFollowingMeFuture.thenAccept(usersFollowingMe -> {
                     GenericCompletableFuture<List<FollowUserModel>> usersIAmFollowingFuture =
-                            getConnectionsForUser(context.getString(R.string.username),
+                            syncConnectionsForUserToFirebase(context.getString(R.string.username),
                                     true, (onDone) -> {
                                     }, logger);
                     usersIAmFollowingFuture.thenAccept(usersIAmFollowing -> {
@@ -538,7 +539,7 @@ public class FollowerBotService {
                     users = users.stream().filter(us -> {
                         boolean isNotAlreadyPresent = !followeIds.contains(String.valueOf(us.getPk()));
                         return isNotAlreadyPresent;
-                    }).filter(new OffensiveWordFilter(logger,context)).collect(Collectors.toList());
+                    }).filter(new OffensiveWordFilter(logger, context)).collect(Collectors.toList());
 
                     cb.onStart("done saved " + users.size());
                     saveUsersToBeFollowed(users, followersLists, onUILog);
@@ -566,7 +567,7 @@ public class FollowerBotService {
                             }
                         })
      */
-    public GenericCompletableFuture<List<FollowUserModel>> getConnectionsForUser(String userName, boolean isIncomingConnection, GenricDataCallback cb, GenricDataCallback onUILog) {
+    public GenericCompletableFuture<List<FollowUserModel>> syncConnectionsForUserToFirebase(String userName, boolean isIncomingConnection, GenricDataCallback cb, GenricDataCallback onUILog) {
 
         GenericCompletableFuture<List<FollowUserModel>> usersResultFuture = new GenericCompletableFuture<>();
         AsyncTask.execute(() -> {
@@ -595,8 +596,10 @@ public class FollowerBotService {
                     nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
 
                     users.addAll(followerInfoResponse.getFollowers());
+                    onUILog.onStart("Retrieved new "+connections+" in batch = " + users.size());
                     Log.d("FollowerBot", "Total " + connections + " Size = " + users.size());
                 }
+                onUILog.onStart("Total "+connections+" retrieved " + users.size());
 
                 List<FollowUserModel> newUsers = users.stream()
                         .map(FollowUserModel::fromUserToBeFollowed)
@@ -611,13 +614,69 @@ public class FollowerBotService {
                         })
                         .collect(Collectors.toList());
 
-                GenericCompletableFuture<Void> onSave = serverDb.save(
-                        isIncomingConnection ? TableNames.MY_FOLLOWING_DATA : TableNames.MY_FOLLOWERS_DATA
-                        , new ArrayList<>(newUsers));
-                onSave.thenAccept(v -> {
-                    getUsersToBeUnFollowed(onUILog,true);
-                    onUILog.onStart("Completed syncing IG " + connections + " " + newUsers.size());
-                });
+                GenricCallback continueToSaveCB = () -> {
+                    GenericCompletableFuture<Void> onSave = serverDb.save(
+                            isIncomingConnection ? TableNames.MY_FOLLOWING_DATA : TableNames.MY_FOLLOWERS_DATA
+                            , new ArrayList<>(newUsers));
+                    onSave.thenAccept(v -> {
+                        usersResultFuture.complete(newUsers);
+                        getUsersToBeUnFollowed(onUILog, true);
+                        onUILog.onStart("Completed syncing IG " + connections + " " + newUsers.size());
+                    });
+                };
+
+                // In case of updating followings
+                // we need to make sure we update the grace period
+                if (isIncomingConnection) {
+
+                    CompletableFuture<List<FollowUserModel>> batchReadAll = new CompletableFuture<>();
+                    List<List<FollowUserModel>> batches = FollowerUtil.chopIntoParts(newUsers, newUsers.size() / 9);
+                    List<FollowUserModel> userListIntersectionFollowedAutomatically = new ArrayList<>();
+                    AtomicInteger completedBatches = new AtomicInteger(0);
+
+
+                    for (final List<FollowUserModel> singleBatch : batches) {
+                        List<WhereClause> conditions = new ArrayList<>();
+                        List<String> actualInstagramIds = singleBatch.stream().map(FollowUserModel::getId).collect(Collectors.toList());
+                        conditions.add(new WhereClause("id", GenericOperator.IN, actualInstagramIds));
+                        conditions.add(new WhereClause("tenant", GenericOperator.EQUAL, SemibitMediaApp.CURRENT_TENANT));
+                        serverDb.query(TableNames.FOLLOW_DATA, conditions, FollowUserModel.class)
+                                .exceptionally(e -> {
+                                    e.printStackTrace();
+                                    onUILog.onStart("Error in sync" + e.getMessage());
+                                    return new ArrayList<>();
+                                })
+                                .thenAccept(chunk -> {
+
+                                    userListIntersectionFollowedAutomatically.addAll(chunk);
+                                    onUILog.onStart("Retrieved chunk " + chunk.size()+" ("+(completedBatches.incrementAndGet())+"/"+batches.size()+") from input of size "+singleBatch.size());
+                                    if (completedBatches.get() == batches.size()) {
+                                        batchReadAll.complete(userListIntersectionFollowedAutomatically);
+                                    }
+
+                                });
+                    }
+
+                    batchReadAll.thenAccept(all -> {
+                        completedBatches.set(0);
+                        newUsers.forEach(newUser -> {
+                            Optional<FollowUserModel> fromAuto =
+                                    userListIntersectionFollowedAutomatically
+                                            .stream().filter(au -> au.getId().equals(newUser.getId()))
+                                            .findAny();
+                            if (fromAuto.isPresent()) {
+                                completedBatches.incrementAndGet();
+                                newUser.followUserState = fromAuto.get().followUserState;
+                                newUser.waitTillFollowBackDate = fromAuto.get().waitTillFollowBackDate;
+                            }
+                        });
+                        onUILog.onStart("Completed correlating actual and automated following. Users accepted my follow request = "+completedBatches.get());
+                        continueToSaveCB.onStart();
+                    });
+
+                } else {
+                    continueToSaveCB.onStart();
+                }
 
                 if (isIncomingConnection) {
                     serverDb.save(TableNames.COUNTER, new FollowerCounter(TableNames.withTablePrefix("following_count"), users.size()));
@@ -631,7 +690,6 @@ public class FollowerBotService {
                     cb.onStart("done saved " + users.size());
                 }
 
-                usersResultFuture.complete(newUsers);
             } catch (Exception e) {
                 e.printStackTrace();
                 cb.onStart("error " + e.getMessage());
@@ -686,12 +744,14 @@ public class FollowerBotService {
                         localUsers = localUsers.stream().filter(us -> {
                             boolean isNotAlreadyPresent = !followeIds.contains(String.valueOf(us.getPk()));
                             return isNotAlreadyPresent;
-                        }).filter(new OffensiveWordFilter(logger,context)).collect(Collectors.toList());
+                        }).filter(new OffensiveWordFilter(logger, context)).collect(Collectors.toList());
 
                         users.addAll(localUsers);
+                        onUILog.onStart("Retrieved new followers in batch = " + users.size());
                         Log.d("FollowerBot", "Total Follower Size = " + users.size());
 
                     }
+                    onUILog.onStart("Total Followers retrieved " + users.size());
                     saveUsersToBeFollowed(users, followersLists, onUILog);
 
                     if (users.isEmpty()) {

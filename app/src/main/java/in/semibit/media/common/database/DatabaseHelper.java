@@ -125,6 +125,10 @@ public class DatabaseHelper {
                     query = query.limit(Integer.parseInt(cl.getValue().toString()));
                 }else if (cl.operator == GenericOperator.OFFSETAFTER) {
                     query = query.orderBy(cl.getField()).startAfter(cl.getValue());
+                }else if (cl.operator == GenericOperator.IN) {
+                    query = query.whereIn(cl.getField(), (List)cl.getValue());
+                }else if (cl.operator == GenericOperator.NOT_IN) {
+                    query = query.whereNotIn(cl.getField(), (List)cl.getValue());
                 }
             }
         }

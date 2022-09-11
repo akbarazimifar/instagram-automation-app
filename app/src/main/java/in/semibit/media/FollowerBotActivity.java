@@ -58,14 +58,14 @@ public class FollowerBotActivity extends AppCompatActivity {
         });
         binding.refresh.setOnClickListener(v -> {
             binding.refresh.setEnabled(false);
-            followerBotService.getConnectionsForUser(context.getString(R.string.username), false, new GenricDataCallback() {
+            followerBotService.syncConnectionsForUserToFirebase(context.getString(R.string.username), false, new GenricDataCallback() {
                 @Override
                 public void onStart(String s) {
                     context.runOnUiThread(() -> binding.refresh.setEnabled(true));
                 }
             }, logger);
 
-            followerBotService.getConnectionsForUser(context.getString(R.string.username), true, new GenricDataCallback() {
+            followerBotService.syncConnectionsForUserToFirebase(context.getString(R.string.username), true, new GenricDataCallback() {
                 @Override
                 public void onStart(String s) {
                     context.runOnUiThread(() -> binding.refresh.setEnabled(true));
