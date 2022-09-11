@@ -365,7 +365,7 @@ public class FollowerBotService {
 
     public void followSingleUser(FollowerBot followerBot, boolean isDoUnfollow, FollowUserModel user, AdvancedWebView webView, Activity context, GenricDataCallback uiLogger) {
         String action = isDoUnfollow ? "Unfollow" : "Follow";
-        if (user == null || !canIFollowNextUser(isDoUnfollow) || !isRunning()) {
+        if (user == null || !canIFollowNextUser(isDoUnfollow) || !isRunning() || true) {
             uiLogger.onStart("Paused " + action + "ing users");
             return;
         }
@@ -420,6 +420,7 @@ public class FollowerBotService {
                             new WhereClause("followUserState", GenericOperator.EQUAL, FollowUserState.FOLLOWED)),
                     FollowUserModel.class)
                     .thenAccept(toBeBanished -> {
+                        toBeUnFollowedQueue.clear();
                         toBeUnFollowedQueue.addAll(toBeBanished);
                         uiLogger.onStart("Added " + toBeBanished.size() + " from firebase to unfollow queue. Total = " + toBeUnFollowedQueue.size());
                     });
@@ -437,6 +438,7 @@ public class FollowerBotService {
             usersIAmFollowingFuture.thenAccept(usersIAmFollowing -> {
 
                 List<FollowUserModel> toBeBanished = FollowerUtil.getUsersThatDontFollowMe(usersFollowingMe, usersIAmFollowing);
+                toBeUnFollowedQueue.clear();
                 toBeUnFollowedQueue.addAll(toBeBanished);
                 uiLogger.onStart("Added " + toBeBanished.size() + " to unfollow queue. Total = " + toBeUnFollowedQueue.size());
 

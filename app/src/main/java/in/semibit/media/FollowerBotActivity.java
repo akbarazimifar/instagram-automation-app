@@ -118,6 +118,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                     followWebView = followerBotService.generateAlert(context, "follow");
                     unfollowWebView = followerBotService.generateAlert(context, "unfollow");
                     followerBotService.getUsersToBeFollowed(logger);
+                    followerBotService.getUsersToBeUnFollowed(logger,true);
 
                     followerBotService.cronStart(followWebView, unfollowWebView, logger);
                 } else
@@ -172,7 +173,7 @@ public class FollowerBotActivity extends AppCompatActivity {
 
     Pair<TextView, AdvancedWebView> followWebView;
     Pair<TextView, AdvancedWebView> unfollowWebView;
-    FollowerBotService followerBotService;
+    static FollowerBotService followerBotService;
 
     public void initBot() {
 
