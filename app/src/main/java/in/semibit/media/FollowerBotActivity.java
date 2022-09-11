@@ -20,6 +20,8 @@ import com.semibit.ezandroidutils.EzUtils;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.databinding.ActivityFollowerBotBinding;
+import in.semibit.media.followerbot.FollowUserModel;
+import in.semibit.media.followerbot.FollowUserState;
 import in.semibit.media.followerbot.FollowerBotService;
 
 public class FollowerBotActivity extends AppCompatActivity {

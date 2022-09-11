@@ -27,7 +27,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Timer;
@@ -403,10 +405,12 @@ public class FollowerBotService {
 
     //////////////// UNFOLLOW ///////////////////////
     public CompletableFuture<Void> setUserAsUnFollowed(FollowUserModel userModel) {
-        userModel.followUserState = FollowUserState.UNFOLLOWED;
-        userModel.unfollowDate = System.currentTimeMillis();
-        serverDb.save((TableNames.MY_FOLLOWING_DATA), userModel);
-        return serverDb.save((TableNames.FOLLOW_DATA), userModel);
+        Map map = new HashMap<>();
+        map.put("followUserState",FollowUserState.UNFOLLOWED);
+        map.put("id",userModel.getId());
+        map.put("unfollowDate", System.currentTimeMillis());
+        serverDb.updateOne((TableNames.MY_FOLLOWING_DATA), map);
+        return serverDb.updateOne((TableNames.FOLLOW_DATA), map);
     }
 
     public FollowUserModel getNextUserUnToFollow() {
@@ -668,6 +672,7 @@ public class FollowerBotService {
                                 completedBatches.incrementAndGet();
                                 newUser.followUserState = fromAuto.get().followUserState;
                                 newUser.waitTillFollowBackDate = fromAuto.get().waitTillFollowBackDate;
+                                newUser.followDate = fromAuto.get().followDate;
                             }
                         });
                         onUILog.onStart("Completed correlating actual and automated following. Users accepted my follow request = "+completedBatches.get());

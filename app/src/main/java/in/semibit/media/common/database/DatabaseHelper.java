@@ -15,6 +15,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Source;
 import com.google.firebase.firestore.WriteBatch;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -68,16 +69,21 @@ public class DatabaseHelper {
         return taskWrapper(batch.commit());
     }
 
+    public GenericCompletableFuture<Void> updateOne(String tableName, IdentifiedModel model) {
 
-    public GenericCompletableFuture<Void> updateOne(String tableName, IdentifiedModel model){
+        ObjectMapper m = new ObjectMapper();
+        Map<String, Object> props = m.convertValue(model, Map.class);
+        return updateOne(tableName,props);
+
+    }
+    public GenericCompletableFuture<Void> updateOne(String tableName, Map<String, Object> props){
         Task<Void> task = null;
         try {
-            if (model.getId() == null) {
+            if (props.get("id") == null) {
                 throw new RuntimeException("ID must be present");
             }
-            ObjectMapper m = new ObjectMapper();
-            Map<String, Object> props = m.convertValue(model, Map.class);
-            task = db.collection(withTablePrefix(tableName)).document(model.getId()).update(props);
+
+            task = db.collection(withTablePrefix(tableName)).document(props.get("id").toString()).update(props);
             return taskWrapper(task);
         } catch (Exception e) {
             e.printStackTrace();
