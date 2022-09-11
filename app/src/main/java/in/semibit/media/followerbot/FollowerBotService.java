@@ -388,7 +388,7 @@ public class FollowerBotService {
         followerBot.followUnfollow(user.userName, isDoUnfollow, webView, context, s -> {
             Log.e("FollowerBot", "Follow Completed");
             if(s.contains("unabletocomplete")){
-                uiLogger.onStart("Error Following "+user.userName+". Timeout or some other issue");
+                uiLogger.onStart("Error connecting to "+user.userName+". Timeout or some other issue");
                 nextUserCb.onStart();
                 return;
             }
