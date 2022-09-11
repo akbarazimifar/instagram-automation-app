@@ -112,7 +112,16 @@ public class FollowerBot {
         if(isDoUnfollow){
             clickOnFollow = "\n" +
                     "function find() {\n" +
-                    "  let btns = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Requested' || el.textContent === 'Unfollow');" +
+                    "  let btns = Array.from(document.querySelectorAll('button')).find(el => {\n" +
+                    "    try {\n" +
+                    "        let svg = el.childNodes[0].childNodes[0].childNodes[0].childNodes[0]\n" +
+                    "        if(svg)\n" +
+                    "       {\n" +
+                    "        let label = svg.getAttribute('aria-label')\n" +
+                    "        return label == \"Following\"\n" +
+                    "       }} catch (e) {}\n" +
+                    "    return el.textContent === 'Requested' || el.textContent === 'Following'\n" +
+                    "});" +
                     "  " +
                     "   " +
                     "if(btns){" +

@@ -3,9 +3,9 @@ package in.semibit.media.followerbot;
 import in.semibit.media.common.database.IdentifiedModel;
 
 public class FollowerCounter implements IdentifiedModel {
-    String id;
-    int count;
-    String tenant = "semibitmedia";
+    public String id;
+    public int count;
+    public String tenant = "semibitmedia";
 
     public FollowerCounter() {
     }

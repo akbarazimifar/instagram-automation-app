@@ -7,6 +7,8 @@ import com.semibit.ezandroidutils.App;
 
 public class SemibitMediaApp extends App {
 
+    public static String CURRENT_TENANT = "semibitmedia";
+
     @Override
     public void onCreate() {
         super.onCreate();

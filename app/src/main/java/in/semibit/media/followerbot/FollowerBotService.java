@@ -24,6 +24,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import in.semibit.media.R;
+import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricCallback;
 import in.semibit.media.common.GenricDataCallback;
@@ -166,14 +168,14 @@ public class FollowerBotService {
             }
         };
 
-        GenricCallback onUnFollowStart = ()->{
+        GenricCallback onUnFollowStart = () -> {
             unFollowTimer = new Timer();
-            TimerTask unFollowerTimerTask = new UnFollowerTimerTask(FollowerBotService.this, uiLogger, followWebView);
+            TimerTask unFollowerTimerTask = new UnFollowerTimerTask(FollowerBotService.this, uiLogger, unFollowWebView);
             unFollowTimer.schedule(unFollowerTimerTask, 0);
         };
 
-        followWebView.second.setVisibility(View.GONE);
-//        onFollowStart.onStart();
+//        followWebView.second.setVisibility(View.GONE);
+        onFollowStart.onStart();
         onUnFollowStart.onStart();
 
     }
@@ -396,27 +398,39 @@ public class FollowerBotService {
     public CompletableFuture<Void> setUserAsUnFollowed(FollowUserModel userModel) {
         userModel.followUserState = FollowUserState.UNFOLLOWED;
         userModel.unfollowDate = System.currentTimeMillis();
-        serverDb.updateOne((TableNames.MY_FOLLOWING_DATA), userModel);
-        return serverDb.updateOne((TableNames.FOLLOW_DATA), userModel);
+        serverDb.save((TableNames.MY_FOLLOWING_DATA), userModel);
+        return serverDb.save((TableNames.FOLLOW_DATA), userModel);
     }
 
     public FollowUserModel getNextUserUnToFollow() {
         return toBeUnFollowedQueue.remove();
     }
 
-    public void getUsersToBeUnFollowed(GenricDataCallback uiLogger) {
+    public void getUsersToBeUnFollowed(GenricDataCallback uiLogger, boolean fromFirebase) {
         if (toBeUnFollowedQueue.size() > 10) {
             logger.onStart("Skip update queue request since queue is full " + toBeFollowedQueue.size());
             return;
         }
+        uiLogger.onStart("Please wait till follower data is loaded !!");
 
+        if (fromFirebase) {
+            serverDb.query(TableNames.MY_FOLLOWING_DATA,
+                    Arrays.asList(new WhereClause("tenant", GenericOperator.EQUAL, SemibitMediaApp.CURRENT_TENANT),
+                            new WhereClause("followUserState", GenericOperator.EQUAL, FollowUserState.FOLLOWED)),
+                    FollowUserModel.class)
+                    .thenAccept(toBeBanished -> {
+                        toBeUnFollowedQueue.addAll(toBeBanished);
+                        uiLogger.onStart("Added " + toBeBanished.size() + " from firebase to unfollow queue. Total = " + toBeUnFollowedQueue.size());
+                    });
+            return;
+        }
         GenericCompletableFuture<List<FollowUserModel>> usersFollowingMeFuture =
-                getAllFollowersForUser(context.getString(R.string.username),
+                getConnectionsForUser(context.getString(R.string.username),
                         false, (onDone) -> {
                         }, logger);
         usersFollowingMeFuture.thenAccept(usersFollowingMe -> {
             GenericCompletableFuture<List<FollowUserModel>> usersIAmFollowingFuture =
-                    getAllFollowersForUser(context.getString(R.string.username),
+                    getConnectionsForUser(context.getString(R.string.username),
                             true, (onDone) -> {
                             }, logger);
             usersIAmFollowingFuture.thenAccept(usersIAmFollowing -> {
@@ -487,13 +501,26 @@ public class FollowerBotService {
         });
     }
 
-    public GenericCompletableFuture<List<FollowUserModel>> getAllFollowersForUser(String userName, boolean isFollowingRequest, GenricDataCallback cb, GenricDataCallback onUILog) {
+    // DONT USE THIS FOR MARKING FOLLOWERS
+    // because of this login
+    /*
+                            .peek(usr -> {
+                            if (isFollowingRequest) {
+                                usr.isUserFollowingMeState = FollowUserState.UNKNOWN;
+                                usr.followUserState = FollowUserState.FOLLOWED;
+                            } else {
+                                usr.isUserFollowingMeState = FollowUserState.FOLLOWED;
+                                usr.followUserState = FollowUserState.UNKNOWN;
+                            }
+                        })
+     */
+    public GenericCompletableFuture<List<FollowUserModel>> getConnectionsForUser(String userName, boolean isIncomingConnection, GenricDataCallback cb, GenricDataCallback onUILog) {
 
         GenericCompletableFuture<List<FollowUserModel>> usersResultFuture = new GenericCompletableFuture<>();
         AsyncTask.execute(() -> {
             try {
                 IGClient client = getIgClient();
-                String connections = isFollowingRequest ? "Followings" : "Followers";
+                String connections = isIncomingConnection ? "Followings" : "Followers";
                 onUILog.onStart("Syncing " + connections + " from IG");
 
                 com.github.instagram4j.instagram4j.models.user.User user = client.getActions().users().findByUsername(userName).get().getUser();
@@ -505,7 +532,7 @@ public class FollowerBotService {
                 while (hasMoreFollowers && nextMaxId != null) {
 
                     CompletableFuture<FollowerInfoResponse> completableFuture =
-                            (isFollowingRequest ? new FollowingInfoRequest(String.valueOf(pk), 100, nextMaxId)
+                            (isIncomingConnection ? new FollowingInfoRequest(String.valueOf(pk), 100, nextMaxId)
                                     : new FollowerInfoRequest(String.valueOf(pk), 100, nextMaxId)).execute(client);
                     FollowerInfoResponse followerInfoResponse = completableFuture.get();
                     if (followerInfoResponse.getFollowerModel() == null) {
@@ -517,28 +544,29 @@ public class FollowerBotService {
 
                     users.addAll(followerInfoResponse.getFollowers());
                     Log.d("FollowerBot", "Total " + connections + " Size = " + users.size());
-
                 }
 
                 List<FollowUserModel> newUsers = users.stream()
                         .map(FollowUserModel::fromUserToBeFollowed)
                         .peek(usr -> {
-                            if (isFollowingRequest) {
-                                usr.isUserFollowingMeState = FollowUserState.FOLLOWED;
-                            } else {
+                            if (isIncomingConnection) {
+                                usr.isUserFollowingMeState = FollowUserState.UNKNOWN;
                                 usr.followUserState = FollowUserState.FOLLOWED;
+                            } else {
+                                usr.isUserFollowingMeState = FollowUserState.FOLLOWED;
+                                usr.followUserState = FollowUserState.UNKNOWN;
                             }
                         })
                         .collect(Collectors.toList());
 
                 GenericCompletableFuture<Void> onSave = serverDb.save(
-                        isFollowingRequest ? TableNames.MY_FOLLOWING_DATA : TableNames.MY_FOLLOWERS_DATA
+                        isIncomingConnection ? TableNames.MY_FOLLOWING_DATA : TableNames.MY_FOLLOWERS_DATA
                         , new ArrayList<>(newUsers));
                 onSave.thenAccept(v -> {
                     onUILog.onStart("Completed syncing IG " + connections + " " + newUsers.size());
                 });
 
-                if (isFollowingRequest) {
+                if (isIncomingConnection) {
                     serverDb.save(TableNames.COUNTER, new FollowerCounter(TableNames.withTablePrefix("following_count"), users.size()));
                 } else {
                     serverDb.save(TableNames.COUNTER, new FollowerCounter(TableNames.withTablePrefix("follower_count"), users.size()));
