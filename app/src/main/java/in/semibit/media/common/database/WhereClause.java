@@ -2,18 +2,18 @@ package in.semibit.media.common.database;
 
 import com.google.firebase.firestore.core.Filter;
 
-public class WhereClause {
+public class WhereClause<T> {
     String field;
-    Filter.Operator operator;
-    String value;
+    GenericOperator operator;
+    T value;
 
-    public WhereClause(String field, Filter.Operator operator, String value) {
+    public WhereClause(String field, GenericOperator operator, T value) {
         this.field = field;
         this.operator = operator;
         this.value = value;
     }
 
-    public static WhereClause of(String field, Filter.Operator operator, String value){
+    public static WhereClause of(String field, GenericOperator operator, String value){
         return new WhereClause(field,operator,value);
     }
 
@@ -25,19 +25,19 @@ public class WhereClause {
         this.field = field;
     }
 
-    public Filter.Operator getOperator() {
+    public GenericOperator getOperator() {
         return operator;
     }
 
-    public void setOperator(Filter.Operator operator) {
+    public void setOperator(GenericOperator operator) {
         this.operator = operator;
     }
 
-    public String getValue() {
+    public T getValue() {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(T value) {
         this.value = value;
     }
 }

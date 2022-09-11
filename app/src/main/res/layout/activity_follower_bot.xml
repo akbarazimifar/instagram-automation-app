@@ -110,6 +110,7 @@
             android:fontFamily="@font/font_style"
             android:minHeight="60dp"
             android:text="CLEAR"
+            android:textColor="@color/white"
             app:cornerRadius="8dp"
             />
 
@@ -125,6 +126,7 @@
             android:fontFamily="@font/font_style"
             android:minHeight="60dp"
             android:text="START"
+            android:textColor="@color/white"
             app:cornerRadius="8dp"
             />
 
@@ -140,6 +142,7 @@
             android:fontFamily="@font/font_style"
             android:minHeight="60dp"
             android:text="REFRESH"
+            android:textColor="@color/white"
             app:cornerRadius="8dp"
             />
 

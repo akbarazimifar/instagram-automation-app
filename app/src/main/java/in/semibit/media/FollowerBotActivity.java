@@ -1,14 +1,17 @@
 package in.semibit.media;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.core.util.Pair;
 
 import com.semibit.ezandroidutils.EzUtils;
 
@@ -76,9 +79,27 @@ public class FollowerBotActivity extends AppCompatActivity {
         binding.clearLogs.setOnClickListener(c -> {
             binding.logs.setText("");
         });
+
+
         binding.startBot.setOnLongClickListener(c -> {
             EzUtils.toast(context, "Start/Stop FollowerBot");
             return true;
+        });
+        binding.startBot.setOnClickListener(c -> {
+            if (followerBotService != null) {
+                if (!followerBotService.isRunning()) {
+
+                    followWebView = followerBotService.generateAlert(context, "follow");
+                    unfollowWebView = followerBotService.generateAlert(context, "unfollow");
+                    followerBotService.getUsersToBeFollowed(logger);
+
+                    followerBotService.cronStart(followWebView, unfollowWebView, logger);
+                } else
+                    followerBotService.kill(logger);
+                updateButtonState();
+            } else {
+                logger.onStart("FollowerBotService Not Initialized yet");
+            }
         });
 
         binding.searchButton.setOnClickListener(c -> {
@@ -123,13 +144,21 @@ public class FollowerBotActivity extends AppCompatActivity {
 
     }
 
-    AdvancedWebView advancedWebView;
+    Pair<TextView, AdvancedWebView> followWebView;
+    Pair<TextView, AdvancedWebView> unfollowWebView;
     FollowerBotService followerBotService;
 
     public void initBot() {
 
-        followerBotService = new FollowerBotService(context);
-//        advancedWebView = followerBotService.generateAlert(context);
+        if (followerBotService == null) {
+            logger.onStart("Initialized FollowerBotService");
+            followerBotService = new FollowerBotService(context);
+            followWebView = followerBotService.generateAlert(context, "follow");
+            unfollowWebView = followerBotService.generateAlert(context, "unfollow");
+            followerBotService.getUsersToBeFollowed(logger);
+            followerBotService.getUsersToBeUnFollowed(logger);
+
+        }
     }
 
     @Override
@@ -142,4 +171,25 @@ public class FollowerBotActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         initBot();
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateButtonState();
+    }
+
+    private void updateButtonState() {
+        try {
+            if (followerBotService.isRunning()) {
+                binding.startBot.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.material_red_500));
+                binding.startBot.setText("STOP");
+            } else {
+                binding.startBot.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.material_green_500));
+                binding.startBot.setText("START");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

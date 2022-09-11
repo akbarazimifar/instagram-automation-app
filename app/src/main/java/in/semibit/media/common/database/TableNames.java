@@ -6,6 +6,13 @@ public interface TableNames {
     String MY_FOLLOWERS_DATA = "my_followers_data";
     String MY_FOLLOWING_DATA = "my_following_data";
 
+    String SCHEDULE = "schedules";
+
     String COUNTER = "counters";
+
+    static String withTablePrefix(String tab) {
+        return "smauto_" + tab;
+    }
+
 
 }

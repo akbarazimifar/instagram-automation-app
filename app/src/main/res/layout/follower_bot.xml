@@ -23,7 +23,6 @@
 
     </TextView>
     <in.semibit.media.common.AdvancedWebView
-        android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:id="@+id/webView"
