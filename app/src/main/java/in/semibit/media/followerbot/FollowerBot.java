@@ -140,7 +140,7 @@ public class FollowerBot {
                     "" +
                     "}" +
                     "" +
-                    "  let folowbtn = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Follow');" +
+                    "  let folowbtn = Array.from(document.querySelectorAll('button')).find(el => el.textContent === 'Follow' || el.textContent === 'Follow Back');" +
                     "  " +
                     "   " +
                     "if(folowbtn){" +

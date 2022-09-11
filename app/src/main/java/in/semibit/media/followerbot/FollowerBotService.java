@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import in.semibit.media.FollowerBotActivity;
 import in.semibit.media.R;
 import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.AdvancedWebView;
@@ -66,8 +67,8 @@ public class FollowerBotService {
     DatabaseHelper serverDb;
     DatabaseHelper localDb;
     List<FollowUserModel> userToFollow;
-    View followWidget;
-    View unFollowWidget;
+    public View followWidget;
+    public View unFollowWidget;
     String tenant;
 
     Timer followTimer, unFollowTimer;
@@ -211,7 +212,7 @@ public class FollowerBotService {
 
         int layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 layoutType,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,   // REMOVE FLAG_NOT_FOCUSABLE
@@ -243,7 +244,7 @@ public class FollowerBotService {
             return true;
         });
         followWidget.setOnClickListener(c -> {
-            Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+            Intent intent = new Intent(context, FollowerBotActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         });
@@ -364,7 +365,7 @@ public class FollowerBotService {
 
     public void followSingleUser(FollowerBot followerBot, boolean isDoUnfollow, FollowUserModel user, AdvancedWebView webView, Activity context, GenricDataCallback uiLogger) {
         String action = isDoUnfollow ? "Unfollow" : "Follow";
-        if (user == null || !canIFollowNextUser(isDoUnfollow)) {
+        if (user == null || !canIFollowNextUser(isDoUnfollow) || !isRunning()) {
             uiLogger.onStart("Paused " + action + "ing users");
             return;
         }

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -80,6 +81,31 @@ public class FollowerBotActivity extends AppCompatActivity {
             binding.logs.setText("");
         });
 
+        binding.showHideBot.setOnClickListener((c) -> {
+            if (followerBotService != null) {
+                try {
+                    if (followerBotService.followWidget != null) {
+                        int visiv = followerBotService.followWidget.findViewById(R.id.webView).getVisibility();
+                        if (visiv == View.GONE) {
+                            binding.showHideBot.setText("HIDE BOT");
+                            followerBotService.followWidget.findViewById(R.id.webView).setVisibility(View.VISIBLE);
+                            followerBotService.unFollowWidget.findViewById(R.id.webView).setVisibility(View.VISIBLE);
+                        }
+                        else {
+                            binding.showHideBot.setText("SHOW BOT");
+                            followerBotService.followWidget.findViewById(R.id.webView).setVisibility(View.GONE);
+                            followerBotService.unFollowWidget.findViewById(R.id.webView).setVisibility(View.GONE);
+                        }
+                    }
+                    else {
+                        logger.onStart("Bot windows not initialized yet");
+                    }
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                    logger.onStart("Error showing windows "+exception.getMessage());
+                }
+            }
+        });
 
         binding.startBot.setOnLongClickListener(c -> {
             EzUtils.toast(context, "Start/Stop FollowerBot");
@@ -156,7 +182,7 @@ public class FollowerBotActivity extends AppCompatActivity {
 //            followWebView = followerBotService.generateAlert(context, "follow");
 //            unfollowWebView = followerBotService.generateAlert(context, "unfollow");
             followerBotService.getUsersToBeFollowed(logger);
-            followerBotService.getUsersToBeUnFollowed(logger,true);
+            followerBotService.getUsersToBeUnFollowed(logger, true);
 
         }
     }
