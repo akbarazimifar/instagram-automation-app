@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.Pair;
 
+import com.google.android.gms.common.util.Strings;
 import com.semibit.ezandroidutils.EzUtils;
 
 import in.semibit.media.common.AdvancedWebView;
@@ -131,10 +132,28 @@ public class FollowerBotActivity extends AppCompatActivity {
 
         binding.searchButton.setOnClickListener(c -> {
             if (followerBotService != null) {
+
+                if (binding.urlOrUsername.getText() == null || Strings.isEmptyOrWhitespace(binding.urlOrUsername.getText().toString())) {
+                    binding.conturlOrUsername.setError("Please enter post url");
+
+                    try {
+                        String textToPaste = MainActivity.readFromClipboard(this);
+                        if (textToPaste.contains("instagram.com/")) {
+                            binding.urlOrUsername.setText(textToPaste);
+                            binding.conturlOrUsername.setError(null);
+
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return;
+                }
+                binding.conturlOrUsername.setError(null);
+
                 String urlOrUname = binding.urlOrUsername.getText().toString();
                 String split[] = urlOrUname.replace("https://", "").split("/");
 
-                if (urlOrUname.contains("/p/") && urlOrUname.contains("instagram.com")) {
+                if ((urlOrUname.contains("/p/") || urlOrUname.contains("/reel/")) && urlOrUname.contains("instagram.com")) {
                     if (split.length > 2) {
                         String shortCode = split[2];
                         followerBotService.markUsersToFollowFromPost(shortCode, new GenricDataCallback() {

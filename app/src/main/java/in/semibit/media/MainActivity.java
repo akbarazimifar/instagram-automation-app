@@ -1,6 +1,7 @@
 package in.semibit.media;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
@@ -91,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean isDownloadAndPost = true;
 
-    public String readFromClipboard(Context context) {
+    public static String readFromClipboard(Activity context) {
         int sdk = android.os.Build.VERSION.SDK_INT;
         if (sdk < android.os.Build.VERSION_CODES.HONEYCOMB) {
             android.text.ClipboardManager clipboard = (android.text.ClipboardManager) context
@@ -136,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public CharSequence coerceToText(Context context, ClipData.Item item) {
+    public static CharSequence coerceToText(Context context, ClipData.Item item) {
         // If this Item has an explicit textual value, simply return that.
         CharSequence text = item.getText();
         if (text != null) {

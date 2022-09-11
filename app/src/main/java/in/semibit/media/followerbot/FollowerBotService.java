@@ -306,6 +306,9 @@ public class FollowerBotService {
     AtomicInteger unfollowHourlySlots = new AtomicInteger(0);
 
     public boolean canIFollowNextUser(boolean isDoUnfollow) {
+        return canIFollowNextUser(isDoUnfollow,logger);
+    }
+        public boolean canIFollowNextUser(boolean isDoUnfollow,GenricDataCallback logger) {
 
         RateLimiter semaphore = isDoUnfollow ? unfollowSemaphore : followSemaphore;
         Queue<FollowUserModel> queue = isDoUnfollow ? toBeUnFollowedQueue : toBeFollowedQueue;
@@ -365,7 +368,7 @@ public class FollowerBotService {
 
     public void followSingleUser(FollowerBot followerBot, boolean isDoUnfollow, FollowUserModel user, AdvancedWebView webView, Activity context, GenricDataCallback uiLogger) {
         String action = isDoUnfollow ? "Unfollow" : "Follow";
-        if (user == null || !canIFollowNextUser(isDoUnfollow) || !isRunning() || true) {
+        if (user == null || !canIFollowNextUser(isDoUnfollow) || !isRunning()) {
             uiLogger.onStart("Paused " + action + "ing users");
             return;
         }
@@ -414,36 +417,65 @@ public class FollowerBotService {
         }
         uiLogger.onStart("Please wait till follower data is loaded !!");
 
-        if (fromFirebase) {
-            serverDb.query(TableNames.MY_FOLLOWING_DATA,
-                    Arrays.asList(new WhereClause("tenant", GenericOperator.EQUAL, SemibitMediaApp.CURRENT_TENANT),
-                            new WhereClause("followUserState", GenericOperator.EQUAL, FollowUserState.FOLLOWED)),
-                    FollowUserModel.class)
-                    .thenAccept(toBeBanished -> {
+        GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
+        onLoadedFollowMeta.exceptionally((e) -> {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }).thenAccept(followersLists -> {
+            if (followersLists == null) {
+                followersLists = new ArrayList<>();
+            }
+            if (followersLists.size() == 0) {
+                followersLists.add(new FollowersList());
+            }
+            FollowersList alreadyToBeFollow = followersLists.get(0);
+            try {
+                String listCsvFollowers = String.join(",", alreadyToBeFollow.getFollowIds());
+
+
+                if (fromFirebase) {
+                    serverDb.query(TableNames.MY_FOLLOWING_DATA,
+                            Arrays.asList(new WhereClause("tenant", GenericOperator.EQUAL, SemibitMediaApp.CURRENT_TENANT),
+                                    new WhereClause("followUserState", GenericOperator.EQUAL, FollowUserState.FOLLOWED)),
+                            FollowUserModel.class)
+                            .thenAccept(toBeBanished -> {
+                                toBeUnFollowedQueue.clear();
+                                // filter to unfollow only automatically followed users
+                                toBeUnFollowedQueue.addAll(toBeBanished.stream().filter(
+                                        user -> listCsvFollowers.contains(String.valueOf(user.getId()))
+                                ).collect(Collectors.toList()));
+                                uiLogger.onStart("Added " + toBeUnFollowedQueue.size() + " from firebase to unfollow queue. Total = " + toBeUnFollowedQueue.size());
+                            });
+                    return;
+                }
+                GenericCompletableFuture<List<FollowUserModel>> usersFollowingMeFuture =
+                        getConnectionsForUser(context.getString(R.string.username),
+                                false, (onDone) -> {
+                                }, logger);
+                usersFollowingMeFuture.thenAccept(usersFollowingMe -> {
+                    GenericCompletableFuture<List<FollowUserModel>> usersIAmFollowingFuture =
+                            getConnectionsForUser(context.getString(R.string.username),
+                                    true, (onDone) -> {
+                                    }, logger);
+                    usersIAmFollowingFuture.thenAccept(usersIAmFollowing -> {
+
+                        List<FollowUserModel> toBeBanished = FollowerUtil.getUsersThatDontFollowMe(usersFollowingMe, usersIAmFollowing);
                         toBeUnFollowedQueue.clear();
-                        toBeUnFollowedQueue.addAll(toBeBanished);
-                        uiLogger.onStart("Added " + toBeBanished.size() + " from firebase to unfollow queue. Total = " + toBeUnFollowedQueue.size());
+                        // filter to unfollow only automatically followed users
+                        toBeUnFollowedQueue.addAll(toBeBanished.stream().filter(
+                                user -> listCsvFollowers.contains(String.valueOf(user.getId()))
+                        ).collect(Collectors.toList()));
+                        uiLogger.onStart("Added " + toBeUnFollowedQueue.size() + " to unfollow queue. Total = " + toBeUnFollowedQueue.size());
+
                     });
-            return;
-        }
-        GenericCompletableFuture<List<FollowUserModel>> usersFollowingMeFuture =
-                getConnectionsForUser(context.getString(R.string.username),
-                        false, (onDone) -> {
-                        }, logger);
-        usersFollowingMeFuture.thenAccept(usersFollowingMe -> {
-            GenericCompletableFuture<List<FollowUserModel>> usersIAmFollowingFuture =
-                    getConnectionsForUser(context.getString(R.string.username),
-                            true, (onDone) -> {
-                            }, logger);
-            usersIAmFollowingFuture.thenAccept(usersIAmFollowing -> {
 
-                List<FollowUserModel> toBeBanished = FollowerUtil.getUsersThatDontFollowMe(usersFollowingMe, usersIAmFollowing);
-                toBeUnFollowedQueue.clear();
-                toBeUnFollowedQueue.addAll(toBeBanished);
-                uiLogger.onStart("Added " + toBeBanished.size() + " to unfollow queue. Total = " + toBeUnFollowedQueue.size());
+                });
 
-            });
 
+            } catch (Exception e) {
+                e.printStackTrace();
+                uiLogger.onStart(e.getMessage());
+            }
         });
     }
 
@@ -471,6 +503,7 @@ public class FollowerBotService {
 
         AsyncTask.execute(() -> {
             IGClient client = getIgClient();
+            onUILog.onStart("Started marking users from post "+shortCode);
             CompletableFuture<LikeInfoResponse> completableFuture = new LikeInfoRequest(shortCode).execute(client);
             GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
             onLoadedFollowMeta.exceptionally((e) -> {
@@ -598,7 +631,7 @@ public class FollowerBotService {
         int maxFollowersToLoad = 300;
         AsyncTask.execute(() -> {
             IGClient client = getIgClient();
-
+            onUILog.onStart("Started marking users from user "+userName);
             GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
             onLoadedFollowMeta.exceptionally((e) -> {
                 e.printStackTrace();

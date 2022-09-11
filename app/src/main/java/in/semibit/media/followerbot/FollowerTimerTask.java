@@ -34,14 +34,15 @@ public class FollowerTimerTask extends TimerTask {
             return;
         }
         uiLogger.onStart("Scheduled task started");
-        boolean canIFollowUsers = followerBotService.canIFollowNextUser(false);
+        boolean canIFollowUsers = followerBotService.canIFollowNextUser(false,uiLogger);
+        followerBotService.getUsersToBeFollowed(uiLogger);
+
         if (canIFollowUsers) {
-            followerBotService.getUsersToBeFollowed(uiLogger);
             followerBotService.startFollowingUsers(webViewPair.second, webViewPair.first,uiLogger);
         } else {
             int nextMins = EzUtils.randomInt(40, 80);
             Instant nextExecInstant = Instant.now().plus(nextMins, ChronoUnit.MINUTES);
-            uiLogger.onStart("Next execution after " + nextMins + " mins at " + nextExecInstant.toString());
+            uiLogger.onStart("Next FollowerTimerTask execution after " + nextMins + " mins at " + nextExecInstant.toString());
             Date nextExecution = Date.from(nextExecInstant);
             followerBotService.cancelFollowTimer();
             followerBotService.followTimer = new Timer();
