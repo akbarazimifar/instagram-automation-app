@@ -139,13 +139,13 @@ public class FollowerBotActivity extends AppCompatActivity {
                     followerBotOrchestrator.listenToTriggers(followWebView.second);
                     Intent intent = new Intent(context, FollowerBotForegroundService.class);
                     Map<String, Long> jobs = new ConcurrentHashMap<>();
-//                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
+                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
                     jobs.put(UnFollowUsersJob.JOBNAME, UnFollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
                     intent.putExtra("jobSchedules", new Gson().toJson(jobs));
                     startForegroundService(intent);
 
-//                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowJobOrchestratorV2.ACTION_BOT_START,FollowUsersJob.JOBNAME);
-//                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowJobOrchestratorV2.ACTION_BOT_START,UnFollowUsersJob.JOBNAME);
+                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START,FollowUsersJob.JOBNAME);
+                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START,UnFollowUsersJob.JOBNAME);
 
                 } else
                     followerBotOrchestrator.killAll(null);
