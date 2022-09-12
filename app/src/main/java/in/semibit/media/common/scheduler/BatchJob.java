@@ -49,7 +49,7 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
     }
 
     public String getJobName() {
-        return getClass().getSimpleName();
+        return this.getClass().getSimpleName();
     }
 
     public GenricDataCallback getLogger() {

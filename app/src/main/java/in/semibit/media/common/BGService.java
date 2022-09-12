@@ -16,19 +16,22 @@ import in.semibit.media.R;
 
 public abstract class BGService extends Service {
 
-    Context context;
+    public Context context;
     int notifIdCounter;
-    public BGService(){
+
+    public BGService() {
         this.context = this;
     }
 
     public abstract void work(Intent intent);
+
     public abstract void stopWork(Intent intent);
+
     public abstract int getNotificationId();
+
     public abstract String getActionStopId();
 
     public abstract String getServiceName();
-
 
 
     @Override
@@ -67,8 +70,12 @@ public abstract class BGService extends Service {
     }
 
     public Notification getMyActivityNotification(String text) {
-
         final String CHANNELID = "semibit-media";
+        return getMyActivityNotification(text, CHANNELID);
+    }
+
+    public Notification getMyActivityNotification(String text, String CHANNELID) {
+
         NotificationChannel channel = new NotificationChannel(
                 CHANNELID,
                 CHANNELID,
@@ -83,7 +90,7 @@ public abstract class BGService extends Service {
         Notification.Builder notification = new Notification.Builder(context, CHANNELID)
                 .setContentIntent(pStopSelf)
                 .setContentText(text)
-                .setContentTitle(getServiceName()+" "+(text.contains("stop") ? "Service Stopped" : "Service running"))
+                .setContentTitle(getServiceName() + " " + (text.contains("stop") ? "Service Stopped" : "Service running"))
                 .setSmallIcon(R.drawable.icon);
 
 
@@ -96,9 +103,10 @@ public abstract class BGService extends Service {
     /**
      * This is the method that can be called to update the Notification
      */
-    public void updateNotification(String text,boolean isUpdateSameNotfi) {
+    public void updateNotification(String text, boolean isUpdateSameNotfi) {
 
-        Notification notification = getMyActivityNotification(text);
+        Notification notification = isUpdateSameNotfi ? getMyActivityNotification(text) :
+                getMyActivityNotification(text,"semibit-media-updates");
 
         NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(isUpdateSameNotfi ? getNotificationId() : ++notifIdCounter, notification);

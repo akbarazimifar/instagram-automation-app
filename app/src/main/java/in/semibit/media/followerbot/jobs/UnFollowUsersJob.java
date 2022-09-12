@@ -20,13 +20,13 @@ import in.semibit.media.common.scheduler.BatchJob;
 import in.semibit.media.common.scheduler.JobResult;
 import in.semibit.media.followerbot.FollowUserModel;
 
-public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
+public class UnFollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
-    public static final String JOBNAME = "FollowUsersJob";
+    public static final String JOBNAME = "UnFollowUsersJob";
     Pair<TextView, AdvancedWebView> uiPair;
     DatabaseHelper db;
 
-    public FollowUsersJob(GenricDataCallback logger, Pair<TextView, AdvancedWebView> uiPair, DatabaseHelper db) {
+    public UnFollowUsersJob(GenricDataCallback logger, Pair<TextView, AdvancedWebView> uiPair, DatabaseHelper db) {
         super(logger);
         this.uiPair = uiPair;
         this.db = db;
@@ -67,5 +67,6 @@ public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
     public static Instant nextScheduledTime(Instant prevIsntant){
         int future = 10;EzUtils.randomInt(5,9);
-        return prevIsntant.plus(future, ChronoUnit.SECONDS);    }
+        return prevIsntant.plus(future, ChronoUnit.SECONDS);
+    }
 }

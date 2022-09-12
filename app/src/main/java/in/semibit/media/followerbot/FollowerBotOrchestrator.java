@@ -86,7 +86,7 @@ public class FollowerBotOrchestrator {
     public Queue<FollowUserModel> toBeUnFollowedQueue = new ConcurrentLinkedDeque<>();
     static RateLimiter followSemaphore;
     static RateLimiter unfollowSemaphore;
-    boolean isRunning = false;
+    public boolean isRunning = false;
 
     public FollowerUtil followerUtil;
 

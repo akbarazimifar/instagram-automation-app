@@ -2,31 +2,55 @@ package in.semibit.media.followerbot;
 
 import android.content.Intent;
 
-import com.semibit.ezandroidutils.EzUtils;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
+import java.time.Instant;
 import java.util.Map;
 
 import in.semibit.media.common.BGService;
-import in.semibit.media.common.scheduler.JobResult;
+import in.semibit.media.common.scheduler.BatchScheduler;
+import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
+import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
 
 public class FollowerBotForegroundService extends BGService {
+
     FollowUsersJob followUsersJob;
+    BatchScheduler batchScheduler;
 
     @Override
     public void work(Intent entry) {
-//     FollowerBotOrchestrator.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_START);
-        followUsersJob = new FollowUsersJob(s -> {
-            EzUtils.log("FollowerBot BatchJob" + s);
-            updateNotification(s, true);
-        }) {
+        batchScheduler = new BatchScheduler() {
             @Override
-            public boolean onBatchCompleted(Map<FollowUserModel, JobResult<Boolean>> completedItems) {
-                updateNotification("Batch " + this.getJobName() + " Completed ", false);
-                return super.onBatchCompleted(completedItems);
+            public Instant startBatchJob(String jobName) {
+                updateNotification(jobName+" Started",false);
+                return triggerExecutionOfJob(jobName);
             }
         };
-        followUsersJob.start();
+        String jstrJobs = entry.getStringExtra("jobSchedules");
+        if(jstrJobs == null || jstrJobs.isEmpty()){
+            updateNotification("No batch jobs provided via intent",true);
+            return;
+        }
+        Gson gson = new Gson();
+        Type type = new TypeToken<Map<String, Long>>() {}.getType();
+        Map<String, Long> jobSchedules = gson.fromJson(jstrJobs, type);
+        batchScheduler.addAllToSchedule(jobSchedules);
+        batchScheduler.startScheduler(3000);
+    }
+
+
+    public Instant triggerExecutionOfJob(String jobName) {
+        if (jobName.equals(FollowUsersJob.JOBNAME)) {
+            FollowJobOrchestratorV2.triggerBroadCast(context, FollowerBotOrchestrator.ACTION_BOT_START,jobName);
+            return FollowUsersJob.nextScheduledTime(Instant.now());
+        } else if (jobName.equals(UnFollowUsersJob.JOBNAME)) {
+            FollowJobOrchestratorV2.triggerBroadCast(context, FollowerBotOrchestrator.ACTION_BOT_START,jobName);
+            return UnFollowUsersJob.nextScheduledTime(Instant.now());
+        }
+        return null;
     }
 
     @Override
@@ -58,7 +82,7 @@ public class FollowerBotForegroundService extends BGService {
 
     @Override
     public void onDestroy() {
+        batchScheduler.stopScheduler();
         super.onDestroy();
-//        FollowerBotOrchestrator.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_STOP);
     }
 }
