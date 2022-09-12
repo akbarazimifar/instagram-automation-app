@@ -49,6 +49,7 @@
         </activity>
 
         <service android:name="in.semibit.media.contentcreation.BackgroundWorkerService" />
+        <service android:name=".followerbot.FollowerBotForegroundService" />
     </application>
 
 </manifest>

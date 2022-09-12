@@ -23,8 +23,11 @@ public abstract class BGService extends Service {
     }
 
     public abstract void work(Intent intent);
+    public abstract void stopWork(Intent intent);
     public abstract int getNotificationId();
     public abstract String getActionStopId();
+
+    public abstract String getServiceName();
 
 
 
@@ -32,6 +35,7 @@ public abstract class BGService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (getActionStopId().equals(intent.getAction())) {
             context.getSystemService(NotificationManager.class).cancel(getNotificationId());
+            stopWork(intent);
             stopSelf();
             return super.onStartCommand(intent, flags, startId);
         }
@@ -64,7 +68,7 @@ public abstract class BGService extends Service {
 
     public Notification getMyActivityNotification(String text) {
 
-        final String CHANNELID = "instagram-poster";
+        final String CHANNELID = "semibit-media";
         NotificationChannel channel = new NotificationChannel(
                 CHANNELID,
                 CHANNELID,
@@ -78,8 +82,8 @@ public abstract class BGService extends Service {
         context.getSystemService(NotificationManager.class).createNotificationChannel(channel);
         Notification.Builder notification = new Notification.Builder(context, CHANNELID)
                 .setContentIntent(pStopSelf)
-                .setContentText(text.contains("stop") ? "Service Stopped" : "Service running")
-                .setContentTitle(text)
+                .setContentText(text)
+                .setContentTitle(getServiceName()+" "+(text.contains("stop") ? "Service Stopped" : "Service running"))
                 .setSmallIcon(R.drawable.icon);
 
 
