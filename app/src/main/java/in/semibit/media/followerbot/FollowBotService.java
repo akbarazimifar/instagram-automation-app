@@ -1,4 +1,4 @@
-package in.semibit.media.followerbot.jobs;
+package in.semibit.media.followerbot;
 
 import static android.content.Context.WINDOW_SERVICE;
 
@@ -42,11 +42,12 @@ import in.semibit.media.followerbot.FollowerBotForegroundService;
 import in.semibit.media.followerbot.FollowerUtil;
 import lombok.NonNull;
 
-public class FollowJobOrchestratorV2 {
+public class FollowBotService {
 
     public static final boolean TEST_MODE = false;
     public static final String ACTION_BOT_START = "ACTION_BOT_START";
     public static final String ACTION_BOT_STOP = "ACTION_BOT_STOP";
+    public static final String ACTION_BOT_LOG = "ACTION_BOT_LOG";
 
     public Activity context;
     public DatabaseHelper serverDb;
@@ -62,7 +63,7 @@ public class FollowJobOrchestratorV2 {
 
     GenricDataCallback logCatLogger = s -> Log.e("FollowerBot", s);
 
-    public FollowJobOrchestratorV2(Activity context, GenricDataCallback uiLogger) {
+    public FollowBotService(Activity context, GenricDataCallback uiLogger) {
         this.uiLogger = uiLogger;
         this.context = context;
         serverDb = new DatabaseHelper(Source.SERVER);
@@ -75,9 +76,10 @@ public class FollowJobOrchestratorV2 {
         if (followerUtil != null) {
             return GenericCompletableFuture.genericCompletedFuture(followerUtil);
         }
+        uiLogger.onStart("Please wait for IG Client to initialize");
+
         GenericCompletableFuture<FollowerUtil> future = new GenericCompletableFuture<>();
         AsyncTask.execute(() -> {
-            uiLogger.onStart("Please wait for IG Client to initialize");
             igClient = Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), (s) -> {
                 uiLogger.onStart("IG Client Ready");
             });
@@ -120,6 +122,14 @@ public class FollowJobOrchestratorV2 {
             softKill();
         }
     };
+    private BroadcastReceiver onLogRecieve = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+           if(uiLogger!=null){
+               uiLogger.onStart(""+intent.getStringExtra("jobName"));
+           }
+        }
+    };
 
     public void softKill() {
         uiLogger.onStart("Soft Killed UI Service");
@@ -137,6 +147,7 @@ public class FollowJobOrchestratorV2 {
         try {
             LocalBroadcastManager.getInstance(broadCastContext).unregisterReceiver(onStartReceive);
             LocalBroadcastManager.getInstance(broadCastContext).unregisterReceiver(onStopReceive);
+            LocalBroadcastManager.getInstance(broadCastContext).unregisterReceiver(onLogRecieve);
         } catch (Exception exception) {
             //exception.printStackTrace();
             EzUtils.e("Non fatal error"+ exception.getMessage());
@@ -149,6 +160,7 @@ public class FollowJobOrchestratorV2 {
         broadCastContext = followWidgetView.getContext();
         LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStartReceive, new IntentFilter(ACTION_BOT_START));
         LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStopReceive, new IntentFilter(ACTION_BOT_STOP));
+        LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onLogRecieve, new IntentFilter(ACTION_BOT_LOG));
     }
 
     public static void triggerBroadCast(@NonNull Context context, @NonNull String action, @Nullable String jobName) {
@@ -157,7 +169,6 @@ public class FollowJobOrchestratorV2 {
             intent.putExtra("jobName", jobName);
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
-
     public void addBatchJob(BatchJob batchJob) {
         jobs.put(batchJob.getJobName(), batchJob);
     }

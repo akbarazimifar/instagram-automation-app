@@ -7,12 +7,12 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import in.semibit.media.common.BGService;
 import in.semibit.media.common.scheduler.BatchScheduler;
-import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
 import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
 
@@ -30,7 +30,12 @@ public class FollowerBotForegroundService extends BGService {
             @Override
             public Instant startBatchJob(String jobName) {
                 updateNotification(jobsInProgress.incrementAndGet()+" jobs triggered",true);
-                return triggerExecutionOfJob(jobName);
+
+                Instant nextExec =  triggerExecutionOfJob(jobName);
+                String msg = "Triggering "+jobName+"from BG. Next exec at "+nextExec.atZone(ZoneId.systemDefault()).toLocalDateTime().toString();
+                FollowBotService.triggerBroadCast(context, FollowBotService.ACTION_BOT_LOG,msg);
+
+                return nextExec;
             }
         };
         String jstrJobs = entry.getStringExtra("jobSchedules");
@@ -46,7 +51,7 @@ public class FollowerBotForegroundService extends BGService {
     }
 
     public Instant triggerExecutionOfJob(String jobName) {
-        FollowJobOrchestratorV2.triggerBroadCast(context, FollowJobOrchestratorV2.ACTION_BOT_START,jobName);
+        FollowBotService.triggerBroadCast(context, FollowBotService.ACTION_BOT_START,jobName);
 
         if (jobName.equals(FollowUsersJob.JOBNAME)) {
             return FollowUsersJob.nextScheduledTime(Instant.now());

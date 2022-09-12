@@ -1,7 +1,7 @@
 package in.semibit.media.followerbot;
 
 
-import static in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2.TEST_MODE;
+import static in.semibit.media.followerbot.FollowBotService.TEST_MODE;
 
 import android.app.Activity;
 import android.content.Context;
@@ -40,7 +40,6 @@ import in.semibit.media.common.igclientext.followers.FollowerInfoRequest;
 import in.semibit.media.common.igclientext.followers.FollowerInfoResponse;
 import in.semibit.media.common.igclientext.followers.FollowingInfoRequest;
 import in.semibit.media.common.igclientext.post.model.User;
-import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
 
 public class FollowerUtil {
 

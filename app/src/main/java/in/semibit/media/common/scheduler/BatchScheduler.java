@@ -79,9 +79,7 @@ public abstract class BatchScheduler {
                 Instant next = startBatchJob(jobName);
                 logger.onStart("Triggering batch job " + jobName + " next exec at "
                         + next.atZone(ZoneOffset.systemDefault()).toLocalDateTime().toString());
-                if (next != null) {
-                    addToSchedule(jobName, next);
-                }
+                addToSchedule(jobName, next);
             }
         });
     }

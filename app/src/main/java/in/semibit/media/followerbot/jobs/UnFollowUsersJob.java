@@ -5,17 +5,12 @@ import android.widget.TextView;
 
 import androidx.core.util.Pair;
 
-import com.semibit.ezandroidutils.EzUtils;
-
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -101,7 +96,7 @@ public class UnFollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
     @Override
     public boolean onBatchCompleted(Map<FollowUserModel, JobResult<Boolean>> completedItems) {
-        getLogger().onStart(getJobName()+" JOB COMPLETED");
+        getLogger().onStart(getJobName() + " JOB COMPLETED");
         return false;
     }
 
@@ -158,16 +153,16 @@ public class UnFollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
     @Override
     public GenericCompletableFuture<JobResult<Boolean>> processItem(FollowUserModel item) {
         getLogger().onStart("Unfollow User " + item.userName);
-        GenericCompletableFuture<JobResult<Boolean>> onFollowCompletedFuture =new  GenericCompletableFuture<>();
+        GenericCompletableFuture<JobResult<Boolean>> onFollowCompletedFuture = new GenericCompletableFuture<>();
 
-        followerBot.followUnfollow(item.userName,true,uiPair.second,activity,(str)->{})
-        .thenAccept(result -> {
-            if(result){
-                onFollowCompletedFuture.complete(new JobResult<>(JobResult.SUCCESS_STATUS, true));
-            }else {
-                onFollowCompletedFuture.complete(new JobResult<>(JobResult.FAILED_STATUS, false));
-            }
-        });
+        followerUtil.followSingleUser(followerBot, true, item, uiPair.second, activity, (str) -> { })
+                .thenAccept(result -> {
+                    if (result) {
+                        onFollowCompletedFuture.complete(new JobResult<>(JobResult.SUCCESS_STATUS, true));
+                    } else {
+                        onFollowCompletedFuture.complete(new JobResult<>(JobResult.FAILED_STATUS, false));
+                    }
+                });
         return onFollowCompletedFuture;
     }
 

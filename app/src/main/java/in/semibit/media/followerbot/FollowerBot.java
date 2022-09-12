@@ -15,7 +15,6 @@ import com.github.instagram4j.instagram4j.IGClient;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.database.GenericCompletableFuture;
-import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
 
 public class FollowerBot {
 
@@ -77,7 +76,7 @@ public class FollowerBot {
 
         onPageFinished = s -> {
             if (s.contains(url)) {
-                if (FollowJobOrchestratorV2.TEST_MODE) {
+                if (FollowBotService.TEST_MODE) {
                     new Handler().postDelayed(() -> onFollowCompleted.onStart("done skipped"), 2000);
                     onFollowCompletedFuture.complete(true);
                     return;

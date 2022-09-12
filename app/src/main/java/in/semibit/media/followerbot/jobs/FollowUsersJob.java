@@ -121,7 +121,7 @@ public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
     public GenericCompletableFuture<JobResult<Boolean>> processItem(FollowUserModel item) {
         getLogger().onStart("Follow User " + item.userName);
         GenericCompletableFuture<JobResult<Boolean>> onFollowCompletedFuture = new GenericCompletableFuture<>();
-        followerBot.followUnfollow(item.userName, true, uiPair.second, activity, (str) -> {})
+        followerUtil.followSingleUser(followerBot,false,item,  uiPair.second, activity, (str) -> {})
                 .thenAccept(result -> {
                     if (result) {
                         onFollowCompletedFuture.complete(new JobResult<>(JobResult.SUCCESS_STATUS, true));
@@ -139,6 +139,6 @@ public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
     public static Instant nextScheduledTime(Instant prevIsntant) {
         int future = EzUtils.randomInt(40, 70);
-        return prevIsntant.plus(future, ChronoUnit.MINUTES);
+        return prevIsntant.plus(30, ChronoUnit.SECONDS);
     }
 }

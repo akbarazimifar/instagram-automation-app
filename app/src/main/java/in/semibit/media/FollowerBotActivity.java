@@ -28,9 +28,8 @@ import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.databinding.ActivityFollowerBotBinding;
 import in.semibit.media.followerbot.FollowerBotForegroundService;
-import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
+import in.semibit.media.followerbot.FollowBotService;
 import in.semibit.media.followerbot.FollowerUtil;
-import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
 import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
 import in.semibit.media.followerbot.jobs.UserFromFollowerMarkerJob;
@@ -127,7 +126,6 @@ public class FollowerBotActivity extends AppCompatActivity {
                         ;
                         followerBotOrchestrator.getFollowerUtil().thenAccept(futil->{
                             followerUtil = futil;
-                            logger.onStart("IG Client Ready !");
                         });
                         return;
                     }
@@ -141,13 +139,13 @@ public class FollowerBotActivity extends AppCompatActivity {
                     followerBotOrchestrator.listenToTriggers(followWebView.second);
                     Intent intent = new Intent(context, FollowerBotForegroundService.class);
                     Map<String, Long> jobs = new ConcurrentHashMap<>();
-                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
+//                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
                     jobs.put(UnFollowUsersJob.JOBNAME, UnFollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
                     intent.putExtra("jobSchedules", new Gson().toJson(jobs));
                     startForegroundService(intent);
 
-                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowJobOrchestratorV2.ACTION_BOT_START,FollowUsersJob.JOBNAME);
-                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowJobOrchestratorV2.ACTION_BOT_START,UnFollowUsersJob.JOBNAME);
+//                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowJobOrchestratorV2.ACTION_BOT_START,FollowUsersJob.JOBNAME);
+//                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowJobOrchestratorV2.ACTION_BOT_START,UnFollowUsersJob.JOBNAME);
 
                 } else
                     followerBotOrchestrator.killAll(null);
@@ -212,18 +210,17 @@ public class FollowerBotActivity extends AppCompatActivity {
     Pair<TextView, AdvancedWebView> followWebView;
     Pair<TextView, AdvancedWebView> unfollowWebView;
 
-    FollowJobOrchestratorV2 followerBotOrchestrator;
+    FollowBotService followerBotOrchestrator;
 
     public void initBot() {
 
         if (followerBotOrchestrator == null) {
 
-            followerBotOrchestrator = new FollowJobOrchestratorV2(FollowerBotActivity.this, logger);
+            followerBotOrchestrator = new FollowBotService(FollowerBotActivity.this, logger);
             GenericCompletableFuture<FollowerUtil> onFollowerUtil = followerBotOrchestrator.getFollowerUtil();
             ;
             onFollowerUtil.thenAccept(u -> {
                 followerUtil = u;
-                logger.onStart("IG Client Ready !");
             });
 
 
