@@ -81,8 +81,8 @@ public class FollowBotService {
         GenericCompletableFuture<FollowerUtil> future = new GenericCompletableFuture<>();
         AsyncTask.execute(() -> {
             igClient = Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), (s) -> {
-                uiLogger.onStart("IG Client Ready");
             });
+            uiLogger.onStart("IG Client Ready");
             FollowerUtil followerUtil = new FollowerUtil(igClient, serverDb,uiLogger,context);
             future.complete(followerUtil);
         });

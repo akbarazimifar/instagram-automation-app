@@ -82,6 +82,9 @@ public class Insta4jClient {
                 callback.onStart(e.getMessage());
             }
         }
+        else {
+            callback.onStart("Logged In");
+        }
 
         return client;
     }
