@@ -1,8 +1,5 @@
 package in.semibit.media.common.database;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 public class GenericCompletableFuture<T> {
 
     private T result;
@@ -21,9 +18,8 @@ public class GenericCompletableFuture<T> {
         ex = exception;
         if (onException != null) {
             T exResult = onException.onException(exception);
-            if (exResult != null) {
-                setResult(exResult);
-            }
+            setResult(exResult);
+
         }
     }
 
@@ -33,7 +29,7 @@ public class GenericCompletableFuture<T> {
 
     public void thenAccept(GenericCompletableFutureCB<T> onComplete) {
         this.onComplete = onComplete;
-        if (result != null) {
+        if (result != null || ex != null) {
             onComplete.onComplete(result);
         }
     }
@@ -54,4 +50,11 @@ public class GenericCompletableFuture<T> {
     }
 
 
+    public boolean isDone() {
+        return result != null || ex != null;
+    }
+
+    public T get() {
+        return result;
+    }
 }

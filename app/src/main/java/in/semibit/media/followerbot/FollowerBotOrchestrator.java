@@ -63,6 +63,7 @@ import in.semibit.media.common.igclientext.post.model.User;
 import in.semibit.media.common.ratelimiter.RateLimiter;
 import in.semibit.media.common.ratelimiter.RateLimiter.SleepingStopwatch;
 import in.semibit.media.common.ratelimiter.SmoothRateLimiter;
+import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
 
 public class FollowerBotOrchestrator {
 
@@ -95,7 +96,6 @@ public class FollowerBotOrchestrator {
         serverDb = new DatabaseHelper(Source.SERVER);
         localDb = new DatabaseHelper(Source.CACHE);
         tenant = "semibitmedia";
-        followerUtil = new FollowerUtil(this);
         double discreteRate = 3600.0; // hourly rate
         double permitsPerSecond = MAX_USERS_TO_BE_FOLLOWED_PER_HOUR / discreteRate;
 
@@ -553,6 +553,7 @@ public class FollowerBotOrchestrator {
 
                 List<String> followeIds = followersLists.stream().flatMap(e -> e.getFollowIds().stream()).collect(Collectors.toList());
 
+                followerUtil = new FollowerUtil(getIgClient(),serverDb,uiLogger,context);
 
                 if (fromFirebase) {
                     long graceTime = System.currentTimeMillis();
@@ -656,7 +657,7 @@ public class FollowerBotOrchestrator {
                     users = users.stream().filter(us -> {
                         boolean isNotAlreadyPresent = !followeIds.contains(String.valueOf(us.getPk()));
                         return isNotAlreadyPresent;
-                    }).filter(new OffensiveWordFilter(logger, context)).collect(Collectors.toList());
+                    }).filter(new OffensiveWordFilter(logger)).collect(Collectors.toList());
 
                     cb.onStart("done saved " + users.size());
                     saveUsersToBeFollowed(users, followersLists, onUILog);
@@ -715,7 +716,7 @@ public class FollowerBotOrchestrator {
                         localUsers = localUsers.stream().filter(us -> {
                             boolean isNotAlreadyPresent = !followeIds.contains(String.valueOf(us.getPk()));
                             return isNotAlreadyPresent;
-                        }).filter(new OffensiveWordFilter(logger, context)).collect(Collectors.toList());
+                        }).filter(new OffensiveWordFilter(logger)).collect(Collectors.toList());
 
                         users.addAll(localUsers);
                         onUILog.onStart("Retrieved new followers in batch = " + users.size());

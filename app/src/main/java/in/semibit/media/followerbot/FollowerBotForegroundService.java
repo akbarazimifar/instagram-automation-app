@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import in.semibit.media.common.BGService;
 import in.semibit.media.common.scheduler.BatchScheduler;
@@ -17,15 +18,18 @@ import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
 
 public class FollowerBotForegroundService extends BGService {
 
+    public static String ACTION_STOP ="FollowerBotForegroundService_STOP";
+
     FollowUsersJob followUsersJob;
     BatchScheduler batchScheduler;
+    AtomicInteger jobsInProgress = new AtomicInteger();
 
     @Override
     public void work(Intent entry) {
         batchScheduler = new BatchScheduler() {
             @Override
             public Instant startBatchJob(String jobName) {
-                updateNotification(jobName+" Started",false);
+                updateNotification(jobsInProgress.incrementAndGet()+" jobs triggered",true);
                 return triggerExecutionOfJob(jobName);
             }
         };
@@ -41,13 +45,12 @@ public class FollowerBotForegroundService extends BGService {
         batchScheduler.startScheduler(3000);
     }
 
-
     public Instant triggerExecutionOfJob(String jobName) {
+        FollowJobOrchestratorV2.triggerBroadCast(context, FollowerBotOrchestrator.ACTION_BOT_START,jobName);
+
         if (jobName.equals(FollowUsersJob.JOBNAME)) {
-            FollowJobOrchestratorV2.triggerBroadCast(context, FollowerBotOrchestrator.ACTION_BOT_START,jobName);
             return FollowUsersJob.nextScheduledTime(Instant.now());
         } else if (jobName.equals(UnFollowUsersJob.JOBNAME)) {
-            FollowJobOrchestratorV2.triggerBroadCast(context, FollowerBotOrchestrator.ACTION_BOT_START,jobName);
             return UnFollowUsersJob.nextScheduledTime(Instant.now());
         }
         return null;
@@ -67,8 +70,9 @@ public class FollowerBotForegroundService extends BGService {
 
     @Override
     public String getActionStopId() {
-        return "FollowerBotForegroundService_STOP";
+        return ACTION_STOP;
     }
+
 
     @Override
     public String getServiceName() {

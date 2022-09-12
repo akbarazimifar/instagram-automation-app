@@ -14,6 +14,7 @@ import com.github.instagram4j.instagram4j.IGClient;
 
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
+import in.semibit.media.common.database.GenericCompletableFuture;
 
 public class FollowerBot {
 
@@ -65,26 +66,30 @@ public class FollowerBot {
         });
     }
 
-    public void followUnfollow(String igUser, boolean isDoUnfollow, AdvancedWebView webview, Activity context, GenricDataCallback onFollowCompleted) {
+    public GenericCompletableFuture<Boolean> followUnfollow(String igUser, boolean isDoUnfollow, AdvancedWebView webview, Activity context, GenricDataCallback onFollowCompleted) {
 
         String url = "https://www.instagram.com/" + igUser + "/";
         // initializing following of user
         logger.onStart("INT FLW " + igUser);
         initializeWebView(webview, context);
+        GenericCompletableFuture<Boolean> onFollowCompletedFuture =new  GenericCompletableFuture<Boolean>();
 
-        onPageFinished = new GenricDataCallback() {
-            @Override
-            public void onStart(String s) {
-                if (s.contains(url)) {
-                    if (FollowerBotOrchestrator.TEST_MODE) {
-                        new Handler().postDelayed(() -> onFollowCompleted.onStart("done skipped"), 2000);
-                        return;
-                    }
-                    pressFollowButton(igUser, isDoUnfollow, webview, onFollowCompleted);
+        onPageFinished = s -> {
+            if (s.contains(url)) {
+                if (FollowerBotOrchestrator.TEST_MODE) {
+                    new Handler().postDelayed(() -> onFollowCompleted.onStart("done skipped"), 2000);
+                    onFollowCompletedFuture.complete(true);
+                    return;
                 }
+                pressFollowButton(igUser, isDoUnfollow, webview, (s2)->{
+                    onFollowCompletedFuture.complete(!s2.contains("unabletocomplete"));
+                    onFollowCompleted.onStart(s2);
+                });
             }
         };
         webview.loadUrl(url);
+
+        return onFollowCompletedFuture;
     }
 
     public void pressFollowButton(String username, boolean isDoUnfollow, AdvancedWebView webview, GenricDataCallback onFollowCompleted) {

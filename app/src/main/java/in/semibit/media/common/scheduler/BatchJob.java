@@ -39,7 +39,7 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
     public abstract GenericCompletableFuture<JobResult<U>> processItem(T item);
 
 
-    boolean isContinueToNext() {
+    public boolean isContinueToNext() {
         return isRunning;
     }
 
@@ -80,6 +80,7 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
         startTime = System.currentTimeMillis();
         isRunning = true;
         getData().thenAccept(data -> {
+            logger.onStart(getJobName()+" : Started for "+data.size()+" items");
             getQueue().addAll(data);
             processNextJobItem();
         });
@@ -105,9 +106,9 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
 
     private void processNextJobItem() {
         if (isContinueToNext()) {
-            final T curItem = getQueue().remove();
-            getLogger().onStart("Processing item " + curItem.getId() + " in Job " + getJobName());
             GenricCallback continueJob = () -> {
+                final T curItem = getQueue().remove();
+                getLogger().onStart("Processing item " + curItem.getId() + " in Job " + getJobName());
                 processItem(curItem)
                         .exceptionally(e -> {
                             e.printStackTrace();

@@ -29,7 +29,6 @@ import com.google.android.gms.common.util.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
-import com.semibit.ezandroidutils.EzUtils;
 
 import org.json.JSONObject;
 
@@ -38,21 +37,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import in.semibit.media.common.AdvancedWebView;
-import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.contentcreation.BackgroundWorkerService;
 import in.semibit.media.databinding.ActivityMainBinding;
-import in.semibit.media.followerbot.FollowerBotForegroundService;
-import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
-import in.semibit.media.followerbot.jobs.FollowUsersJob;
-import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
 
 public class MainActivity extends AppCompatActivity {
 

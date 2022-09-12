@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.TextView;
@@ -15,17 +16,31 @@ import androidx.core.content.ContextCompat;
 import androidx.core.util.Pair;
 
 import com.google.android.gms.common.util.Strings;
+import com.google.gson.Gson;
 import com.semibit.ezandroidutils.EzUtils;
+
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
+import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.databinding.ActivityFollowerBotBinding;
+import in.semibit.media.followerbot.FollowerBotForegroundService;
 import in.semibit.media.followerbot.FollowerBotOrchestrator;
+import in.semibit.media.followerbot.FollowerUtil;
+import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
+import in.semibit.media.followerbot.jobs.FollowUsersJob;
+import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
+import in.semibit.media.followerbot.jobs.UserFromFollowerMarkerJob;
+import in.semibit.media.followerbot.jobs.UserFromPostMarkerJob;
 
 public class FollowerBotActivity extends AppCompatActivity {
 
     ActivityFollowerBotBinding binding;
     Activity context;
+    FollowerUtil followerUtil;
 
     public GenricDataCallback logger = new GenricDataCallback() {
         @Override
@@ -58,19 +73,14 @@ public class FollowerBotActivity extends AppCompatActivity {
         });
         binding.refresh.setOnClickListener(v -> {
             binding.refresh.setEnabled(false);
-            followerBotOrchestrator.followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username), false, new GenricDataCallback() {
-                @Override
-                public void onStart(String s) {
-                    context.runOnUiThread(() -> binding.refresh.setEnabled(true));
-                }
-            }, logger);
+            logger.onStart("Refresh From IG Started");
+            followerBotOrchestrator.getFollowerUtil().thenAccept(e->{
+                e.syncConnectionsForUserToFirebase(context.getString(R.string.username),
+                        false, s -> context.runOnUiThread(() -> binding.refresh.setEnabled(true)), logger);
 
-            followerBotOrchestrator.followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username), true, new GenricDataCallback() {
-                @Override
-                public void onStart(String s) {
-                    context.runOnUiThread(() -> binding.refresh.setEnabled(true));
-                }
-            }, logger);
+                e.syncConnectionsForUserToFirebase(context.getString(R.string.username),
+                        true, s -> context.runOnUiThread(() -> binding.refresh.setEnabled(true)), logger);
+            });
         });
 
         binding.clearLogs.setOnLongClickListener(c -> {
@@ -90,8 +100,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                         if (visiv == View.GONE) {
                             binding.showHideBot.setText("HIDE BOT");
                             followerBotOrchestrator.followWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
-                            if (!followerBotOrchestrator.toBeUnFollowedQueue.isEmpty())
-                                followerBotOrchestrator.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
+                            followerBotOrchestrator.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
                         } else {
                             binding.showHideBot.setText("SHOW BOT");
                             followerBotOrchestrator.followWidgetView.findViewById(R.id.webView).setVisibility(View.GONE);
@@ -114,24 +123,35 @@ public class FollowerBotActivity extends AppCompatActivity {
         binding.startBot.setOnClickListener(c -> {
             if (followerBotOrchestrator != null) {
                 if (!followerBotOrchestrator.isRunning()) {
+                    if(followerUtil == null){
+                        ;
+                        followerBotOrchestrator.getFollowerUtil().thenAccept(futil->{
+                            followerUtil = futil;
+                            logger.onStart("IG Client Ready !");
+                        });
+                        return;
+                    }
 
                     followWebView = followerBotOrchestrator.generateAlert(context, "follow");
                     unfollowWebView = followerBotOrchestrator.generateAlert(context, "unfollow");
-                    followerBotOrchestrator.listenToTriggers(followerBotOrchestrator.followWidgetView);
-                    followerBotOrchestrator.getUsersToBeFollowed(logger);
-                    followerBotOrchestrator.getUsersToBeUnFollowed(logger, true);
 
-                    if (FollowerBotOrchestrator.ENABLE_TIMER_BASED_SCHEDULE)
-                    {
-                        followerBotOrchestrator.cronStart(followWebView, unfollowWebView, logger);
-                    }
-                    else
-                    {
-                        FollowerBotOrchestrator.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_START);
-                    }
+                    followerBotOrchestrator.addBatchJob(new FollowUsersJob(logger, followWebView, followerBotOrchestrator.serverDb,followerUtil,context));
+                    followerBotOrchestrator.addBatchJob(new UnFollowUsersJob(logger, unfollowWebView, followerBotOrchestrator.serverDb,followerUtil,context));
+
+                    followerBotOrchestrator.listenToTriggers(followWebView.second);
+                    Intent intent = new Intent(context, FollowerBotForegroundService.class);
+                    Map<String, Long> jobs = new ConcurrentHashMap<>();
+                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
+                    jobs.put(UnFollowUsersJob.JOBNAME, UnFollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
+                    intent.putExtra("jobSchedules", new Gson().toJson(jobs));
+                    startForegroundService(intent);
+
+                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_START,FollowUsersJob.JOBNAME);
+                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_START,UnFollowUsersJob.JOBNAME);
+
                 } else
-                    followerBotOrchestrator.kill(logger);
-                updateButtonState();
+                    followerBotOrchestrator.killAll(null);
+               new Handler().postDelayed(this::updateButtonState,1000);
             } else {
                 logger.onStart("FollowerBotService Not Initialized yet");
             }
@@ -163,12 +183,8 @@ public class FollowerBotActivity extends AppCompatActivity {
                 if ((urlOrUname.contains("/p/") || urlOrUname.contains("/reel/")) && urlOrUname.contains("instagram.com")) {
                     if (split.length > 2) {
                         String shortCode = split[2];
-                        followerBotOrchestrator.markUsersToFollowFromPost(shortCode, new GenricDataCallback() {
-                            @Override
-                            public void onStart(String s) {
-
-                            }
-                        }, logger);
+                        UserFromFollowerMarkerJob followerMarkerJob = new UserFromFollowerMarkerJob(logger, followerBotOrchestrator.serverDb, followerUtil);
+                        followerMarkerJob.markUsersToFollowFromPost(shortCode, logger, logger);
                         binding.conturlOrUsername.setError(null);
                         return;
                     }
@@ -177,12 +193,8 @@ public class FollowerBotActivity extends AppCompatActivity {
                     if (urlOrUname.contains("instagram.com") && split.length > 1) {
                         userName = split[1];
                     }
-                    followerBotOrchestrator.markUsersToFollowFromFollowers(userName, new GenricDataCallback() {
-                        @Override
-                        public void onStart(String s) {
-
-                        }
-                    }, logger);
+                    UserFromPostMarkerJob followerMarkerJob = new UserFromPostMarkerJob(logger, followerBotOrchestrator.serverDb, followerUtil);
+                    followerMarkerJob.markUsersToFollowFromFollowers(userName, logger, logger);
                     binding.conturlOrUsername.setError(null);
                     return;
                 }
@@ -199,17 +211,21 @@ public class FollowerBotActivity extends AppCompatActivity {
 
     Pair<TextView, AdvancedWebView> followWebView;
     Pair<TextView, AdvancedWebView> unfollowWebView;
-    static FollowerBotOrchestrator followerBotOrchestrator;
+
+    FollowJobOrchestratorV2 followerBotOrchestrator;
 
     public void initBot() {
 
         if (followerBotOrchestrator == null) {
-            logger.onStart("Initialized FollowerBotService");
-            followerBotOrchestrator = new FollowerBotOrchestrator(context);
-//            followWebView = followerBotService.generateAlert(context, "follow");
-//            unfollowWebView = followerBotService.generateAlert(context, "unfollow");
-            followerBotOrchestrator.getUsersToBeFollowed(logger);
-            followerBotOrchestrator.getUsersToBeUnFollowed(logger, true);
+
+            followerBotOrchestrator = new FollowJobOrchestratorV2(FollowerBotActivity.this, logger);
+            GenericCompletableFuture<FollowerUtil> onFollowerUtil = followerBotOrchestrator.getFollowerUtil();
+            ;
+            onFollowerUtil.thenAccept(u -> {
+                followerUtil = u;
+                logger.onStart("IG Client Ready !");
+            });
+
 
         }
     }

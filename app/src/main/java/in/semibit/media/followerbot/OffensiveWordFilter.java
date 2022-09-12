@@ -18,7 +18,7 @@ public class OffensiveWordFilter implements Predicate<User> {
 
     GenricDataCallback logger;
 
-    public OffensiveWordFilter(GenricDataCallback logger, Activity context) {
+    public OffensiveWordFilter(GenricDataCallback logger) {
         this.logger = logger;
         try {
             if (!Insta4jClient.root.exists()) {
