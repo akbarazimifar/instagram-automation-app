@@ -439,7 +439,7 @@ public class FollowerBotOrchestrator {
         return toBeFollowedQueue.remove();
     }
 
-    public CompletableFuture<Void> setUserAsFollowed(FollowUserModel userModel) {
+    public GenericCompletableFuture<Void> setUserAsFollowed(FollowUserModel userModel) {
         userModel.followUserState = FollowUserState.FOLLOWED;
         userModel.followDate = System.currentTimeMillis();
         Instant unFollowOn = Instant.now().plus(2, ChronoUnit.DAYS);
@@ -447,7 +447,7 @@ public class FollowerBotOrchestrator {
         logger.onStart("Gonna Unfollow " + userModel.userName + " after " + (ZonedDateTime.ofInstant(unFollowOn, ZoneOffset.systemDefault())).toString());
 
         if(TEST_MODE){
-            return CompletableFuture.completedFuture(null);
+            return GenericCompletableFuture.genericCompletedFuture(null);
         }
         return serverDb.save((TableNames.FOLLOW_DATA), userModel);
     }
@@ -511,14 +511,14 @@ public class FollowerBotOrchestrator {
     }
 
     //////////////// UNFOLLOW ///////////////////////
-    public CompletableFuture<Void> setUserAsUnFollowed(FollowUserModel userModel) {
+    public GenericCompletableFuture<Void> setUserAsUnFollowed(FollowUserModel userModel) {
         Map map = new HashMap<>();
         map.put("followUserState", FollowUserState.UNFOLLOWED);
         map.put("id", userModel.getId());
         map.put("unfollowDate", System.currentTimeMillis());
         if (TEST_MODE) {
             logger.onStart("TEST MODE : skip setUserAsUnFollowed");
-            return CompletableFuture.completedFuture(null);
+            return GenericCompletableFuture.genericCompletedFuture(null);
         }
         serverDb.updateOne((TableNames.MY_FOLLOWING_DATA), map);
         return serverDb.updateOne((TableNames.FOLLOW_DATA), map);

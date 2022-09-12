@@ -1,8 +1,12 @@
 package in.semibit.media.common.scheduler;
 
+import android.os.AsyncTask;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -41,11 +45,11 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
 
     public GenericCompletableFuture<JobResult<U>> postProcess(T item) {
         JobResult<U> result = JobResult.success();
-        return (GenericCompletableFuture) GenericCompletableFuture.completedFuture(result);
+        return (GenericCompletableFuture) GenericCompletableFuture.genericCompletedFuture(result);
     }
 
     public String getJobName() {
-        return getClass().getName();
+        return getClass().getSimpleName();
     }
 
     public GenricDataCallback getLogger() {
@@ -85,17 +89,31 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
         processNextJobItem();
     }
 
+    public void runAsync(Runnable callback, int delayMs) {
+        if (delayMs <= 0) {
+            AsyncTask.execute(callback);
+        } else {
+            Timer timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    callback.run();
+                }
+            }, delayMs);
+        }
+    }
+
     private void processNextJobItem() {
         if (isContinueToNext()) {
-            T curItem = getQueue().remove();
+            final T curItem = getQueue().remove();
             getLogger().onStart("Processing item " + curItem.getId() + " in Job " + getJobName());
             GenricCallback continueJob = () -> {
                 processItem(curItem)
                         .exceptionally(e -> {
                             e.printStackTrace();
-                            return JobResult.failed();
+                            return new JobResult<U>(JobResult.FAILED_STATUS,null);
                         }).thenAccept(result -> {
-
+                    batchResult.put(curItem, result);
                     postProcess(curItem).thenAccept(e -> {
                         processNextJobItem();
                     });
@@ -121,11 +139,4 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
             getLogger().onStart("Paused job " + getJobName() + " since isContinueToNext returned false");
         }
     }
-
-    public static GenericCompletableFuture completedFuture(Object o) {
-        GenericCompletableFuture completableFuture = new GenericCompletableFuture();
-        completableFuture.complete(o);
-        return completableFuture;
-    }
-
 }

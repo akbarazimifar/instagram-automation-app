@@ -42,6 +42,7 @@ import java.util.HashMap;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.contentcreation.BackgroundWorkerService;
 import in.semibit.media.databinding.ActivityMainBinding;
+import in.semibit.media.followerbot.FollowerBotForegroundService;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -419,7 +420,8 @@ public class MainActivity extends AppCompatActivity {
                     binding.heaederText.setText("Logged In");
                     binding.contBottom.setVisibility(View.VISIBLE);
                     binding.watchAd.setOnClickListener(v -> {
-                        startActivity(new Intent(context, FollowerBotActivity.class));
+//                        startActivity(new Intent(context, FollowerBotActivity.class));
+                        startForegroundService(new Intent(context, FollowerBotForegroundService.class));
                     });
                     binding.webview.setVisibility(View.GONE);
                 }

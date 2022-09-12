@@ -1,5 +1,7 @@
 package in.semibit.media.followerbot;
 
+import com.semibit.ezandroidutils.EzUtils;
+
 import in.semibit.media.common.database.IdentifiedModel;
 import in.semibit.media.common.igclientext.post.model.User;
 
@@ -32,6 +34,15 @@ public class FollowUserModel implements IdentifiedModel {
         followUserModel.isUserFollowingMeState = FollowUserState.UNKNOWN;
         followUserModel.followUserState = FollowUserState.TO_BE_FOLLOWED;
 
+        return followUserModel;
+    }
+
+    public static FollowUserModel random(){
+        FollowUserModel followUserModel = new FollowUserModel();
+        followUserModel.id  = "" + EzUtils.randomInt(1000,10000);
+        followUserModel.userName = EzUtils.uid(5);
+        followUserModel.isUserFollowingMeState = FollowUserState.UNKNOWN;
+        followUserModel.followUserState = FollowUserState.UNKNOWN;
         return followUserModel;
     }
 

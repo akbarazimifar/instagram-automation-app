@@ -1,6 +1,5 @@
 package in.semibit.media.followerbot.jobs;
 
-import android.os.Handler;
 import android.widget.TextView;
 
 import androidx.core.util.Pair;
@@ -21,7 +20,6 @@ public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
     Pair<TextView, AdvancedWebView> uiPair;
     DatabaseHelper db;
-    Handler handler = new Handler();
 
     public FollowUsersJob(GenricDataCallback logger) {
         super(logger);
@@ -35,13 +33,11 @@ public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
     @Override
     public GenericCompletableFuture<List<FollowUserModel>> getData() {
-        FollowUserModel followUserModel = new FollowUserModel();
-        followUserModel.id = "A";
-        getLogger().onStart("JOB getData");
+
 
         GenericCompletableFuture dummy = new GenericCompletableFuture();
-        handler.postDelayed(() -> {
-            dummy.complete(Arrays.asList(followUserModel, followUserModel, followUserModel));
+        runAsync(() -> {
+            dummy.complete(Arrays.asList(FollowUserModel.random(), FollowUserModel.random(), FollowUserModel.random()));
         }, 3000);
         return dummy;
     }
@@ -51,8 +47,8 @@ public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
         getLogger().onStart("JOB PROCESS " + item.getId());
 
         GenericCompletableFuture dummy = new GenericCompletableFuture();
-        handler.postDelayed(() -> {
-            dummy.complete("Complete");
+        runAsync(() -> {
+            dummy.complete(new JobResult<>(JobResult.SUCCESS_STATUS,"Complete"));
         }, 3000);
         return dummy;
     }

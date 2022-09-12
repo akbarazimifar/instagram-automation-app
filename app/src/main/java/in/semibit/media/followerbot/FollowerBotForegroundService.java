@@ -4,26 +4,34 @@ import android.content.Intent;
 
 import com.semibit.ezandroidutils.EzUtils;
 
+import java.util.Map;
+
 import in.semibit.media.common.BGService;
+import in.semibit.media.common.scheduler.JobResult;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
 
 public class FollowerBotForegroundService extends BGService {
     FollowUsersJob followUsersJob;
+
     @Override
     public void work(Intent entry) {
 //     FollowerBotOrchestrator.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_START);
         followUsersJob = new FollowUsersJob(s -> {
             EzUtils.log("FollowerBot BatchJob" + s);
             updateNotification(s, true);
-        }){
-
+        }) {
+            @Override
+            public boolean onBatchCompleted(Map<FollowUserModel, JobResult<Boolean>> completedItems) {
+                updateNotification("Batch " + this.getJobName() + " Completed ", false);
+                return super.onBatchCompleted(completedItems);
+            }
         };
         followUsersJob.start();
     }
 
     @Override
     public void stopWork(Intent intent) {
-        if(followUsersJob!=null){
+        if (followUsersJob != null) {
             followUsersJob.stop(true);
         }
     }
