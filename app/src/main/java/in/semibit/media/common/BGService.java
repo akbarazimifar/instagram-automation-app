@@ -33,6 +33,7 @@ public abstract class BGService extends Service {
         if (getActionStopId().equals(intent.getAction())) {
             context.getSystemService(NotificationManager.class).cancel(getNotificationId());
             stopSelf();
+            return super.onStartCommand(intent, flags, startId);
         }
         this.startForeground(intent);
 

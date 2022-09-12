@@ -35,14 +35,14 @@ public class UnFollowerTimerTask extends TimerTask {
             uiLogger.onStart("Stopped scheduler");
             return;
         }
-
         uiLogger.onStart("Scheduled task started");
         boolean canIFollowUsers = followerBotService.canIFollowNextUser(true, uiLogger,null);
         if (canIFollowUsers) {
             followerBotService.getUsersToBeUnFollowed(uiLogger, true);
             followerBotService.startUnFollowingUsers(webViewPair.second, webViewPair.first, uiLogger);
         }
-        if (followerBotService.isRunning()) {
+
+        if (FollowerBotService.ENABLE_TIMER_BASED_SCHEDULE && followerBotService.isRunning()) {
             int nextMins = EzUtils.randomInt(40, 80);
             Instant nextExecInstant = Instant.now().plus(nextMins, ChronoUnit.MINUTES);
             uiLogger.onStart("Next UnFollowerTimerTask execution after " + nextMins + " mins at " +  (ZonedDateTime.ofInstant(nextExecInstant, ZoneOffset.systemDefault())).toString());

@@ -43,7 +43,7 @@ public class FollowerTimerTask extends TimerTask {
             followerBotService.startFollowingUsers(webViewPair.second, webViewPair.first,uiLogger);
         }
 
-        if(followerBotService.isRunning()){
+        if(FollowerBotService.ENABLE_TIMER_BASED_SCHEDULE && followerBotService.isRunning()){
 
             int nextMins = EzUtils.randomInt(40, 80);
             Instant nextExecInstant = Instant.now().plus(nextMins, ChronoUnit.MINUTES);

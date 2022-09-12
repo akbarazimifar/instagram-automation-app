@@ -3,9 +3,13 @@ package in.semibit.media.followerbot;
 import static android.content.Context.WINDOW_SERVICE;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -15,6 +19,7 @@ import android.view.WindowManager;
 import android.widget.TextView;
 
 import androidx.core.util.Pair;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.github.instagram4j.instagram4j.IGClient;
 import com.google.firebase.firestore.Source;
@@ -30,7 +35,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -54,7 +58,6 @@ import in.semibit.media.common.database.WhereClause;
 import in.semibit.media.common.igclientext.FollowersList;
 import in.semibit.media.common.igclientext.followers.FollowerInfoRequest;
 import in.semibit.media.common.igclientext.followers.FollowerInfoResponse;
-import in.semibit.media.common.igclientext.followers.FollowingInfoRequest;
 import in.semibit.media.common.igclientext.likes.LikeInfoRequest;
 import in.semibit.media.common.igclientext.likes.LikeInfoResponse;
 import in.semibit.media.common.igclientext.post.model.User;
@@ -66,43 +69,52 @@ public class FollowerBotService {
 
     public static final int MAX_USERS_TO_BE_FOLLOWED_PER_HOUR = 150 / 24;
     public static final int MAX_USERS_TO_BE_UNFOLLOWED_PER_HOUR = 150 / 24;
+    public static final String ACTION_BOT_START = "ACTION_BOT_START";
+    public static final String ACTION_BOT_STOP = "ACTION_BOT_STOP";
 
-    Activity context;
-    DatabaseHelper serverDb;
-    DatabaseHelper localDb;
-    List<FollowUserModel> userToFollow;
-    public View followWidget;
-    public View unFollowWidget;
-    String tenant;
+    public static boolean ENABLE_TIMER_BASED_SCHEDULE = false;
+    public static boolean TEST_MODE = true;
 
-    Timer followTimer, unFollowTimer;
-    Queue<FollowUserModel> toBeFollowedQueue = new ConcurrentLinkedDeque<>();
-    Queue<FollowUserModel> toBeUnFollowedQueue = new ConcurrentLinkedDeque<>();
-    RateLimiter followSemaphore;
-    RateLimiter unfollowSemaphore;
+    public Activity context;
+    public DatabaseHelper serverDb;
+    public DatabaseHelper localDb;
+    public View followWidgetView;
+    public View unFollowWidgetView;
+    public String tenant;
+
+    public Timer followTimer, unFollowTimer;
+    public Queue<FollowUserModel> toBeFollowedQueue = new ConcurrentLinkedDeque<>();
+    public Queue<FollowUserModel> toBeUnFollowedQueue = new ConcurrentLinkedDeque<>();
+    static RateLimiter followSemaphore;
+    static RateLimiter unfollowSemaphore;
     boolean isRunning = false;
 
+    public FollowerUtil followerUtil;
 
     public FollowerBotService(Activity context) {
         this.context = context;
         serverDb = new DatabaseHelper(Source.SERVER);
         localDb = new DatabaseHelper(Source.CACHE);
         tenant = "semibitmedia";
-
+        followerUtil = new FollowerUtil(this);
         double discreteRate = 3600.0; // hourly rate
         double permitsPerSecond = MAX_USERS_TO_BE_FOLLOWED_PER_HOUR / discreteRate;
 
-        followSemaphore = new SmoothRateLimiter.SmoothBursty(SleepingStopwatch.createFromSystemTimer(), discreteRate);
-        followSemaphore.setRate(permitsPerSecond);
+        if (followSemaphore == null || unfollowSemaphore == null) {
 
-        unfollowSemaphore = new SmoothRateLimiter.SmoothBursty(SleepingStopwatch.createFromSystemTimer(), discreteRate);
-        unfollowSemaphore.setRate(permitsPerSecond);
+            followSemaphore = new SmoothRateLimiter.SmoothBursty(SleepingStopwatch.createFromSystemTimer(), discreteRate);
+            followSemaphore.setRate(permitsPerSecond);
 
-        logger.onStart("Follow Semaphores initialized with " + followSemaphore.getRate() + " permits/seconds");
-        logger.onStart("UnFollow Semaphores initialized with " + unfollowSemaphore.getRate() + " permits/seconds");
+            unfollowSemaphore = new SmoothRateLimiter.SmoothBursty(SleepingStopwatch.createFromSystemTimer(), discreteRate);
+            unfollowSemaphore.setRate(permitsPerSecond);
+
+            logger.onStart("Follow Semaphores initialized with " + followSemaphore.getRate() + " permits/seconds");
+            logger.onStart("UnFollow Semaphores initialized with " + unfollowSemaphore.getRate() + " permits/seconds");
+
+        }
     }
 
-    private IGClient getIgClient() {
+    public IGClient getIgClient() {
         return Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), null);
     }
 
@@ -132,27 +144,39 @@ public class FollowerBotService {
         }
     }
 
+
+    public void softKill(GenricDataCallback loggerFromContext) {
+        try {
+            isRunning = false;
+            cancelFollowTimer();
+            cancelUnFollowTimer();
+            loggerFromContext.onStart("Soft Killed : Paused FollowerBotService");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void kill(GenricDataCallback logger) {
         try {
             isRunning = false;
             cancelFollowTimer();
             cancelUnFollowTimer();
             WindowManager mWindowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
-            if (followWidget != null) {
+            if (followWidgetView != null) {
                 try {
-                    mWindowManager.removeView(followWidget);
+                    mWindowManager.removeView(followWidgetView);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-            if (unFollowWidget != null) {
+            if (unFollowWidgetView != null) {
                 try {
-                    mWindowManager.removeView(unFollowWidget);
+                    mWindowManager.removeView(unFollowWidgetView);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-            logger.onStart("Killed FollowerBotService");
+            logger.onStart("Hard Killed FollowerBotService");
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -164,13 +188,10 @@ public class FollowerBotService {
         cancelFollowTimer();
         cancelUnFollowTimer();
         isRunning = true;
-        GenricCallback onFollowStart = new GenricCallback() {
-            @Override
-            public void onStart() {
-                followTimer = new Timer();
-                TimerTask followerTimerTask = new FollowerTimerTask(FollowerBotService.this, uiLogger, followWebView);
-                followTimer.schedule(followerTimerTask, 0);
-            }
+        GenricCallback onFollowStart = () -> {
+            followTimer = new Timer();
+            TimerTask followerTimerTask = new FollowerTimerTask(FollowerBotService.this, uiLogger, followWebView);
+            followTimer.schedule(followerTimerTask, 0);
         };
 
         GenricCallback onUnFollowStart = () -> {
@@ -183,6 +204,77 @@ public class FollowerBotService {
         onFollowStart.onStart();
         onUnFollowStart.onStart();
 
+    }
+
+    public GenricDataCallback getLoggerFromContext() {
+        if (context != null && context instanceof FollowerBotActivity) {
+            return ((FollowerBotActivity) context).logger;
+        }
+        return logger;
+    }
+
+    private BroadcastReceiver onStartReceive = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            singleStart();
+        }
+    };
+
+    Context broadCastContext;
+    private BroadcastReceiver onStopReceive = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            softKill(getLoggerFromContext());
+        }
+    };
+
+    public void stopListeningToTriggers(){
+        LocalBroadcastManager.getInstance(broadCastContext).unregisterReceiver(onStartReceive);
+        LocalBroadcastManager.getInstance(broadCastContext).unregisterReceiver(onStopReceive);
+
+    }
+
+    public void listenToTriggers(View followWidgetView) {
+        broadCastContext = followWidgetView.getContext();
+        LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStartReceive, new IntentFilter(ACTION_BOT_START));
+        LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStopReceive, new IntentFilter(ACTION_BOT_STOP));
+
+    }
+
+    public static void triggerBroadCast(Context context,String action){
+        Intent intent = new Intent(action);
+        intent.putExtra("message", "This is my message!");
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+    }
+
+    public void singleStart() {
+        if (followWidgetView == null || unFollowWidgetView == null || context == null) {
+            logger.onStart("Fatal error. Bot Windows not initialized.");
+            EzUtils.toast(SemibitMediaApp.getAppContext(), "Fatal : Bot Windows not initialized.");
+            return;
+        }
+
+        Pair<TextView, AdvancedWebView> followWebView = Pair.create(followWidgetView.findViewById(R.id.label), followWidgetView.findViewById(R.id.webView));
+        Pair<TextView, AdvancedWebView> unFollowWebView = Pair.create(unFollowWidgetView.findViewById(R.id.label), unFollowWidgetView.findViewById(R.id.webView));
+        cancelFollowTimer();
+        cancelUnFollowTimer();
+        isRunning = true;
+        GenricDataCallback uiLogger = getLoggerFromContext();
+
+        GenricCallback onFollowStart = () -> {
+            followTimer = new Timer();
+            TimerTask followerTimerTask = new FollowerTimerTask(FollowerBotService.this, uiLogger, followWebView);
+            followTimer.schedule(followerTimerTask, 0);
+        };
+
+        GenricCallback onUnFollowStart = () -> {
+            unFollowTimer = new Timer();
+            TimerTask unFollowerTimerTask = new UnFollowerTimerTask(FollowerBotService.this, uiLogger, unFollowWebView);
+            unFollowTimer.schedule(unFollowerTimerTask, 0);
+        };
+
+        onFollowStart.onStart();
+        onUnFollowStart.onStart();
     }
 
     public GenericCompletableFuture<List<FollowUserModel>> getUserByFollowState(String table, FollowUserState followUserState) {
@@ -198,14 +290,14 @@ public class FollowerBotService {
     public View setAndGetView(View view, String viewType) {
         if (viewType.equals("follow")) {
             if (view != null) {
-                followWidget = view;
+                followWidgetView = view;
             }
-            return followWidget;
+            return followWidgetView;
         } else if (viewType.equals("unfollow")) {
             if (view != null) {
-                unFollowWidget = view;
+                unFollowWidgetView = view;
             }
-            return unFollowWidget;
+            return unFollowWidgetView;
         }
         return null;
     }
@@ -310,7 +402,7 @@ public class FollowerBotService {
     AtomicInteger unfollowHourlySlots = new AtomicInteger(0);
 
     public boolean canIFollowNextUser(boolean isDoUnfollow, FollowUserModel user) {
-        return canIFollowNextUser(isDoUnfollow,logger, user);
+        return canIFollowNextUser(isDoUnfollow, logger, user);
     }
 
     public boolean canIFollowNextUser(boolean isDoUnfollow, GenricDataCallback logger, FollowUserModel user) {
@@ -342,7 +434,7 @@ public class FollowerBotService {
 
     ////////////// FOLLOW /////////////////////////
     public FollowUserModel getNextUserToFollow() {
-        if(toBeFollowedQueue.isEmpty()){
+        if (toBeFollowedQueue.isEmpty()) {
             return null;
         }
         return toBeFollowedQueue.remove();
@@ -354,6 +446,10 @@ public class FollowerBotService {
         Instant unFollowOn = Instant.now().plus(2, ChronoUnit.DAYS);
         userModel.waitTillFollowBackDate = unFollowOn.toEpochMilli();
         logger.onStart("Gonna Unfollow " + userModel.userName + " after " + (ZonedDateTime.ofInstant(unFollowOn, ZoneOffset.systemDefault())).toString());
+
+        if(TEST_MODE){
+            return CompletableFuture.completedFuture(null);
+        }
         return serverDb.save((TableNames.FOLLOW_DATA), userModel);
     }
 
@@ -368,7 +464,7 @@ public class FollowerBotService {
                     e.printStackTrace();
                 }
             });
-            context.runOnUiThread(() -> {
+            webView.post(() -> {
                 followSingleUser(followerBot, false, getNextUserToFollow(), webView, context, uiLogger);
             });
         });
@@ -378,17 +474,18 @@ public class FollowerBotService {
         String action = isDoUnfollow ? "Unfollow" : "Follow";
         if (user == null || !canIFollowNextUser(isDoUnfollow, user) || !isRunning()) {
             uiLogger.onStart("Paused " + action + "ing users");
+            softKill(uiLogger);
             return;
         }
-        GenricCallback nextUserCb = ()->{
+        GenricCallback nextUserCb = () -> {
             FollowUserModel nextUser = isDoUnfollow ? getNextUserUnToFollow() : getNextUserToFollow();
             followSingleUser(followerBot, isDoUnfollow, nextUser, webView, context, uiLogger);
         };
         uiLogger.onStart("Trying to " + action + " " + user.userName);
         followerBot.followUnfollow(user.userName, isDoUnfollow, webView, context, s -> {
             Log.e("FollowerBot", "Follow Completed");
-            if(s.contains("unabletocomplete")){
-                uiLogger.onStart("Error connecting to "+user.userName+". Timeout or some other issue");
+            if (s.contains("unabletocomplete")) {
+                uiLogger.onStart("Error connecting to " + user.userName + ". Timeout or some other issue");
                 nextUserCb.onStart();
                 return;
             }
@@ -420,6 +517,10 @@ public class FollowerBotService {
         map.put("followUserState", FollowUserState.UNFOLLOWED);
         map.put("id", userModel.getId());
         map.put("unfollowDate", System.currentTimeMillis());
+        if (TEST_MODE) {
+            logger.onStart("TEST MODE : skip setUserAsUnFollowed");
+            return CompletableFuture.completedFuture(null);
+        }
         serverDb.updateOne((TableNames.MY_FOLLOWING_DATA), map);
         return serverDb.updateOne((TableNames.FOLLOW_DATA), map);
     }
@@ -431,7 +532,7 @@ public class FollowerBotService {
         return toBeUnFollowedQueue.remove();
     }
 
-    public void getUsersToBeUnFollowed(GenricDataCallback uiLogger, boolean fromFirebase) {
+    public  void getUsersToBeUnFollowed(GenricDataCallback uiLogger, boolean fromFirebase) {
         if (toBeUnFollowedQueue.size() > 10) {
             logger.onStart("Skip update queue request since queue is full " + toBeFollowedQueue.size());
             return;
@@ -481,12 +582,11 @@ public class FollowerBotService {
                     return;
                 }
                 GenericCompletableFuture<List<FollowUserModel>> usersFollowingMeFuture =
-                        syncConnectionsForUserToFirebase(context.getString(R.string.username),
-                                false, (onDone) -> {
-                                }, logger);
+                        followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username),
+                                false, (onDone) -> {}, logger);
                 usersFollowingMeFuture.thenAccept(usersFollowingMe -> {
                     GenericCompletableFuture<List<FollowUserModel>> usersIAmFollowingFuture =
-                            syncConnectionsForUserToFirebase(context.getString(R.string.username),
+                            followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username),
                                     true, (onDone) -> {
                                     }, logger);
                     usersIAmFollowingFuture.thenAccept(usersIAmFollowing -> {
@@ -522,7 +622,7 @@ public class FollowerBotService {
                     e.printStackTrace();
                 }
             });
-            context.runOnUiThread(() -> {
+            webView.post(() -> {
                 followSingleUser(followerBot, true, getNextUserUnToFollow(), webView, context, uiLogger);
             });
         });
@@ -570,153 +670,6 @@ public class FollowerBotService {
 
 
         });
-    }
-
-    // DONT USE THIS FOR MARKING FOLLOWERS
-    // because of this login
-    /*
-                            .peek(usr -> {
-                            if (isFollowingRequest) {
-                                usr.isUserFollowingMeState = FollowUserState.UNKNOWN;
-                                usr.followUserState = FollowUserState.FOLLOWED;
-                            } else {
-                                usr.isUserFollowingMeState = FollowUserState.FOLLOWED;
-                                usr.followUserState = FollowUserState.UNKNOWN;
-                            }
-                        })
-     */
-    public GenericCompletableFuture<List<FollowUserModel>> syncConnectionsForUserToFirebase(String userName, boolean isIncomingConnection, GenricDataCallback cb, GenricDataCallback onUILog) {
-
-        GenericCompletableFuture<List<FollowUserModel>> usersResultFuture = new GenericCompletableFuture<>();
-        AsyncTask.execute(() -> {
-            try {
-                IGClient client = getIgClient();
-                String connections = isIncomingConnection ? "Followings" : "Followers";
-                onUILog.onStart("Syncing " + connections + " from IG");
-
-                com.github.instagram4j.instagram4j.models.user.User user = client.getActions().users().findByUsername(userName).get().getUser();
-                Long pk = user.getPk();
-                List<User> users = new ArrayList<>();
-                String nextMaxId = "";
-                boolean hasMoreFollowers = true;
-
-                while (hasMoreFollowers && nextMaxId != null) {
-
-                    CompletableFuture<FollowerInfoResponse> completableFuture =
-                            (isIncomingConnection ? new FollowingInfoRequest(String.valueOf(pk), 100, nextMaxId)
-                                    : new FollowerInfoRequest(String.valueOf(pk), 100, nextMaxId)).execute(client);
-                    FollowerInfoResponse followerInfoResponse = completableFuture.get();
-                    if (followerInfoResponse.getFollowerModel() == null) {
-                        cb.onStart("error . no followers found. is this profile public ?");
-                        return;
-                    }
-                    hasMoreFollowers = followerInfoResponse.getFollowerModel().getBigList();
-                    nextMaxId = followerInfoResponse.getFollowerModel().getNextMaxId();
-
-                    users.addAll(followerInfoResponse.getFollowers());
-                    onUILog.onStart("Retrieved new " + connections + " in batch = " + users.size());
-                    Log.d("FollowerBot", "Total " + connections + " Size = " + users.size());
-                }
-                onUILog.onStart("Total " + connections + " retrieved " + users.size());
-
-                List<FollowUserModel> newUsers = users.stream()
-                        .map(FollowUserModel::fromUserToBeFollowed)
-                        .peek(usr -> {
-                            if (isIncomingConnection) {
-                                usr.isUserFollowingMeState = FollowUserState.UNKNOWN;
-                                usr.followUserState = FollowUserState.FOLLOWED;
-                            } else {
-                                usr.isUserFollowingMeState = FollowUserState.FOLLOWED;
-                                usr.followUserState = FollowUserState.UNKNOWN;
-                            }
-                        })
-                        .collect(Collectors.toList());
-
-                GenricCallback continueToSaveCB = () -> {
-                    GenericCompletableFuture<Void> onSave = serverDb.save(
-                            isIncomingConnection ? TableNames.MY_FOLLOWING_DATA : TableNames.MY_FOLLOWERS_DATA
-                            , new ArrayList<>(newUsers));
-                    onSave.thenAccept(v -> {
-                        usersResultFuture.complete(newUsers);
-                        getUsersToBeUnFollowed(onUILog, true);
-                        onUILog.onStart("Completed syncing IG " + connections + " " + newUsers.size());
-                    });
-                };
-
-                // In case of updating followings
-                // we need to make sure we update the grace period
-                if (isIncomingConnection) {
-
-                    CompletableFuture<List<FollowUserModel>> batchReadAll = new CompletableFuture<>();
-                    List<List<FollowUserModel>> batches = FollowerUtil.chopIntoParts(newUsers, newUsers.size() / 9);
-                    List<FollowUserModel> userListIntersectionFollowedAutomatically = new ArrayList<>();
-                    AtomicInteger completedBatches = new AtomicInteger(0);
-
-
-                    for (final List<FollowUserModel> singleBatch : batches) {
-                        List<WhereClause> conditions = new ArrayList<>();
-                        List<String> actualInstagramIds = singleBatch.stream().map(FollowUserModel::getId).collect(Collectors.toList());
-                        conditions.add(new WhereClause("id", GenericOperator.IN, actualInstagramIds));
-                        conditions.add(new WhereClause("tenant", GenericOperator.EQUAL, SemibitMediaApp.CURRENT_TENANT));
-                        serverDb.query(TableNames.FOLLOW_DATA, conditions, FollowUserModel.class)
-                                .exceptionally(e -> {
-                                    e.printStackTrace();
-                                    onUILog.onStart("Error in sync" + e.getMessage());
-                                    return new ArrayList<>();
-                                })
-                                .thenAccept(chunk -> {
-
-                                    userListIntersectionFollowedAutomatically.addAll(chunk);
-                                    onUILog.onStart("Retrieved chunk " + chunk.size() + " (" + (completedBatches.incrementAndGet()) + "/" + batches.size() + ") from input of size " + singleBatch.size());
-                                    if (completedBatches.get() == batches.size()) {
-                                        batchReadAll.complete(userListIntersectionFollowedAutomatically);
-                                    }
-
-                                });
-                    }
-
-                    batchReadAll.thenAccept(all -> {
-                        completedBatches.set(0);
-                        newUsers.forEach(newUser -> {
-                            Optional<FollowUserModel> fromAuto =
-                                    userListIntersectionFollowedAutomatically
-                                            .stream().filter(au -> au.getId().equals(newUser.getId()))
-                                            .findAny();
-                            if (fromAuto.isPresent()) {
-                                completedBatches.incrementAndGet();
-                                newUser.followUserState = fromAuto.get().followUserState;
-                                newUser.waitTillFollowBackDate = fromAuto.get().waitTillFollowBackDate;
-                                newUser.followDate = fromAuto.get().followDate;
-                            }
-                        });
-                        onUILog.onStart("Completed correlating actual and automated following. Users accepted my follow request = " + completedBatches.get());
-                        continueToSaveCB.onStart();
-                    });
-
-                } else {
-                    continueToSaveCB.onStart();
-                }
-
-                if (isIncomingConnection) {
-                    serverDb.save(TableNames.COUNTER, new FollowerCounter(TableNames.withTablePrefix("following_count"), users.size()));
-                } else {
-                    serverDb.save(TableNames.COUNTER, new FollowerCounter(TableNames.withTablePrefix("follower_count"), users.size()));
-                }
-
-                if (users.isEmpty()) {
-                    cb.onStart("error . empty response");
-                } else {
-                    cb.onStart("done saved " + users.size());
-                }
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                cb.onStart("error " + e.getMessage());
-                onUILog.onStart(e.getMessage());
-                usersResultFuture.completeExceptionally(e);
-            }
-        });
-        return usersResultFuture;
     }
 
     public void markUsersToFollowFromFollowers(String userName, GenricDataCallback
@@ -792,6 +745,10 @@ public class FollowerBotService {
     public void saveUsersToBeFollowed(List<User> users, List<FollowersList>
             followeIdList, GenricDataCallback onUILog) {
 
+        if (TEST_MODE) {
+            logger.onStart("TEST MODE : skip saveUsersToBeFollowed");
+            return;
+        }
 
         List<FollowUserModel> newUsers = users.stream()
                 .map(FollowUserModel::fromUserToBeFollowed).collect(Collectors.toList());

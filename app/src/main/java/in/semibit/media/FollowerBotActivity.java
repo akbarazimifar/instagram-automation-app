@@ -20,8 +20,6 @@ import com.semibit.ezandroidutils.EzUtils;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.databinding.ActivityFollowerBotBinding;
-import in.semibit.media.followerbot.FollowUserModel;
-import in.semibit.media.followerbot.FollowUserState;
 import in.semibit.media.followerbot.FollowerBotService;
 
 public class FollowerBotActivity extends AppCompatActivity {
@@ -29,7 +27,7 @@ public class FollowerBotActivity extends AppCompatActivity {
     ActivityFollowerBotBinding binding;
     Activity context;
 
-    GenricDataCallback logger = new GenricDataCallback() {
+    public GenricDataCallback logger = new GenricDataCallback() {
         @Override
         public void onStart(String s) {
             context.runOnUiThread(() -> {
@@ -60,14 +58,14 @@ public class FollowerBotActivity extends AppCompatActivity {
         });
         binding.refresh.setOnClickListener(v -> {
             binding.refresh.setEnabled(false);
-            followerBotService.syncConnectionsForUserToFirebase(context.getString(R.string.username), false, new GenricDataCallback() {
+            followerBotService.followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username), false, new GenricDataCallback() {
                 @Override
                 public void onStart(String s) {
                     context.runOnUiThread(() -> binding.refresh.setEnabled(true));
                 }
             }, logger);
 
-            followerBotService.syncConnectionsForUserToFirebase(context.getString(R.string.username), true, new GenricDataCallback() {
+            followerBotService.followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username), true, new GenricDataCallback() {
                 @Override
                 public void onStart(String s) {
                     context.runOnUiThread(() -> binding.refresh.setEnabled(true));
@@ -87,25 +85,24 @@ public class FollowerBotActivity extends AppCompatActivity {
         binding.showHideBot.setOnClickListener((c) -> {
             if (followerBotService != null) {
                 try {
-                    if (followerBotService.followWidget != null) {
-                        int visiv = followerBotService.followWidget.findViewById(R.id.webView).getVisibility();
+                    if (followerBotService.followWidgetView != null) {
+                        int visiv = followerBotService.followWidgetView.findViewById(R.id.webView).getVisibility();
                         if (visiv == View.GONE) {
                             binding.showHideBot.setText("HIDE BOT");
-                            followerBotService.followWidget.findViewById(R.id.webView).setVisibility(View.VISIBLE);
-                            followerBotService.unFollowWidget.findViewById(R.id.webView).setVisibility(View.VISIBLE);
-                        }
-                        else {
+                            followerBotService.followWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
+                            if (!followerBotService.toBeUnFollowedQueue.isEmpty())
+                                followerBotService.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
+                        } else {
                             binding.showHideBot.setText("SHOW BOT");
-                            followerBotService.followWidget.findViewById(R.id.webView).setVisibility(View.GONE);
-                            followerBotService.unFollowWidget.findViewById(R.id.webView).setVisibility(View.GONE);
+                            followerBotService.followWidgetView.findViewById(R.id.webView).setVisibility(View.GONE);
+                            followerBotService.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.GONE);
                         }
-                    }
-                    else {
+                    } else {
                         logger.onStart("Bot windows not initialized yet");
                     }
                 } catch (Exception exception) {
                     exception.printStackTrace();
-                    logger.onStart("Error showing windows "+exception.getMessage());
+                    logger.onStart("Error showing windows " + exception.getMessage());
                 }
             }
         });
@@ -120,10 +117,18 @@ public class FollowerBotActivity extends AppCompatActivity {
 
                     followWebView = followerBotService.generateAlert(context, "follow");
                     unfollowWebView = followerBotService.generateAlert(context, "unfollow");
+                    followerBotService.listenToTriggers(followerBotService.followWidgetView);
                     followerBotService.getUsersToBeFollowed(logger);
-                    followerBotService.getUsersToBeUnFollowed(logger,true);
+                    followerBotService.getUsersToBeUnFollowed(logger, true);
 
-                    followerBotService.cronStart(followWebView, unfollowWebView, logger);
+                    if (FollowerBotService.ENABLE_TIMER_BASED_SCHEDULE)
+                    {
+                        followerBotService.cronStart(followWebView, unfollowWebView, logger);
+                    }
+                    else
+                    {
+                        FollowerBotService.triggerBroadCast(this,FollowerBotService.ACTION_BOT_START);
+                    }
                 } else
                     followerBotService.kill(logger);
                 updateButtonState();
@@ -224,6 +229,12 @@ public class FollowerBotActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         updateButtonState();
+    }
+
+    @Override
+    protected void onDestroy() {
+        followerBotService.stopListeningToTriggers();
+        super.onDestroy();
     }
 
     private void updateButtonState() {

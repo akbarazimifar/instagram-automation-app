@@ -2,6 +2,7 @@ package in.semibit.media.followerbot;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.webkit.ConsoleMessage;
@@ -64,7 +65,7 @@ public class FollowerBot {
         });
     }
 
-    public void followUnfollow(String igUser,boolean isDoUnfollow, AdvancedWebView webview, Activity context, GenricDataCallback onFollowCompleted) {
+    public void followUnfollow(String igUser, boolean isDoUnfollow, AdvancedWebView webview, Activity context, GenricDataCallback onFollowCompleted) {
 
         String url = "https://www.instagram.com/" + igUser + "/";
         // initializing following of user
@@ -75,14 +76,18 @@ public class FollowerBot {
             @Override
             public void onStart(String s) {
                 if (s.contains(url)) {
-                    pressFollowButton(igUser,isDoUnfollow, webview, onFollowCompleted);
+                    if (FollowerBotService.TEST_MODE) {
+                        new Handler().postDelayed(() -> onFollowCompleted.onStart("done skipped"), 2000);
+                        return;
+                    }
+                    pressFollowButton(igUser, isDoUnfollow, webview, onFollowCompleted);
                 }
             }
         };
         webview.loadUrl(url);
     }
 
-    public void pressFollowButton(String username,boolean isDoUnfollow, AdvancedWebView webview, GenricDataCallback onFollowCompleted) {
+    public void pressFollowButton(String username, boolean isDoUnfollow, AdvancedWebView webview, GenricDataCallback onFollowCompleted) {
         WebView.setWebContentsDebuggingEnabled(true);
 
         logger.onStart("WAT FLW " + username);
@@ -109,7 +114,7 @@ public class FollowerBot {
                 "}" +
                 "}";
 
-        if(isDoUnfollow){
+        if (isDoUnfollow) {
             clickOnFollow = "\n" +
                     "function find() {\n" +
                     "  let btns = Array.from(document.querySelectorAll('button')).find(el => {\n" +
