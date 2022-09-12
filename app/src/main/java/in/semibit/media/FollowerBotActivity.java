@@ -28,7 +28,7 @@ import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.databinding.ActivityFollowerBotBinding;
 import in.semibit.media.followerbot.FollowerBotForegroundService;
-import in.semibit.media.followerbot.FollowerBotOrchestrator;
+import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
 import in.semibit.media.followerbot.FollowerUtil;
 import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
@@ -146,8 +146,8 @@ public class FollowerBotActivity extends AppCompatActivity {
                     intent.putExtra("jobSchedules", new Gson().toJson(jobs));
                     startForegroundService(intent);
 
-                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_START,FollowUsersJob.JOBNAME);
-                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_START,UnFollowUsersJob.JOBNAME);
+                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowJobOrchestratorV2.ACTION_BOT_START,FollowUsersJob.JOBNAME);
+                    FollowJobOrchestratorV2.triggerBroadCast(this, FollowJobOrchestratorV2.ACTION_BOT_START,UnFollowUsersJob.JOBNAME);
 
                 } else
                     followerBotOrchestrator.killAll(null);

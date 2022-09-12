@@ -44,8 +44,7 @@ import lombok.NonNull;
 
 public class FollowJobOrchestratorV2 {
 
-    private static FollowJobOrchestratorV2 followJobOrchestratorV2;
-
+    public static final boolean TEST_MODE = false;
     public static final String ACTION_BOT_START = "ACTION_BOT_START";
     public static final String ACTION_BOT_STOP = "ACTION_BOT_STOP";
 

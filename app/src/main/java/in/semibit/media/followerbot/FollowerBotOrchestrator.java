@@ -2,6 +2,8 @@ package in.semibit.media.followerbot;
 
 import static android.content.Context.WINDOW_SERVICE;
 
+import static in.semibit.media.followerbot.Constants.MAX_USERS_TO_BE_FOLLOWED_PER_HOUR;
+
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -67,13 +69,7 @@ import in.semibit.media.followerbot.jobs.FollowJobOrchestratorV2;
 
 public class FollowerBotOrchestrator {
 
-    public static final int MAX_USERS_TO_BE_FOLLOWED_PER_HOUR = 150 / 24;
-    public static final int MAX_USERS_TO_BE_UNFOLLOWED_PER_HOUR = 150 / 24;
-    public static final String ACTION_BOT_START = "ACTION_BOT_START";
-    public static final String ACTION_BOT_STOP = "ACTION_BOT_STOP";
-
     public static boolean ENABLE_TIMER_BASED_SCHEDULE = false;
-    public static boolean TEST_MODE = true;
 
     public Activity context;
     public DatabaseHelper serverDb;
@@ -235,8 +231,8 @@ public class FollowerBotOrchestrator {
 
     public void listenToTriggers(View followWidgetView) {
         broadCastContext = followWidgetView.getContext();
-        LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStartReceive, new IntentFilter(ACTION_BOT_START));
-        LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStopReceive, new IntentFilter(ACTION_BOT_STOP));
+        LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStartReceive, new IntentFilter(FollowJobOrchestratorV2.ACTION_BOT_START));
+        LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStopReceive, new IntentFilter(FollowJobOrchestratorV2.ACTION_BOT_STOP));
 
     }
 
@@ -409,7 +405,7 @@ public class FollowerBotOrchestrator {
         RateLimiter semaphore = isDoUnfollow ? unfollowSemaphore : followSemaphore;
         Queue<FollowUserModel> queue = isDoUnfollow ? toBeUnFollowedQueue : toBeFollowedQueue;
         AtomicInteger slots = isDoUnfollow ? unfollowHourlySlots : followHourlySlots;
-        int maxRate = isDoUnfollow ? MAX_USERS_TO_BE_UNFOLLOWED_PER_HOUR : MAX_USERS_TO_BE_FOLLOWED_PER_HOUR;
+        int maxRate = isDoUnfollow ? Constants.MAX_USERS_TO_BE_UNFOLLOWED_PER_HOUR : MAX_USERS_TO_BE_FOLLOWED_PER_HOUR;
 
         boolean canIFollow = false;
         if (slots.get() > 0) {

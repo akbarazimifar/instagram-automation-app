@@ -46,7 +46,7 @@ public class FollowerBotForegroundService extends BGService {
     }
 
     public Instant triggerExecutionOfJob(String jobName) {
-        FollowJobOrchestratorV2.triggerBroadCast(context, FollowerBotOrchestrator.ACTION_BOT_START,jobName);
+        FollowJobOrchestratorV2.triggerBroadCast(context, FollowJobOrchestratorV2.ACTION_BOT_START,jobName);
 
         if (jobName.equals(FollowUsersJob.JOBNAME)) {
             return FollowUsersJob.nextScheduledTime(Instant.now());
