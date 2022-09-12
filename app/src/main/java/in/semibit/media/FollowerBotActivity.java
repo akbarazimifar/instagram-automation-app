@@ -20,7 +20,7 @@ import com.semibit.ezandroidutils.EzUtils;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.databinding.ActivityFollowerBotBinding;
-import in.semibit.media.followerbot.FollowerBotService;
+import in.semibit.media.followerbot.FollowerBotOrchestrator;
 
 public class FollowerBotActivity extends AppCompatActivity {
 
@@ -58,14 +58,14 @@ public class FollowerBotActivity extends AppCompatActivity {
         });
         binding.refresh.setOnClickListener(v -> {
             binding.refresh.setEnabled(false);
-            followerBotService.followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username), false, new GenricDataCallback() {
+            followerBotOrchestrator.followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username), false, new GenricDataCallback() {
                 @Override
                 public void onStart(String s) {
                     context.runOnUiThread(() -> binding.refresh.setEnabled(true));
                 }
             }, logger);
 
-            followerBotService.followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username), true, new GenricDataCallback() {
+            followerBotOrchestrator.followerUtil.syncConnectionsForUserToFirebase(context.getString(R.string.username), true, new GenricDataCallback() {
                 @Override
                 public void onStart(String s) {
                     context.runOnUiThread(() -> binding.refresh.setEnabled(true));
@@ -83,19 +83,19 @@ public class FollowerBotActivity extends AppCompatActivity {
         });
 
         binding.showHideBot.setOnClickListener((c) -> {
-            if (followerBotService != null) {
+            if (followerBotOrchestrator != null) {
                 try {
-                    if (followerBotService.followWidgetView != null) {
-                        int visiv = followerBotService.followWidgetView.findViewById(R.id.webView).getVisibility();
+                    if (followerBotOrchestrator.followWidgetView != null) {
+                        int visiv = followerBotOrchestrator.followWidgetView.findViewById(R.id.webView).getVisibility();
                         if (visiv == View.GONE) {
                             binding.showHideBot.setText("HIDE BOT");
-                            followerBotService.followWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
-                            if (!followerBotService.toBeUnFollowedQueue.isEmpty())
-                                followerBotService.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
+                            followerBotOrchestrator.followWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
+                            if (!followerBotOrchestrator.toBeUnFollowedQueue.isEmpty())
+                                followerBotOrchestrator.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
                         } else {
                             binding.showHideBot.setText("SHOW BOT");
-                            followerBotService.followWidgetView.findViewById(R.id.webView).setVisibility(View.GONE);
-                            followerBotService.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.GONE);
+                            followerBotOrchestrator.followWidgetView.findViewById(R.id.webView).setVisibility(View.GONE);
+                            followerBotOrchestrator.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.GONE);
                         }
                     } else {
                         logger.onStart("Bot windows not initialized yet");
@@ -112,25 +112,25 @@ public class FollowerBotActivity extends AppCompatActivity {
             return true;
         });
         binding.startBot.setOnClickListener(c -> {
-            if (followerBotService != null) {
-                if (!followerBotService.isRunning()) {
+            if (followerBotOrchestrator != null) {
+                if (!followerBotOrchestrator.isRunning()) {
 
-                    followWebView = followerBotService.generateAlert(context, "follow");
-                    unfollowWebView = followerBotService.generateAlert(context, "unfollow");
-                    followerBotService.listenToTriggers(followerBotService.followWidgetView);
-                    followerBotService.getUsersToBeFollowed(logger);
-                    followerBotService.getUsersToBeUnFollowed(logger, true);
+                    followWebView = followerBotOrchestrator.generateAlert(context, "follow");
+                    unfollowWebView = followerBotOrchestrator.generateAlert(context, "unfollow");
+                    followerBotOrchestrator.listenToTriggers(followerBotOrchestrator.followWidgetView);
+                    followerBotOrchestrator.getUsersToBeFollowed(logger);
+                    followerBotOrchestrator.getUsersToBeUnFollowed(logger, true);
 
-                    if (FollowerBotService.ENABLE_TIMER_BASED_SCHEDULE)
+                    if (FollowerBotOrchestrator.ENABLE_TIMER_BASED_SCHEDULE)
                     {
-                        followerBotService.cronStart(followWebView, unfollowWebView, logger);
+                        followerBotOrchestrator.cronStart(followWebView, unfollowWebView, logger);
                     }
                     else
                     {
-                        FollowerBotService.triggerBroadCast(this,FollowerBotService.ACTION_BOT_START);
+                        FollowerBotOrchestrator.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_START);
                     }
                 } else
-                    followerBotService.kill(logger);
+                    followerBotOrchestrator.kill(logger);
                 updateButtonState();
             } else {
                 logger.onStart("FollowerBotService Not Initialized yet");
@@ -138,7 +138,7 @@ public class FollowerBotActivity extends AppCompatActivity {
         });
 
         binding.searchButton.setOnClickListener(c -> {
-            if (followerBotService != null) {
+            if (followerBotOrchestrator != null) {
 
                 if (binding.urlOrUsername.getText() == null || Strings.isEmptyOrWhitespace(binding.urlOrUsername.getText().toString())) {
                     binding.conturlOrUsername.setError("Please enter post url");
@@ -163,7 +163,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                 if ((urlOrUname.contains("/p/") || urlOrUname.contains("/reel/")) && urlOrUname.contains("instagram.com")) {
                     if (split.length > 2) {
                         String shortCode = split[2];
-                        followerBotService.markUsersToFollowFromPost(shortCode, new GenricDataCallback() {
+                        followerBotOrchestrator.markUsersToFollowFromPost(shortCode, new GenricDataCallback() {
                             @Override
                             public void onStart(String s) {
 
@@ -177,7 +177,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                     if (urlOrUname.contains("instagram.com") && split.length > 1) {
                         userName = split[1];
                     }
-                    followerBotService.markUsersToFollowFromFollowers(userName, new GenricDataCallback() {
+                    followerBotOrchestrator.markUsersToFollowFromFollowers(userName, new GenricDataCallback() {
                         @Override
                         public void onStart(String s) {
 
@@ -199,17 +199,17 @@ public class FollowerBotActivity extends AppCompatActivity {
 
     Pair<TextView, AdvancedWebView> followWebView;
     Pair<TextView, AdvancedWebView> unfollowWebView;
-    static FollowerBotService followerBotService;
+    static FollowerBotOrchestrator followerBotOrchestrator;
 
     public void initBot() {
 
-        if (followerBotService == null) {
+        if (followerBotOrchestrator == null) {
             logger.onStart("Initialized FollowerBotService");
-            followerBotService = new FollowerBotService(context);
+            followerBotOrchestrator = new FollowerBotOrchestrator(context);
 //            followWebView = followerBotService.generateAlert(context, "follow");
 //            unfollowWebView = followerBotService.generateAlert(context, "unfollow");
-            followerBotService.getUsersToBeFollowed(logger);
-            followerBotService.getUsersToBeUnFollowed(logger, true);
+            followerBotOrchestrator.getUsersToBeFollowed(logger);
+            followerBotOrchestrator.getUsersToBeUnFollowed(logger, true);
 
         }
     }
@@ -233,13 +233,13 @@ public class FollowerBotActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        followerBotService.stopListeningToTriggers();
+        followerBotOrchestrator.stopListeningToTriggers();
         super.onDestroy();
     }
 
     private void updateButtonState() {
         try {
-            if (followerBotService.isRunning()) {
+            if (followerBotOrchestrator.isRunning()) {
                 binding.startBot.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.material_red_500));
                 binding.startBot.setText("STOP");
             } else {

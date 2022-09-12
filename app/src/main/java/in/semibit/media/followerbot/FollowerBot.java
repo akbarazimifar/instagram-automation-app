@@ -76,7 +76,7 @@ public class FollowerBot {
             @Override
             public void onStart(String s) {
                 if (s.contains(url)) {
-                    if (FollowerBotService.TEST_MODE) {
+                    if (FollowerBotOrchestrator.TEST_MODE) {
                         new Handler().postDelayed(() -> onFollowCompleted.onStart("done skipped"), 2000);
                         return;
                     }

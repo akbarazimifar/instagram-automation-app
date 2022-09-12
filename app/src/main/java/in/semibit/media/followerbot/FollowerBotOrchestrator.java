@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -65,7 +64,7 @@ import in.semibit.media.common.ratelimiter.RateLimiter;
 import in.semibit.media.common.ratelimiter.RateLimiter.SleepingStopwatch;
 import in.semibit.media.common.ratelimiter.SmoothRateLimiter;
 
-public class FollowerBotService {
+public class FollowerBotOrchestrator {
 
     public static final int MAX_USERS_TO_BE_FOLLOWED_PER_HOUR = 150 / 24;
     public static final int MAX_USERS_TO_BE_UNFOLLOWED_PER_HOUR = 150 / 24;
@@ -91,7 +90,7 @@ public class FollowerBotService {
 
     public FollowerUtil followerUtil;
 
-    public FollowerBotService(Activity context) {
+    public FollowerBotOrchestrator(Activity context) {
         this.context = context;
         serverDb = new DatabaseHelper(Source.SERVER);
         localDb = new DatabaseHelper(Source.CACHE);
@@ -190,13 +189,13 @@ public class FollowerBotService {
         isRunning = true;
         GenricCallback onFollowStart = () -> {
             followTimer = new Timer();
-            TimerTask followerTimerTask = new FollowerTimerTask(FollowerBotService.this, uiLogger, followWebView);
+            TimerTask followerTimerTask = new FollowerTimerTask(FollowerBotOrchestrator.this, uiLogger, followWebView);
             followTimer.schedule(followerTimerTask, 0);
         };
 
         GenricCallback onUnFollowStart = () -> {
             unFollowTimer = new Timer();
-            TimerTask unFollowerTimerTask = new UnFollowerTimerTask(FollowerBotService.this, uiLogger, unFollowWebView);
+            TimerTask unFollowerTimerTask = new UnFollowerTimerTask(FollowerBotOrchestrator.this, uiLogger, unFollowWebView);
             unFollowTimer.schedule(unFollowerTimerTask, 0);
         };
 
@@ -263,13 +262,13 @@ public class FollowerBotService {
 
         GenricCallback onFollowStart = () -> {
             followTimer = new Timer();
-            TimerTask followerTimerTask = new FollowerTimerTask(FollowerBotService.this, uiLogger, followWebView);
+            TimerTask followerTimerTask = new FollowerTimerTask(FollowerBotOrchestrator.this, uiLogger, followWebView);
             followTimer.schedule(followerTimerTask, 0);
         };
 
         GenricCallback onUnFollowStart = () -> {
             unFollowTimer = new Timer();
-            TimerTask unFollowerTimerTask = new UnFollowerTimerTask(FollowerBotService.this, uiLogger, unFollowWebView);
+            TimerTask unFollowerTimerTask = new UnFollowerTimerTask(FollowerBotOrchestrator.this, uiLogger, unFollowWebView);
             unFollowTimer.schedule(unFollowerTimerTask, 0);
         };
 

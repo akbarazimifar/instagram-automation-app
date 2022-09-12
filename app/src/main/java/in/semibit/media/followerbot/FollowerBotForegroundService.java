@@ -7,7 +7,7 @@ import in.semibit.media.common.BGService;
 public class FollowerBotForegroundService extends BGService {
     @Override
     public void work(Intent entry) {
-     FollowerBotService.triggerBroadCast(this,FollowerBotService.ACTION_BOT_START);
+     FollowerBotOrchestrator.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_START);
     }
 
     @Override
@@ -28,6 +28,6 @@ public class FollowerBotForegroundService extends BGService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        FollowerBotService.triggerBroadCast(this,FollowerBotService.ACTION_BOT_STOP);
+        FollowerBotOrchestrator.triggerBroadCast(this, FollowerBotOrchestrator.ACTION_BOT_STOP);
     }
 }

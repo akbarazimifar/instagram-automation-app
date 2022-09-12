@@ -19,39 +19,39 @@ import in.semibit.media.common.GenricDataCallback;
 
 public class FollowerTimerTask extends TimerTask {
 
-    FollowerBotService followerBotService;
+    FollowerBotOrchestrator followerBotOrchestrator;
     GenricDataCallback uiLogger;
     Pair<TextView, AdvancedWebView> webViewPair;
 
-    public FollowerTimerTask(FollowerBotService followerBotService, GenricDataCallback uiLogger, Pair<TextView, AdvancedWebView> webViewPair) {
-        this.followerBotService = followerBotService;
+    public FollowerTimerTask(FollowerBotOrchestrator followerBotOrchestrator, GenricDataCallback uiLogger, Pair<TextView, AdvancedWebView> webViewPair) {
+        this.followerBotOrchestrator = followerBotOrchestrator;
         this.uiLogger = uiLogger;
         this.webViewPair = webViewPair;
     }
 
     @Override
     public void run() {
-        if (!followerBotService.isRunning()) {
+        if (!followerBotOrchestrator.isRunning()) {
             uiLogger.onStart("Stopped scheduler");
             return;
         }
         uiLogger.onStart("Scheduled task started");
-        boolean canIFollowUsers = followerBotService.canIFollowNextUser(false,uiLogger,null);
-        followerBotService.getUsersToBeFollowed(uiLogger);
+        boolean canIFollowUsers = followerBotOrchestrator.canIFollowNextUser(false,uiLogger,null);
+        followerBotOrchestrator.getUsersToBeFollowed(uiLogger);
 
         if (canIFollowUsers) {
-            followerBotService.startFollowingUsers(webViewPair.second, webViewPair.first,uiLogger);
+            followerBotOrchestrator.startFollowingUsers(webViewPair.second, webViewPair.first,uiLogger);
         }
 
-        if(FollowerBotService.ENABLE_TIMER_BASED_SCHEDULE && followerBotService.isRunning()){
+        if(FollowerBotOrchestrator.ENABLE_TIMER_BASED_SCHEDULE && followerBotOrchestrator.isRunning()){
 
             int nextMins = EzUtils.randomInt(40, 80);
             Instant nextExecInstant = Instant.now().plus(nextMins, ChronoUnit.MINUTES);
             uiLogger.onStart("Next FollowerTimerTask execution after " + nextMins + " mins at " +  (ZonedDateTime.ofInstant(nextExecInstant, ZoneOffset.systemDefault())).toString());
             Date nextExecution = Date.from(nextExecInstant);
-            followerBotService.cancelFollowTimer();
-            followerBotService.followTimer = new Timer();
-            followerBotService.followTimer.schedule(new TimerTask() {
+            followerBotOrchestrator.cancelFollowTimer();
+            followerBotOrchestrator.followTimer = new Timer();
+            followerBotOrchestrator.followTimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
                     FollowerTimerTask.this.run();

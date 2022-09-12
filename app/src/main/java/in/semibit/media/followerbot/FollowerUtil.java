@@ -27,10 +27,10 @@ import in.semibit.media.common.igclientext.post.model.User;
 
 public class FollowerUtil {
 
-    FollowerBotService followerBotService;
+    FollowerBotOrchestrator followerBotOrchestrator;
 
-    public FollowerUtil(FollowerBotService followerBotService) {
-        this.followerBotService = followerBotService;
+    public FollowerUtil(FollowerBotOrchestrator followerBotOrchestrator) {
+        this.followerBotOrchestrator = followerBotOrchestrator;
     }
 
     public static List<FollowUserModel> getUsersThatDontFollowMe(List<FollowUserModel> usersFollowingMe,
@@ -101,7 +101,7 @@ public class FollowerUtil {
         GenericCompletableFuture<List<FollowUserModel>> usersResultFuture = new GenericCompletableFuture<>();
         AsyncTask.execute(() -> {
             try {
-                IGClient client = followerBotService.getIgClient();
+                IGClient client = followerBotOrchestrator.getIgClient();
                 String connections = isIncomingConnection ? "Followings" : "Followers";
                 onUILog.onStart("Syncing " + connections + " from IG");
 
@@ -144,12 +144,12 @@ public class FollowerUtil {
                         .collect(Collectors.toList());
 
                 GenricCallback continueToSaveCB = () -> {
-                    GenericCompletableFuture<Void> onSave = followerBotService.serverDb.save(
+                    GenericCompletableFuture<Void> onSave = followerBotOrchestrator.serverDb.save(
                             isIncomingConnection ? TableNames.MY_FOLLOWING_DATA : TableNames.MY_FOLLOWERS_DATA
                             , new ArrayList<>(newUsers));
                     onSave.thenAccept(v -> {
                         usersResultFuture.complete(newUsers);
-                        followerBotService.getUsersToBeUnFollowed(onUILog, true);
+                        followerBotOrchestrator.getUsersToBeUnFollowed(onUILog, true);
                         onUILog.onStart("Completed syncing IG " + connections + " " + newUsers.size());
                     });
                 };
@@ -169,7 +169,7 @@ public class FollowerUtil {
                         List<String> actualInstagramIds = singleBatch.stream().map(FollowUserModel::getId).collect(Collectors.toList());
                         conditions.add(new WhereClause("id", GenericOperator.IN, actualInstagramIds));
                         conditions.add(new WhereClause("tenant", GenericOperator.EQUAL, SemibitMediaApp.CURRENT_TENANT));
-                        followerBotService.serverDb.query(TableNames.FOLLOW_DATA, conditions, FollowUserModel.class)
+                        followerBotOrchestrator.serverDb.query(TableNames.FOLLOW_DATA, conditions, FollowUserModel.class)
                                 .exceptionally(e -> {
                                     e.printStackTrace();
                                     onUILog.onStart("Error in sync" + e.getMessage());
@@ -209,9 +209,9 @@ public class FollowerUtil {
                 }
 
                 if (isIncomingConnection) {
-                    followerBotService.serverDb.save(TableNames.COUNTER, new FollowerCounter(TableNames.withTablePrefix("following_count"), users.size()));
+                    followerBotOrchestrator.serverDb.save(TableNames.COUNTER, new FollowerCounter(TableNames.withTablePrefix("following_count"), users.size()));
                 } else {
-                    followerBotService.serverDb.save(TableNames.COUNTER, new FollowerCounter(TableNames.withTablePrefix("follower_count"), users.size()));
+                    followerBotOrchestrator.serverDb.save(TableNames.COUNTER, new FollowerCounter(TableNames.withTablePrefix("follower_count"), users.size()));
                 }
 
                 if (users.isEmpty()) {
