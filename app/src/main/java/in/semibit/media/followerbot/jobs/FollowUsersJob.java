@@ -139,6 +139,6 @@ public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
     public static Instant nextScheduledTime(Instant prevIsntant) {
         int future = EzUtils.randomInt(40, 70);
-        return prevIsntant.plus(future, ChronoUnit.MINUTES);
+        return prevIsntant.plus(future, ChronoUnit.SECONDS);
     }
 }

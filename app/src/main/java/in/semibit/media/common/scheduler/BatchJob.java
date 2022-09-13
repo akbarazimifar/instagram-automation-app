@@ -19,7 +19,7 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
 
     private final GenricDataCallback logger;
     private final Queue<T> queue = new ConcurrentLinkedDeque<>();
-    private Map<T, JobResult<U>> batchResult = new ConcurrentHashMap<>();
+    private final Map<T, JobResult<U>> batchResult = new ConcurrentHashMap<>();
     private boolean isRunning = false;
     private long startTime = 0;
 
@@ -68,19 +68,19 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
     public void stop(boolean withResult) {
         isRunning = false;
         for (T e : getQueue()) {
-            Map<T, JobResult<U>> result = new ConcurrentHashMap<>();
-            batchResult.put(e, JobResult.failed());
+            if (!batchResult.containsKey(e))
+                batchResult.put(e, JobResult.failed());
         }
         if (withResult)
             onBatchCompleted(batchResult);
-        logger.onStart("Job Stopped");
+        logger.onStart(getJobName() + " Job Stopped");
     }
 
     public void start() {
         startTime = System.currentTimeMillis();
         isRunning = true;
         getData().thenAccept(data -> {
-            logger.onStart(getJobName()+" : Started for "+data.size()+" items");
+            logger.onStart(getJobName() + " : Started for " + data.size() + " items");
             getQueue().addAll(data);
             processNextJobItem();
         });
@@ -112,7 +112,7 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
                 processItem(curItem)
                         .exceptionally(e -> {
                             e.printStackTrace();
-                            return new JobResult<U>(JobResult.FAILED_STATUS,null);
+                            return new JobResult<U>(JobResult.FAILED_STATUS, null);
                         }).thenAccept(result -> {
                     batchResult.put(curItem, result);
                     postProcess(curItem).thenAccept(e -> {
@@ -137,7 +137,8 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
             }
 
         } else {
-            getLogger().onStart("Paused job " + getJobName() + " since isContinueToNext returned false");
+            getLogger().onStart("Stopped job " + getJobName() + " since isContinueToNext returned false");
+            stop(true);
         }
     }
 }

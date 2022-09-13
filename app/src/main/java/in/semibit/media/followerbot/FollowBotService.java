@@ -24,13 +24,12 @@ import com.github.instagram4j.instagram4j.IGClient;
 import com.google.firebase.firestore.Source;
 import com.semibit.ezandroidutils.EzUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nullable;
 
-import in.semibit.media.FollowerBotActivity;
-import in.semibit.media.MainActivity;
 import in.semibit.media.R;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
@@ -38,13 +37,11 @@ import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.common.scheduler.BatchJob;
-import in.semibit.media.followerbot.FollowerBotForegroundService;
-import in.semibit.media.followerbot.FollowerUtil;
 import lombok.NonNull;
 
 public class FollowBotService {
 
-    public static final boolean TEST_MODE = false;
+    public static final boolean TEST_MODE = true;
     public static final String ACTION_BOT_START = "ACTION_BOT_START";
     public static final String ACTION_BOT_STOP = "ACTION_BOT_STOP";
     public static final String ACTION_BOT_LOG = "ACTION_BOT_LOG";
@@ -52,8 +49,7 @@ public class FollowBotService {
     public Activity context;
     public DatabaseHelper serverDb;
     public DatabaseHelper localDb;
-    public View followWidgetView;
-    public View unFollowWidgetView;
+    public final Map<String, View> widgetsMap = new HashMap<>();
     public String tenant;
     public FollowerUtil followerUtil;
     GenricDataCallback uiLogger;
@@ -83,7 +79,7 @@ public class FollowBotService {
             igClient = Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), (s) -> {
             });
             uiLogger.onStart("IG Client Ready");
-            FollowerUtil followerUtil = new FollowerUtil(igClient, serverDb,uiLogger);
+            FollowerUtil followerUtil = new FollowerUtil(igClient, serverDb, uiLogger);
             future.complete(followerUtil);
         });
         return future;
@@ -93,15 +89,34 @@ public class FollowBotService {
         isRunning = false;
         jobs.forEach((jobName, job) -> {
             if (jobToKill == null || job.getJobName().contains(jobToKill)) {
-                job.stop(false);
+                job.stop(true);
             }
         });
+        jobs.clear();
         try {
             Intent stopIntent = new Intent(context, FollowerBotForegroundService.class);
             stopIntent.setAction(FollowerBotForegroundService.ACTION_STOP);
             context.stopService(stopIntent);
         } catch (Exception exception) {
             exception.printStackTrace();
+        }
+
+        try {
+            WindowManager mWindowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
+            for (View followWidget : widgetsMap.values())
+                if (followWidget != null) {
+                    try {
+                        mWindowManager.removeView(followWidget);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            widgetsMap.clear();
+            uiLogger.onStart("Bot views removed from window");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            uiLogger.onStart("Error removing views "+e.getMessage());
         }
     }
 
@@ -125,9 +140,9 @@ public class FollowBotService {
     private BroadcastReceiver onLogRecieve = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-           if(uiLogger!=null){
-               uiLogger.onStart(""+intent.getStringExtra("jobName"));
-           }
+            if (uiLogger != null) {
+                uiLogger.onStart("" + intent.getStringExtra("jobName"));
+            }
         }
     };
 
@@ -150,14 +165,14 @@ public class FollowBotService {
             LocalBroadcastManager.getInstance(broadCastContext).unregisterReceiver(onLogRecieve);
         } catch (Exception exception) {
             //exception.printStackTrace();
-            EzUtils.e("Non fatal error"+ exception.getMessage());
+            EzUtils.e("Non fatal error" + exception.getMessage());
         }
 
     }
 
     public void listenToTriggers(View followWidgetView) {
         stopListeningToTriggers();
-        broadCastContext = followWidgetView.getContext();
+        broadCastContext = followWidgetView.getContext().getApplicationContext();
         LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStartReceive, new IntentFilter(ACTION_BOT_START));
         LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStopReceive, new IntentFilter(ACTION_BOT_STOP));
         LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onLogRecieve, new IntentFilter(ACTION_BOT_LOG));
@@ -169,6 +184,7 @@ public class FollowBotService {
             intent.putExtra("jobName", jobName);
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
+
     public void addBatchJob(BatchJob batchJob) {
         jobs.put(batchJob.getJobName(), batchJob);
     }
@@ -189,23 +205,15 @@ public class FollowBotService {
 
 
     public View setAndGetView(View view, String viewType) {
-        if (viewType.equals("follow")) {
-            if (view != null) {
-                followWidgetView = view;
-            }
-            return followWidgetView;
-        } else if (viewType.equals("unfollow")) {
-            if (view != null) {
-                unFollowWidgetView = view;
-            }
-            return unFollowWidgetView;
+        if (view != null) {
+            widgetsMap.put(viewType, view);
         }
-        return null;
+        return widgetsMap.get(viewType);
     }
 
     public Pair<TextView, AdvancedWebView> generateAlert(final Activity context, String viewType) {
 
-        View followWidget = setAndGetView(null, viewType);
+        View curViewRoot = setAndGetView(null, viewType);
 
         int layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
@@ -220,31 +228,30 @@ public class FollowBotService {
         params.y = 100;
 
         WindowManager mWindowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
-        if (followWidget != null) {
+        if (curViewRoot != null) {
             try {
-                mWindowManager.removeView(followWidget);
+                mWindowManager.removeView(curViewRoot);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        followWidget = LayoutInflater.from(context).inflate(R.layout.follower_bot, null);
-        mWindowManager.addView(followWidget, params);
+        curViewRoot = LayoutInflater.from(context).inflate(R.layout.follower_bot, null);
+        mWindowManager.addView(curViewRoot, params);
 
 
-        final TextView label = followWidget.findViewById(R.id.label);
-        final AdvancedWebView webView = followWidget.findViewById(R.id.webView);
+        final TextView label = curViewRoot.findViewById(R.id.label);
+        final AdvancedWebView webView = curViewRoot.findViewById(R.id.webView);
 
 
-        View finalWidget = followWidget;
-        followWidget.setOnLongClickListener((v) -> {
+        View finalWidget = curViewRoot;
+        curViewRoot.setOnLongClickListener((v) -> {
             mWindowManager.removeView(finalWidget);
             return true;
         });
-        followWidget.setOnClickListener(c -> {
-            if(webView.getVisibility() == View.VISIBLE){
+        curViewRoot.setOnClickListener(c -> {
+            if (webView.getVisibility() == View.VISIBLE) {
                 webView.setVisibility(View.GONE);
-            }
-            else {
+            } else {
                 webView.setVisibility(View.VISIBLE);
             }
 //            Intent intent = new Intent(context, FollowerBotActivity.class);
@@ -253,7 +260,7 @@ public class FollowBotService {
         });
         int MAX_X_MOVE = 10;
         int MAX_Y_MOVE = 10;
-        followWidget.setOnTouchListener(new View.OnTouchListener() {
+        curViewRoot.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
             private int initialY;
             private float initialTouchX;
@@ -299,7 +306,7 @@ public class FollowBotService {
                 return false;
             }
         });
-        setAndGetView(followWidget, viewType);
+        setAndGetView(curViewRoot, viewType);
         return Pair.create(label, webView);
 
     }

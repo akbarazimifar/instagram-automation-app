@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import com.semibit.ezandroidutils.EzUtils;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,6 +31,7 @@ import in.semibit.media.databinding.ActivityFollowerBotBinding;
 import in.semibit.media.followerbot.FollowBotService;
 import in.semibit.media.followerbot.FollowerBotForegroundService;
 import in.semibit.media.followerbot.FollowerUtil;
+import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
 import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
 import in.semibit.media.followerbot.jobs.UserFromFollowerMarkerJob;
@@ -40,20 +42,12 @@ public class FollowerBotActivity extends AppCompatActivity {
     ActivityFollowerBotBinding binding;
     Activity context;
     FollowerUtil followerUtil;
+    Instant lastLog;
 
     public GenricDataCallback logger = new GenricDataCallback() {
         @Override
         public void onStart(String s) {
-            try {
-                if (context != null)
-                    context.runOnUiThread(() -> {
-                        binding.logs.append("\n" + s);
-                    });
-                else
-                    EzUtils.e(s);
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
+            LogsViewModel.addToLog(s);
         }
     };
 
@@ -73,6 +67,22 @@ public class FollowerBotActivity extends AppCompatActivity {
             initBot();
         }
 
+        try {
+            LogsViewModel.getLiveLogData().observe(this, pairs -> {
+                List<Pair<Instant, String>> newLogs = LogsViewModel.filterAfter(lastLog);
+                if (newLogs != null && !newLogs.isEmpty())
+                {
+                    lastLog = newLogs.get(newLogs.size() - 1).first;
+                    for(Pair<Instant, String> log:newLogs){
+                        binding.logs.append(LogsViewModel.formattedLog(log));
+                    }
+                }
+
+            });
+
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
         binding.refresh.setOnLongClickListener(c -> {
             EzUtils.toast(context, "Sync followers from Instagram");
             return true;
@@ -101,16 +111,16 @@ public class FollowerBotActivity extends AppCompatActivity {
         binding.showHideBot.setOnClickListener((c) -> {
             if (followerBotOrchestrator != null) {
                 try {
-                    if (followerBotOrchestrator.followWidgetView != null) {
-                        int visiv = followerBotOrchestrator.followWidgetView.findViewById(R.id.webView).getVisibility();
+                    if (!followerBotOrchestrator.widgetsMap.isEmpty()) {
+                        int visiv = followerBotOrchestrator.setAndGetView(null,"follow").findViewById(R.id.webView).getVisibility();
                         if (visiv == View.GONE) {
                             binding.showHideBot.setText("HIDE BOT");
-                            followerBotOrchestrator.followWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
-                            followerBotOrchestrator.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.VISIBLE);
+                            followerBotOrchestrator.setAndGetView(null,"follow").findViewById(R.id.webView).setVisibility(View.VISIBLE);
+                            followerBotOrchestrator.setAndGetView(null,"unfollow").findViewById(R.id.webView).setVisibility(View.VISIBLE);
                         } else {
                             binding.showHideBot.setText("SHOW BOT");
-                            followerBotOrchestrator.followWidgetView.findViewById(R.id.webView).setVisibility(View.GONE);
-                            followerBotOrchestrator.unFollowWidgetView.findViewById(R.id.webView).setVisibility(View.GONE);
+                            followerBotOrchestrator.setAndGetView(null,"follow").findViewById(R.id.webView).setVisibility(View.GONE);
+                            followerBotOrchestrator.setAndGetView(null,"unfollow").findViewById(R.id.webView).setVisibility(View.GONE);
                         }
                     } else {
                         logger.onStart("Bot windows not initialized yet");
@@ -146,14 +156,16 @@ public class FollowerBotActivity extends AppCompatActivity {
                     followerBotOrchestrator.listenToTriggers(followWebView.second);
                     Intent intent = new Intent(context, FollowerBotForegroundService.class);
                     Map<String, Long> jobs = new ConcurrentHashMap<>();
-                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
-                    jobs.put(UnFollowUsersJob.JOBNAME, UnFollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
-                    intent.putExtra("jobSchedules", new Gson().toJson(jobs));
-                    startForegroundService(intent);
 
-                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, FollowUsersJob.JOBNAME);
+
+//                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
+//                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, FollowUsersJob.JOBNAME);
+
+                    jobs.put(UnFollowUsersJob.JOBNAME, UnFollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
                     FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, UnFollowUsersJob.JOBNAME);
 
+                    intent.putExtra("jobSchedules", new Gson().toJson(jobs));
+                    startForegroundService(intent);
                 } else
                     followerBotOrchestrator.killAll(null);
                 new Handler().postDelayed(this::updateButtonState, 1000);

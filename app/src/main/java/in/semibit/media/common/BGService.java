@@ -82,9 +82,13 @@ public abstract class BGService extends Service {
                 NotificationManager.IMPORTANCE_HIGH
         );
 
-        Intent stopSelf = new Intent(context, getOverriddenClass());
-        stopSelf.setAction(this.getActionStopId());
-        PendingIntent pStopSelf = PendingIntent.getService(context, 0, stopSelf, PendingIntent.FLAG_CANCEL_CURRENT);
+
+        Intent intent = getOnTouchIntent();
+        int flag = PendingIntent.FLAG_CANCEL_CURRENT;
+        if (intent.getAction() == null || !intent.getAction().equals(getActionStopId())) {
+            flag = PendingIntent.FLAG_UPDATE_CURRENT;
+        }
+        PendingIntent pStopSelf = PendingIntent.getService(context, 0, intent, flag);
 
         context.getSystemService(NotificationManager.class).createNotificationChannel(channel);
         Notification.Builder notification = new Notification.Builder(context, CHANNELID)
@@ -98,6 +102,12 @@ public abstract class BGService extends Service {
 
     }
 
+    protected Intent getOnTouchIntent() {
+        Intent stopSelf = new Intent(context, getOverriddenClass());
+        stopSelf.setAction(this.getActionStopId());
+        return stopSelf;
+    }
+
     protected abstract Class<?> getOverriddenClass();
 
     /**
@@ -106,7 +116,7 @@ public abstract class BGService extends Service {
     public void updateNotification(String text, boolean isUpdateSameNotfi) {
 
         Notification notification = isUpdateSameNotfi ? getMyActivityNotification(text) :
-                getMyActivityNotification(text,"semibit-media-updates");
+                getMyActivityNotification(text, "semibit-media-updates");
 
         NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(isUpdateSameNotfi ? getNotificationId() : ++notifIdCounter, notification);

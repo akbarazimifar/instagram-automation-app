@@ -295,13 +295,14 @@ public class FollowerUtil {
                 followResult.complete(false);
                 return;
             }
-            (isDoUnfollow ? setUserAsUnFollowed(user) : setUserAsFollowed(user)).exceptionally(e -> {
+            (isDoUnfollow ? setUserAsUnFollowed(user) : setUserAsFollowed(user))
+                    .exceptionally(e -> {
                 uiLogger.onStart("Error saving after " + action + " " + user.userName + " " + e.getMessage());
-                followResult.complete(false);
+//                followResult.complete(false);
                 return null;
             }).thenAccept(e -> {
-                if (!followResult.isDone())
-                    followResult.complete(true);
+//                if (!followResult.isDone())
+                followResult.complete(true);
                 uiLogger.onStart("Completed " + action + " " + user.userName+" "+(followResult.get()));
             });
         });

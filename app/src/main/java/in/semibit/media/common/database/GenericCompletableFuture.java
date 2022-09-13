@@ -6,21 +6,25 @@ public class GenericCompletableFuture<T> {
     private Exception ex;
     private GenericCompletableFutureCBX<T> onException;
     private GenericCompletableFutureCB<T> onComplete;
+    private boolean isCompleted;
+
+    public boolean isCompleted() {
+        return isCompleted;
+    }
 
     void setResult(T value) {
+        isCompleted = true;
         this.result = value;
-        if (this.onComplete != null) {
+        if (this.onComplete != null)
             this.onComplete.onComplete(result);
-        }
     }
 
     public void completeExceptionally(Exception exception) {
         ex = exception;
-        if (onException != null) {
-            T exResult = onException.onException(exception);
-            setResult(exResult);
-
-        }
+        T exResult = null;
+        if(onException!=null)
+            exResult = onException.onException(exception);
+        setResult(exResult);
     }
 
     public void complete(T result) {
@@ -29,7 +33,7 @@ public class GenericCompletableFuture<T> {
 
     public void thenAccept(GenericCompletableFutureCB<T> onComplete) {
         this.onComplete = onComplete;
-        if (result != null || ex != null) {
+        if (isCompleted()) {
             onComplete.onComplete(result);
         }
     }
@@ -47,11 +51,6 @@ public class GenericCompletableFuture<T> {
         GenericCompletableFuture completableFuture = new GenericCompletableFuture();
         completableFuture.complete(o);
         return completableFuture;
-    }
-
-
-    public boolean isDone() {
-        return result != null || ex != null;
     }
 
     public T get() {

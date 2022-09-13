@@ -1,5 +1,7 @@
 package in.semibit.media.common.scheduler;
 
+import androidx.core.util.Pair;
+
 import com.semibit.ezandroidutils.EzUtils;
 
 import java.time.Instant;
@@ -30,7 +32,7 @@ public abstract class BatchScheduler {
     public void startScheduler(long tickRateMs) {
         rateMs = tickRateMs;
         tickCount = 0;
-        if(timer!=null){
+        if (timer != null) {
             try {
                 timer.cancel();
                 timer.purge();
@@ -48,8 +50,27 @@ public abstract class BatchScheduler {
     }
 
     public void stopScheduler() {
-        isRunning = false;
-        timer.cancel();
+        try {
+            isRunning = false;
+            timer.cancel();
+            timer.purge();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+    }
+
+    public Pair<String,Instant> getNextJobSchedule() {
+        long latest = Long.MAX_VALUE;
+        Map.Entry<String ,Long> latestEntry = null;
+        for (Map.Entry<String, Long> cur : nextSchedules.entrySet()) {
+            if(cur.getValue() < latest){
+                latestEntry = cur;
+                latest = cur.getValue();
+            }
+        }
+        if (latest == Long.MAX_VALUE)
+            return Pair.create("UnknownJob",Instant.now());
+        return Pair.create(latestEntry.getKey(),Instant.ofEpochMilli(latestEntry.getValue()));
     }
 
     public boolean isJobScheduleNowOrPassed(String jobName) {
