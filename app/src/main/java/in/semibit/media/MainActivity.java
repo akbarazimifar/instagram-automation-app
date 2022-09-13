@@ -398,7 +398,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void driver() {
-        binding.webview.loadUrl("https://www.instagram.com/accounts/login");
+        binding.webview.loadUrl("https://www.instagram.com/accounts/edit/");
         binding.heaederText.setText("Logging In");
         binding.webview.addJavascriptInterface(new JS_INTERFACE(), "android");
 
@@ -415,14 +415,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageStarted(String url, Bitmap favicon) {
 //                Log.e("INSTAGRAMMM", url);
-                if (url.equals("https://www.instagram.com/")) {
-                    binding.heaederText.setText("Logged In");
-                    binding.contBottom.setVisibility(View.VISIBLE);
-                    binding.watchAd.setOnClickListener(v -> {
-                        startActivity(new Intent(context, FollowerBotActivity.class));
-                    });
-                    binding.webview.setVisibility(View.GONE);
-                }
+
 //                else if(url.contains("graphql/query/?query_hash=")){
 //
 //                }
@@ -430,7 +423,14 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPageFinished(String url) {
-
+                if (url.contains("https://www.instagram.com/accounts/edit")) {
+                    binding.heaederText.setText("Logged In");
+                    binding.contBottom.setVisibility(View.VISIBLE);
+                    binding.watchAd.setOnClickListener(v -> {
+                        startActivity(new Intent(context, FollowerBotActivity.class));
+                    });
+                    binding.webview.setVisibility(View.GONE);
+                }
             }
 
             @Override

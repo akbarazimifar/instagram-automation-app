@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
+import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.common.database.TableNames;
@@ -65,6 +66,12 @@ public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
 
     public boolean canIFollowNextUser() {
+        if(FollowBotService.TEST_MODE)
+        {
+            LogsViewModel.addToLog("Skip semaphore slot check since in Test Mode");
+            return true;
+        }
+
         RateLimiter semaphore = unfollowSemaphore;
         AtomicInteger slots = unfollowHourlySlots;
         int maxRate = Constants.MAX_USERS_TO_BE_UNFOLLOWED_PER_HOUR;

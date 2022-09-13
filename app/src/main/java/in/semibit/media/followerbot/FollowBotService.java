@@ -35,6 +35,7 @@ import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.common.LogsViewModel;
+import in.semibit.media.common.SignalLiveData;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.common.scheduler.BatchJob;
@@ -117,13 +118,13 @@ public class FollowBotService {
 
         } catch (Exception e) {
             e.printStackTrace();
-            uiLogger.onStart("Error removing views "+e.getMessage());
+            uiLogger.onStart("Error removing views " + e.getMessage());
         }
     }
 
     private BroadcastReceiver onStartReceive = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onReceive(@Nullable Context context, Intent intent) {
             String jobName = intent.getStringExtra("jobName");
             if (jobName != null) {
                 singleStart(jobName);
@@ -134,13 +135,14 @@ public class FollowBotService {
     Context broadCastContext;
     private BroadcastReceiver onStopReceive = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onReceive(@Nullable Context context, Intent intent) {
+            if(intent.getStringExtra("jobName") !=null && intent.getStringExtra("jobName").equals(ACTION_BOT_STOP))
             softKill();
         }
     };
     private BroadcastReceiver onLogRecieve = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onReceive(@Nullable Context context, Intent intent) {
             if (uiLogger != null) {
                 uiLogger.onStart("" + intent.getStringExtra("jobName"));
             }
@@ -164,6 +166,10 @@ public class FollowBotService {
             LocalBroadcastManager.getInstance(broadCastContext).unregisterReceiver(onStartReceive);
             LocalBroadcastManager.getInstance(broadCastContext).unregisterReceiver(onStopReceive);
             LocalBroadcastManager.getInstance(broadCastContext).unregisterReceiver(onLogRecieve);
+
+            SignalLiveData.getLiveLogData().removeUnsafeObserver(ACTION_BOT_START);
+            SignalLiveData.getLiveLogData().removeUnsafeObserver(ACTION_BOT_STOP);
+
         } catch (Exception exception) {
             //exception.printStackTrace();
             EzUtils.e("Non fatal error" + exception.getMessage());
@@ -177,23 +183,29 @@ public class FollowBotService {
         LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStartReceive, new IntentFilter(ACTION_BOT_START));
         LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onStopReceive, new IntentFilter(ACTION_BOT_STOP));
         LocalBroadcastManager.getInstance(broadCastContext).registerReceiver(onLogRecieve, new IntentFilter(ACTION_BOT_LOG));
+
+        SignalLiveData.getLiveLogData().addUnsafeObserver(ACTION_BOT_START, onStartReceive);
+        SignalLiveData.getLiveLogData().addUnsafeObserver(ACTION_BOT_STOP, onStopReceive);
+
     }
 
     public static void triggerBroadCast(@NonNull Context context, @NonNull String action, @Nullable String jobName) {
         Intent intent = new Intent(action);
         if (jobName != null)
             intent.putExtra("jobName", jobName);
-        LogsViewModel.addToLog(jobName+" Triggered from background service");
-        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+        LogsViewModel.addToLog(jobName + " Triggered from background service");
+//        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+        SignalLiveData.getLiveLogData().postSingleValue(jobName);
     }
 
     public void addBatchJob(BatchJob batchJob) {
         jobs.put(batchJob.getJobName(), batchJob);
     }
 
-    public void singleStart(String jName) {
+    public void singleStart(String jobName) {
+        LogsViewModel.addToLog(jobName + " Trigger Received in UI");
         isRunning = true;
-        BatchJob job = jobs.get(jName);
+        BatchJob job = jobs.get(jobName);
         if (job != null) {
             job.start();
         }
