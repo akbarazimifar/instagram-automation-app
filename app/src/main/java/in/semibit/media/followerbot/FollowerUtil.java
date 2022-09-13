@@ -49,11 +49,10 @@ public class FollowerUtil {
     public Context context;
     public String  tenant;
 
-    public FollowerUtil(IGClient igClient, DatabaseHelper serverDb, GenricDataCallback logger, Context context) {
+    public FollowerUtil(IGClient igClient, DatabaseHelper serverDb, GenricDataCallback logger) {
         this.igClient = igClient;
         this.serverDb = serverDb;
         this.logger = logger;
-        this.context = context;
         tenant = SemibitMediaApp.CURRENT_TENANT;
     }
 
@@ -279,10 +278,6 @@ public class FollowerUtil {
 
 
     public IGClient getIgClient() {
-        if (igClient == null)
-            igClient = Insta4jClient.getClient(context.getString(R.string.username),
-                    context.getString(R.string.password), (s) -> {
-                    });
         return igClient;
     }
 

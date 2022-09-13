@@ -27,8 +27,8 @@ import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.databinding.ActivityFollowerBotBinding;
-import in.semibit.media.followerbot.FollowerBotForegroundService;
 import in.semibit.media.followerbot.FollowBotService;
+import in.semibit.media.followerbot.FollowerBotForegroundService;
 import in.semibit.media.followerbot.FollowerUtil;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
 import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
@@ -44,9 +44,16 @@ public class FollowerBotActivity extends AppCompatActivity {
     public GenricDataCallback logger = new GenricDataCallback() {
         @Override
         public void onStart(String s) {
-            context.runOnUiThread(() -> {
-                binding.logs.append("\n" + s);
-            });
+            try {
+                if (context != null)
+                    context.runOnUiThread(() -> {
+                        binding.logs.append("\n" + s);
+                    });
+                else
+                    EzUtils.e(s);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
         }
     };
 
@@ -73,7 +80,7 @@ public class FollowerBotActivity extends AppCompatActivity {
         binding.refresh.setOnClickListener(v -> {
             binding.refresh.setEnabled(false);
             logger.onStart("Refresh From IG Started");
-            followerBotOrchestrator.getFollowerUtil().thenAccept(e->{
+            followerBotOrchestrator.getFollowerUtil().thenAccept(e -> {
                 e.syncConnectionsForUserToFirebase(context.getString(R.string.username),
                         false, s -> context.runOnUiThread(() -> binding.refresh.setEnabled(true)), logger);
 
@@ -122,9 +129,9 @@ public class FollowerBotActivity extends AppCompatActivity {
         binding.startBot.setOnClickListener(c -> {
             if (followerBotOrchestrator != null) {
                 if (!followerBotOrchestrator.isRunning()) {
-                    if(followerUtil == null){
+                    if (followerUtil == null) {
                         ;
-                        followerBotOrchestrator.getFollowerUtil().thenAccept(futil->{
+                        followerBotOrchestrator.getFollowerUtil().thenAccept(futil -> {
                             followerUtil = futil;
                         });
                         return;
@@ -133,8 +140,8 @@ public class FollowerBotActivity extends AppCompatActivity {
                     followWebView = followerBotOrchestrator.generateAlert(context, "follow");
                     unfollowWebView = followerBotOrchestrator.generateAlert(context, "unfollow");
 
-                    followerBotOrchestrator.addBatchJob(new FollowUsersJob(logger, followWebView, followerBotOrchestrator.serverDb,followerUtil,context));
-                    followerBotOrchestrator.addBatchJob(new UnFollowUsersJob(logger, unfollowWebView, followerBotOrchestrator.serverDb,followerUtil,context));
+                    followerBotOrchestrator.addBatchJob(new FollowUsersJob(logger, followWebView, followerBotOrchestrator.serverDb, followerUtil, context));
+                    followerBotOrchestrator.addBatchJob(new UnFollowUsersJob(logger, unfollowWebView, followerBotOrchestrator.serverDb, followerUtil, context));
 
                     followerBotOrchestrator.listenToTriggers(followWebView.second);
                     Intent intent = new Intent(context, FollowerBotForegroundService.class);
@@ -144,12 +151,12 @@ public class FollowerBotActivity extends AppCompatActivity {
                     intent.putExtra("jobSchedules", new Gson().toJson(jobs));
                     startForegroundService(intent);
 
-                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START,FollowUsersJob.JOBNAME);
-                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START,UnFollowUsersJob.JOBNAME);
+                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, FollowUsersJob.JOBNAME);
+                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, UnFollowUsersJob.JOBNAME);
 
                 } else
                     followerBotOrchestrator.killAll(null);
-               new Handler().postDelayed(this::updateButtonState,1000);
+                new Handler().postDelayed(this::updateButtonState, 1000);
             } else {
                 logger.onStart("FollowerBotService Not Initialized yet");
             }
@@ -210,7 +217,7 @@ public class FollowerBotActivity extends AppCompatActivity {
     Pair<TextView, AdvancedWebView> followWebView;
     Pair<TextView, AdvancedWebView> unfollowWebView;
 
-    FollowBotService followerBotOrchestrator;
+    static FollowBotService followerBotOrchestrator;
 
     public void initBot() {
 
@@ -241,6 +248,7 @@ public class FollowerBotActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        followerBotOrchestrator.context = this;
         updateButtonState();
     }
 
