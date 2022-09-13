@@ -2,6 +2,7 @@ package in.semibit.media;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -106,6 +107,7 @@ public class FollowerBotActivity extends AppCompatActivity {
 
         binding.clearLogs.setOnClickListener(c -> {
             binding.logs.setText("");
+            LogsViewModel.getLiveLogData().setValue(LogsViewModel.getInitialData());
         });
 
         binding.showHideBot.setOnClickListener((c) -> {
@@ -158,8 +160,8 @@ public class FollowerBotActivity extends AppCompatActivity {
                     Map<String, Long> jobs = new ConcurrentHashMap<>();
 
 
-//                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
-//                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, FollowUsersJob.JOBNAME);
+                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
+                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, FollowUsersJob.JOBNAME);
 
                     jobs.put(UnFollowUsersJob.JOBNAME, UnFollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
                     FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, UnFollowUsersJob.JOBNAME);
@@ -236,10 +238,14 @@ public class FollowerBotActivity extends AppCompatActivity {
         if (followerBotOrchestrator == null) {
 
             followerBotOrchestrator = new FollowBotService(FollowerBotActivity.this, logger);
+            ProgressDialog progressDialog = new ProgressDialog(context);
+            progressDialog.show();
+            progressDialog.setMessage("IG Client initializing...");
+            progressDialog.setCancelable(true);
             GenericCompletableFuture<FollowerUtil> onFollowerUtil = followerBotOrchestrator.getFollowerUtil();
-            ;
             onFollowerUtil.thenAccept(u -> {
                 followerUtil = u;
+                progressDialog.cancel();
             });
 
 

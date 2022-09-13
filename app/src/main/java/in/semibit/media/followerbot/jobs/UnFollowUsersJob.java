@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
+import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.common.database.GenericOperator;
@@ -28,6 +29,7 @@ import in.semibit.media.common.ratelimiter.SmoothRateLimiter;
 import in.semibit.media.common.scheduler.BatchJob;
 import in.semibit.media.common.scheduler.JobResult;
 import in.semibit.media.followerbot.Constants;
+import in.semibit.media.followerbot.FollowBotService;
 import in.semibit.media.followerbot.FollowUserModel;
 import in.semibit.media.followerbot.FollowUserState;
 import in.semibit.media.followerbot.FollowerBot;
@@ -67,6 +69,11 @@ public class UnFollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
 
     public boolean canIFollowNextUser() {
+        if(FollowBotService.TEST_MODE)
+        {
+            LogsViewModel.addToLog("Skip semaphore slot check since in Test Mode");
+            return true;
+        }
         RateLimiter semaphore = unfollowSemaphore;
         AtomicInteger slots = unfollowHourlySlots;
         int maxRate = Constants.MAX_USERS_TO_BE_UNFOLLOWED_PER_HOUR;

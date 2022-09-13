@@ -14,7 +14,7 @@ public class LogsViewModel {
     private static MutableLiveData<List<Pair<Instant, String>>> liveLogData =
             new MutableLiveData<>(new ArrayList<>(getInitialData()));
 
-    private static List<Pair<Instant, String>> getInitialData() {
+    public static List<Pair<Instant, String>> getInitialData() {
         List<Pair<Instant, String>> initialData = new ArrayList<>();
         initialData.add(Pair.create(Instant.now(), "Initiated background logger"));
         return initialData;

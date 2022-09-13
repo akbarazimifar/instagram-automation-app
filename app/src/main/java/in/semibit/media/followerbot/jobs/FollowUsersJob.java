@@ -24,6 +24,7 @@ import in.semibit.media.common.ratelimiter.SmoothRateLimiter;
 import in.semibit.media.common.scheduler.BatchJob;
 import in.semibit.media.common.scheduler.JobResult;
 import in.semibit.media.followerbot.Constants;
+import in.semibit.media.followerbot.FollowBotService;
 import in.semibit.media.followerbot.FollowUserModel;
 import in.semibit.media.followerbot.FollowUserState;
 import in.semibit.media.followerbot.FollowerBot;
@@ -139,6 +140,6 @@ public class FollowUsersJob extends BatchJob<FollowUserModel, Boolean> {
 
     public static Instant nextScheduledTime(Instant prevIsntant) {
         int future = EzUtils.randomInt(40, 70);
-        return prevIsntant.plus(future, ChronoUnit.SECONDS);
+        return prevIsntant.plus(future, FollowBotService.TEST_MODE ? ChronoUnit.SECONDS : ChronoUnit.MINUTES);
     }
 }

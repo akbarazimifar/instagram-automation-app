@@ -34,6 +34,7 @@ import in.semibit.media.R;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.Insta4jClient;
+import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.common.scheduler.BatchJob;
@@ -41,7 +42,7 @@ import lombok.NonNull;
 
 public class FollowBotService {
 
-    public static final boolean TEST_MODE = true;
+    public static final boolean TEST_MODE = false;
     public static final String ACTION_BOT_START = "ACTION_BOT_START";
     public static final String ACTION_BOT_STOP = "ACTION_BOT_STOP";
     public static final String ACTION_BOT_LOG = "ACTION_BOT_LOG";
@@ -182,6 +183,7 @@ public class FollowBotService {
         Intent intent = new Intent(action);
         if (jobName != null)
             intent.putExtra("jobName", jobName);
+        LogsViewModel.addToLog(jobName+" Triggered from background service");
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 

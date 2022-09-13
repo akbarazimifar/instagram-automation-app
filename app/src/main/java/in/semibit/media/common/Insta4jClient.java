@@ -18,7 +18,7 @@ public class Insta4jClient {
     private static IGClient client;
     public static File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
 
-    public static IGClient getClient(String username, String passwd, GenricDataCallback callback) {
+    public static synchronized IGClient getClient(String username, String passwd, GenricDataCallback callback) {
         if (callback == null) {
             callback = (s) -> {
             };
@@ -48,6 +48,7 @@ public class Insta4jClient {
 
                 try {
                     if (fileClient.exists() && sessionFile.exists()) {
+                        LogsViewModel.addToLog("IG Client saved Login");
                         client = IGClient.deserialize(fileClient, sessionFile,
                                 IGUtils.defaultHttpClientBuilder()
                                         .callTimeout(duration)
@@ -60,6 +61,7 @@ public class Insta4jClient {
                 }
                 if (client == null) {
 
+                    LogsViewModel.addToLog("IG Client WEB Login");
                     OkHttpClient okHttpClient = IGUtils.defaultHttpClientBuilder()
                             .callTimeout(duration)
                             .readTimeout(duration)
