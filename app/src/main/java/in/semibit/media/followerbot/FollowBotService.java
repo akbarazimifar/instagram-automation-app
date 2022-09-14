@@ -43,7 +43,7 @@ import lombok.NonNull;
 
 public class FollowBotService {
 
-    public static final boolean TEST_MODE = false;
+    public static final boolean TEST_MODE = true;
     public static final String ACTION_BOT_START = "ACTION_BOT_START";
     public static final String ACTION_BOT_STOP = "ACTION_BOT_STOP";
     public static final String ACTION_BOT_LOG = "ACTION_BOT_LOG";

@@ -26,16 +26,17 @@ import in.semibit.media.common.igclientext.likes.LikeInfoResponse;
 import in.semibit.media.common.igclientext.post.model.User;
 import in.semibit.media.common.scheduler.BatchJob;
 import in.semibit.media.common.scheduler.JobResult;
+import in.semibit.media.followerbot.FollowBotService;
 import in.semibit.media.followerbot.FollowUserModel;
 import in.semibit.media.followerbot.FollowerUtil;
 import in.semibit.media.followerbot.OffensiveWordFilter;
 
-public class UserFromPostMarkerJob extends BatchJob<FollowUserModel,Boolean> {
+public class MarkUsersFromFollowersJob extends BatchJob<FollowUserModel,Boolean> {
 
     DatabaseHelper serverDb;
     FollowerUtil followerUtil;
 
-    public UserFromPostMarkerJob(GenricDataCallback logger, DatabaseHelper serverDb, FollowerUtil igClient) {
+    public MarkUsersFromFollowersJob(GenricDataCallback logger, DatabaseHelper serverDb, FollowerUtil igClient) {
         super(logger);
         this.serverDb = serverDb;
         this.followerUtil = igClient;
@@ -62,7 +63,8 @@ public class UserFromPostMarkerJob extends BatchJob<FollowUserModel,Boolean> {
     public void markUsersToFollowFromFollowers(String userName, GenricDataCallback cb,
                                                GenricDataCallback onUILog) {
 
-        int maxFollowersToLoad = 300;
+        int maxFollowersToLoad = FollowBotService.TEST_MODE ? 15: 300;
+        int maxFollowersToLoadPerBatch = FollowBotService.TEST_MODE ? 12: 100;
         AsyncTask.execute(() -> {
             IGClient client = followerUtil.getIgClient();
             onUILog.onStart("Started marking users from user " + userName);
@@ -88,7 +90,7 @@ public class UserFromPostMarkerJob extends BatchJob<FollowUserModel,Boolean> {
                     while (users.size() < maxFollowersToLoad && hasMoreFollowers && nextMaxId != null) {
 
                         CompletableFuture<FollowerInfoResponse> completableFuture =
-                                new FollowerInfoRequest(String.valueOf(pk), 100, nextMaxId).execute(client);
+                                new FollowerInfoRequest(String.valueOf(pk), maxFollowersToLoadPerBatch, nextMaxId).execute(client);
                         FollowerInfoResponse followerInfoResponse = completableFuture.get();
                         if (followerInfoResponse.getFollowerModel() == null) {
                             cb.onStart("error . no followers found. is the profile public ?");

@@ -25,12 +25,12 @@ import in.semibit.media.followerbot.FollowUserModel;
 import in.semibit.media.followerbot.FollowerUtil;
 import in.semibit.media.followerbot.OffensiveWordFilter;
 
-public class UserFromFollowerMarkerJob extends BatchJob<FollowUserModel,Boolean> {
+public class MarkUserFromPostJob extends BatchJob<FollowUserModel,Boolean> {
 
     DatabaseHelper serverDb;
     FollowerUtil followerUtil;
 
-    public UserFromFollowerMarkerJob(GenricDataCallback logger, DatabaseHelper serverDb, FollowerUtil igClient) {
+    public MarkUserFromPostJob(GenricDataCallback logger, DatabaseHelper serverDb, FollowerUtil igClient) {
         super(logger);
         this.serverDb = serverDb;
         this.followerUtil = igClient;
@@ -52,7 +52,7 @@ public class UserFromFollowerMarkerJob extends BatchJob<FollowUserModel,Boolean>
     }
 
 
-    public void markUsersToFollowFromPost(String shortCode, GenricDataCallback cb, GenricDataCallback onUILog) {
+    public void markUsersToFollowFromPostLikers(String shortCode, GenricDataCallback cb, GenricDataCallback onUILog) {
 
         AsyncTask.execute(() -> {
             onUILog.onStart("Started marking users from post " + shortCode);

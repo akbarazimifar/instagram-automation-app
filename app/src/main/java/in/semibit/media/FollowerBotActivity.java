@@ -35,8 +35,8 @@ import in.semibit.media.followerbot.FollowerUtil;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
 import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
-import in.semibit.media.followerbot.jobs.UserFromFollowerMarkerJob;
-import in.semibit.media.followerbot.jobs.UserFromPostMarkerJob;
+import in.semibit.media.followerbot.jobs.MarkUserFromPostJob;
+import in.semibit.media.followerbot.jobs.MarkUsersFromFollowersJob;
 
 public class FollowerBotActivity extends AppCompatActivity {
 
@@ -202,8 +202,8 @@ public class FollowerBotActivity extends AppCompatActivity {
                 if ((urlOrUname.contains("/p/") || urlOrUname.contains("/reel/")) && urlOrUname.contains("instagram.com")) {
                     if (split.length > 2) {
                         String shortCode = split[2];
-                        UserFromFollowerMarkerJob followerMarkerJob = new UserFromFollowerMarkerJob(logger, followerBotOrchestrator.serverDb, followerUtil);
-                        followerMarkerJob.markUsersToFollowFromPost(shortCode, logger, logger);
+                        MarkUserFromPostJob followerMarkerJob = new MarkUserFromPostJob(logger, followerBotOrchestrator.serverDb, followerUtil);
+                        followerMarkerJob.markUsersToFollowFromPostLikers(shortCode, logger, logger);
                         binding.conturlOrUsername.setError(null);
                         return;
                     }
@@ -212,7 +212,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                     if (urlOrUname.contains("instagram.com") && split.length > 1) {
                         userName = split[1];
                     }
-                    UserFromPostMarkerJob followerMarkerJob = new UserFromPostMarkerJob(logger, followerBotOrchestrator.serverDb, followerUtil);
+                    MarkUsersFromFollowersJob followerMarkerJob = new MarkUsersFromFollowersJob(logger, followerBotOrchestrator.serverDb, followerUtil);
                     followerMarkerJob.markUsersToFollowFromFollowers(userName, logger, logger);
                     binding.conturlOrUsername.setError(null);
                     return;
@@ -272,7 +272,7 @@ public class FollowerBotActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        followerBotOrchestrator.stopListeningToTriggers();
+//        followerBotOrchestrator.stopListeningToTriggers();
         super.onDestroy();
     }
 
