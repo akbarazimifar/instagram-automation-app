@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
@@ -54,7 +55,7 @@ public class MarkUserFromPostJob extends BatchJob<FollowUserModel,Boolean> {
 
     public void markUsersToFollowFromPostLikers(String shortCode, GenricDataCallback cb, GenricDataCallback onUILog) {
 
-        AsyncTask.execute(() -> {
+        CommonAsyncExecutor.execute(() -> {
             onUILog.onStart("Started marking users from post " + shortCode);
             CompletableFuture<LikeInfoResponse> completableFuture = new LikeInfoRequest(shortCode).execute(followerUtil.getIgClient());
             GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("type", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);

@@ -24,8 +24,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.R;
+import in.semibit.media.common.CommonAsyncExecutor;
+import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.Insta4jClient;
 
 public class BackgroundWorkerService extends Service {
@@ -33,7 +34,7 @@ public class BackgroundWorkerService extends Service {
     public Context context;
     File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
     public String ACTION_STOP_SERVICE = "199213";
-    public static  int NOTIF_ID = 1;
+    public static int NOTIF_ID = 1;
 
 
     private void copyAssets() {
@@ -128,7 +129,7 @@ public class BackgroundWorkerService extends Service {
 
         client.post(file, cover,
                 intent.getStringExtra("caption"),
-                intent.getStringExtra("mediaType"),intent.getStringExtra("post"));
+                intent.getStringExtra("mediaType"), intent.getStringExtra("post"));
     }
 
 
@@ -141,7 +142,7 @@ public class BackgroundWorkerService extends Service {
                     context.getString(R.string.password), null));
         }
 
-        if (ACTION_STOP_SERVICE.equals(intent.getAction())) {
+        if (intent == null || ACTION_STOP_SERVICE.equals(intent.getAction())) {
             context.getSystemService(NotificationManager.class).cancel(NOTIF_ID);
             stopSelf();
         }
@@ -159,16 +160,17 @@ public class BackgroundWorkerService extends Service {
 
     public void startForeground(Intent intent) {
         startForeground(NOTIF_ID, getMyActivityNotification(""));
-        new Thread(
-                () -> {
-                    Log.e("Service", "Service is running...");
-                    try {
-                        work(intent);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-        ).start();
+//        new Thread(
+//                () -> {
+//                    Log.e("Service", "Service is running...");
+//                    try {
+//                        work(intent);
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//        ).start();
+        CommonAsyncExecutor.execute(()->work(intent));
     }
 
     public Notification getMyActivityNotification(String text) {

@@ -10,6 +10,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.GenricCallback;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.database.GenericCompletableFuture;
@@ -92,7 +93,7 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
 
     public void runAsync(Runnable callback, int delayMs) {
         if (delayMs <= 0) {
-            AsyncTask.execute(callback);
+            CommonAsyncExecutor.execute(callback);
         } else {
             Timer timer = new Timer();
             timer.schedule(new TimerTask() {

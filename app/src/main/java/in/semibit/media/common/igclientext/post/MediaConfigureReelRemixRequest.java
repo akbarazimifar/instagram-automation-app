@@ -12,11 +12,13 @@ import com.github.instagram4j.instagram4j.utils.IGUtils;
 
 import java.util.Collections;
 
+import in.semibit.media.SemibitMediaApp;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import okhttp3.MediaType;
+import okhttp3.Request;
 import okhttp3.RequestBody;
 
 public class MediaConfigureReelRemixRequest extends IGPostRequest<MediaResponse.MediaConfigureTimelineResponse> {
@@ -31,14 +33,34 @@ public class MediaConfigureReelRemixRequest extends IGPostRequest<MediaResponse.
         String payloadStr = IGUtils.objectToJson(getPayload(client) instanceof IGPayload
                 ? client.setIGPayloadDefaults((IGPayload) getPayload(client))
                 : getPayload(client));
-        payloadStr = RemixPayload.getRemixPayload(
-                (MediaConfigureReelRemixRequest.MediaConfigurePayload) client.setIGPayloadDefaults(payload));
+        if (SemibitMediaApp.TEST_MODE)
+            payloadStr = RemixPayload.getRemixPayload(
+                    (MediaConfigureReelRemixRequest.MediaConfigurePayload) client.setIGPayloadDefaults(payload));
         if (isSigned()) {
             return RequestBody.create(IGUtils.generateSignature(payloadStr),
                     MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8"));
         } else {
             return RequestBody.create(payloadStr, MediaType.parse("application/json; charset=UTF-8"));
         }
+    }
+
+    @Override
+    protected Request.Builder applyHeaders(IGClient client, Request.Builder builder) {
+        String UA = "Instagram 252.0.0.17.111 Android (29/10; 400dpi; 1080x2040; Google/google; Android SDK built for x86; generic_x86; ranchu; en_US; 397702078)";
+        String APPID = "56706734335242";
+        String CAPA = "3brTv10=";
+
+        Request.Builder req = super.applyHeaders(client, builder);
+        req.removeHeader("User-Agent");
+        req.addHeader("User-Agent", UA);
+
+        req.removeHeader("X-Ig-App-Id");
+        req.addHeader("X-Ig-App-Id", APPID);
+
+        req.removeHeader("X-Ig-Capabilities");
+        req.addHeader("X-Ig-Capabilities", CAPA);
+
+        return req;
     }
 
     public MediaConfigureReelRemixRequest(@NonNull MediaConfigureReelRemixRequest.MediaConfigurePayload payload) {
@@ -72,11 +94,11 @@ public class MediaConfigureReelRemixRequest extends IGPostRequest<MediaResponse.
         private String location;
         private String usertags;
 
-        public String  caption() {
+        public String caption() {
             return caption;
         }
 
-        public String  upload_id() {
+        public String upload_id() {
             return upload_id;
         }
 

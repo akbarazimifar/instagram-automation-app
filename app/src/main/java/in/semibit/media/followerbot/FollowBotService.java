@@ -32,6 +32,7 @@ import javax.annotation.Nullable;
 
 import in.semibit.media.R;
 import in.semibit.media.common.AdvancedWebView;
+import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.common.LogsViewModel;
@@ -43,7 +44,7 @@ import lombok.NonNull;
 
 public class FollowBotService {
 
-    public static final boolean TEST_MODE = false;
+    public static final boolean TEST_MODE = true;
     public static final String ACTION_BOT_START = "ACTION_BOT_START";
     public static final String ACTION_BOT_STOP = "ACTION_BOT_STOP";
     public static final String ACTION_BOT_LOG = "ACTION_BOT_LOG";
@@ -77,7 +78,7 @@ public class FollowBotService {
         uiLogger.onStart("Please wait for IG Client to initialize");
 
         GenericCompletableFuture<FollowerUtil> future = new GenericCompletableFuture<>();
-        AsyncTask.execute(() -> {
+        CommonAsyncExecutor.execute(() -> {
             igClient = Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), (s) -> {
             });
             uiLogger.onStart("IG Client Ready");

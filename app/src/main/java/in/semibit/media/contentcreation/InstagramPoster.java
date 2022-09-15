@@ -5,9 +5,11 @@ import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.StringRequestListener;
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.models.media.UploadParameters;
+import com.github.instagram4j.instagram4j.requests.upload.RuploadVideoRequest;
 import com.github.instagram4j.instagram4j.responses.media.MediaResponse;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
 import com.google.gson.Gson;
+import com.semibit.ezandroidutils.EzUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,8 +20,10 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 
+import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.igclientext.post.MediaConfigureReelRemixRequest;
+import in.semibit.media.followerbot.FollowBotService;
 
 public class InstagramPoster {
 
@@ -45,7 +49,7 @@ public class InstagramPoster {
     public void post(File file, File cover, String caption, String mediaType, String bboy) {
 
         long startTime = System.currentTimeMillis();
-        if (last.equals(file.getAbsolutePath())) {
+        if (last.equals(file.getAbsolutePath()) && !SemibitMediaApp.TEST_MODE) {
             System.out.println("Skip reption !");
             this.callback.onStart("skipping repetition");
             return;
@@ -128,6 +132,7 @@ public class InstagramPoster {
                                 }
                                 return;
                             }
+
                             System.out.println("response of uploaded video! " + response.getStatus());
                             this.callback.onStart("stop: upload status code " + response.getStatus() + " (" + totalTimeSecs + " secs)");
 
@@ -145,6 +150,11 @@ public class InstagramPoster {
 
 
     public void savePost(JSONObject bboy) {
+
+        if (FollowBotService.TEST_MODE) {
+            callback.onStart("Info Save Skipped since in Test Mode");
+            return;
+        }
 
         HashMap<String, String> ma = new HashMap<>();
         ma.put("body", bboy.toString());
@@ -173,15 +183,20 @@ public class InstagramPoster {
                                                                                                   MediaConfigureReelRemixRequest.MediaConfigurePayload payload,
                                                                                                   long uploadFinishTimeoutSeconds) {
         String upload_id = String.valueOf(System.currentTimeMillis());
+
         return client.actions().upload()
                 .videoWithCover(videoData, coverData,
                         UploadParameters.forTimelineVideo(upload_id, false))
                 .thenCompose(response -> {
-                    IGUtils.sleepSeconds(uploadFinishTimeoutSeconds);
+//                    EzUtils.e("Sleeping for "+uploadFinishTimeoutSeconds+" seconds before checking upload_finish");
+//                    IGUtils.sleepSeconds(uploadFinishTimeoutSeconds);
 
+//                    return CompletableFuture.completedFuture(response);
                     return client.actions().upload().finish(upload_id);
                 })
-                .thenCompose(response -> configureMediaToReelRemix(client, upload_id, payload));
+                .thenCompose(response -> {
+                    return configureMediaToReelRemix(client, upload_id, payload);
+                });
     }
 
 

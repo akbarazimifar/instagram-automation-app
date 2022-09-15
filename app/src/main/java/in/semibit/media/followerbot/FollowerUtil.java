@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import in.semibit.media.R;
 import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.AdvancedWebView;
+import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.GenricCallback;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.Insta4jClient;
@@ -115,7 +116,7 @@ public class FollowerUtil {
      */
     public GenericCompletableFuture<List<FollowUserModel>> syncConnectionsForUserToFirebase(String userName, boolean isIncomingConnection, GenricDataCallback cb, GenricDataCallback onUILog) {
         GenericCompletableFuture<List<FollowUserModel>> usersResultFuture = new GenericCompletableFuture<>();
-        AsyncTask.execute(() -> {
+        CommonAsyncExecutor.execute(() -> {
             try {
                 IGClient client = igClient;
                 String connections = isIncomingConnection ? "Followings" : "Followers";

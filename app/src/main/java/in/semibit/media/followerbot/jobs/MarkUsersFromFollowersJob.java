@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
@@ -65,7 +66,7 @@ public class MarkUsersFromFollowersJob extends BatchJob<FollowUserModel,Boolean>
 
         int maxFollowersToLoad = FollowBotService.TEST_MODE ? 15: 300;
         int maxFollowersToLoadPerBatch = FollowBotService.TEST_MODE ? 12: 100;
-        AsyncTask.execute(() -> {
+        CommonAsyncExecutor.execute(() -> {
             IGClient client = followerUtil.getIgClient();
             onUILog.onStart("Started marking users from user " + userName);
             GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("type", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
