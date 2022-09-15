@@ -4,10 +4,13 @@ import com.androidnetworking.AndroidNetworking;
 import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.StringRequestListener;
 import com.github.instagram4j.instagram4j.IGClient;
+import com.github.instagram4j.instagram4j.actions.async.AsyncAction;
+import com.github.instagram4j.instagram4j.actions.media.MediaAction;
+import com.github.instagram4j.instagram4j.exceptions.IGResponseException;
 import com.github.instagram4j.instagram4j.models.media.UploadParameters;
-import com.github.instagram4j.instagram4j.requests.upload.RuploadVideoRequest;
+import com.github.instagram4j.instagram4j.requests.media.MediaConfigureTimelineRequest;
+import com.github.instagram4j.instagram4j.requests.media.MediaConfigureToClipsRequest;
 import com.github.instagram4j.instagram4j.responses.media.MediaResponse;
-import com.github.instagram4j.instagram4j.utils.IGUtils;
 import com.google.gson.Gson;
 import com.semibit.ezandroidutils.EzUtils;
 
@@ -15,14 +18,19 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.igclientext.post.MediaConfigureReelRemixRequest;
+import in.semibit.media.common.igclientext.post.MediaConfigureToClipsRequestExt;
 import in.semibit.media.followerbot.FollowBotService;
 
 public class InstagramPoster {
@@ -105,38 +113,39 @@ public class InstagramPoster {
                 CompletableFuture<MediaResponse.MediaConfigureTimelineResponse> onMediaConfiguredResult =
                         uploadVideoWithTimeout(Files.readAllBytes(Paths.get(file.toURI())),
                                 Files.readAllBytes(Paths.get(cover.toURI())),
-                                new MediaConfigureReelRemixRequest.MediaConfigurePayload().caption(caption), 50L);
+                                new MediaConfigureTimelineRequest.MediaConfigurePayload().caption(caption), 50L);
 
+                if (true)
+                    return;
                 onMediaConfiguredResult.exceptionally(throwable -> {
                     this.callback.onStart("stop: error in upload " + throwable.getMessage());
                     throwable.printStackTrace();
                     return null;
+                }).thenAccept(response -> {
+                    long endTime = System.currentTimeMillis();
+                    long totalTimeSecs = (endTime - startTime) / 1000;
+                    if (response != null && response.getStatusCode() == 200) {
+                        String code = response.getMedia().getCode();
+                        //MainActivity.toast(null,"Successfully uploaded photo! " + code);
+                        System.out.println("Successfully uploaded video! " + code);
+                        this.callback.onStart("stop: upload status code " + response.getStatus() + " (" + totalTimeSecs + " secs)");
+                        JSONObject bo = null;
+                        try {
+                            bo = new JSONObject(bboy);
+                            bo.put("mediaId", response.getMedia().getPk());
+                            bo.put("permalink", "https://www.instagram.com/p/" + code);
+                            bo.put("short_code", code);
+                            savePost(bo);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        return;
+                    }
+
+                    System.out.println("response of uploaded video! " + response.getStatus());
+                    this.callback.onStart("stop: upload status code " + response.getStatus() + " (" + totalTimeSecs + " secs)");
+
                 })
-                        .thenAccept(response -> {
-                            long endTime = System.currentTimeMillis();
-                            long totalTimeSecs = (endTime - startTime) / 1000;
-                            if (response != null && response.getStatusCode() == 200) {
-                                String code = response.getMedia().getCode();
-                                //MainActivity.toast(null,"Successfully uploaded photo! " + code);
-                                System.out.println("Successfully uploaded video! " + code);
-                                this.callback.onStart("stop: upload status code " + response.getStatus() + " (" + totalTimeSecs + " secs)");
-                                JSONObject bo = null;
-                                try {
-                                    bo = new JSONObject(bboy);
-                                    bo.put("mediaId", response.getMedia().getPk());
-                                    bo.put("permalink", "https://www.instagram.com/p/" + code);
-                                    bo.put("short_code", code);
-                                    savePost(bo);
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                                return;
-                            }
-
-                            System.out.println("response of uploaded video! " + response.getStatus());
-                            this.callback.onStart("stop: upload status code " + response.getStatus() + " (" + totalTimeSecs + " secs)");
-
-                        })
                         .join();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -180,23 +189,48 @@ public class InstagramPoster {
 
     public CompletableFuture<MediaResponse.MediaConfigureTimelineResponse> uploadVideoWithTimeout(byte[] videoData,
                                                                                                   byte[] coverData,
-                                                                                                  MediaConfigureReelRemixRequest.MediaConfigurePayload payload,
+                                                                                                  MediaConfigureTimelineRequest.MediaConfigurePayload mediPayload,
                                                                                                   long uploadFinishTimeoutSeconds) {
         String upload_id = String.valueOf(System.currentTimeMillis());
-
-        return client.actions().upload()
-                .videoWithCover(videoData, coverData,
-                        UploadParameters.forTimelineVideo(upload_id, false))
-                .thenCompose(response -> {
-//                    EzUtils.e("Sleeping for "+uploadFinishTimeoutSeconds+" seconds before checking upload_finish");
-//                    IGUtils.sleepSeconds(uploadFinishTimeoutSeconds);
-
-//                    return CompletableFuture.completedFuture(response);
-                    return client.actions().upload().finish(upload_id);
+        MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload payload = new MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload().caption(mediPayload.caption());
+        CompletableFuture<MediaResponse.MediaConfigureToClipsResponse> reelResponse = client.actions().upload()
+                .videoWithCover(videoData, coverData, UploadParameters.forClip(upload_id))
+                .thenCompose(response -> client.actions().upload().finish(upload_id))
+                .thenCompose(response -> new MediaConfigureToClipsRequestExt(payload.upload_id(upload_id)).execute(client))
+                .thenApply(CompletableFuture::completedFuture)
+                .exceptionally(tr -> {
+                    if (IGResponseException.IGFailedResponse.of(tr.getCause()).getStatusCode() != 202 &&
+                            !(tr.getCause() instanceof SocketTimeoutException))
+                        throw new CompletionException(tr.getCause());
+                    return AsyncAction.retry(
+                            () -> new MediaConfigureToClipsRequestExt(payload.upload_id(upload_id)).execute(client),
+                            tr, 3, 10,
+                            TimeUnit.SECONDS);
                 })
-                .thenCompose(response -> {
-                    return configureMediaToReelRemix(client, upload_id, payload);
-                });
+                .thenCompose(Function.identity());
+
+        try {
+            MediaResponse.MediaConfigureToClipsResponse mediaResponse = reelResponse.join();
+            EzUtils.log(mediaResponse.toString());
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+
+//        CompletableFuture<MediaResponse.MediaConfigureTimelineResponse> postResponse =configureMediaToReelRemix(client, upload_id, mediPayload);
+//        try {
+//            CompletableFuture<MediaResponse.MediaConfigureTimelineResponse> postResponseFuture =
+//                    AsyncAction.retry(
+//                            () -> MediaAction.configureMediaToTimeline(client, upload_id, mediPayload),
+//                            null, 3, 10L,
+//                            TimeUnit.SECONDS);
+//
+//            MediaResponse.MediaConfigureTimelineResponse postResponse = postResponseFuture.join();
+//            return postResponseFuture;
+//        } catch (Exception exception) {
+//            exception.printStackTrace();
+//            return null;
+//        }
+        return null;
     }
 
 

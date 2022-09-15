@@ -44,10 +44,12 @@ dependencies {
     implementation 'com.google.firebase:firebase-crashlytics'
     implementation 'com.google.firebase:firebase-config'
     implementation 'com.amitshekhar.android:android-networking:1.0.2'
-    implementation 'com.github.instagram4j:instagram4j:2.0.7'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'javax.annotation:javax.annotation-api:1.3.2'
     implementation 'com.github.shiveshnavin:ezandroidutils:1.2.0'
+
+//    implementation 'com.github.instagram4j:instagram4j:2.0.7'
+    implementation 'com.github.shiveshnavin:instagram4j:534c7de363'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

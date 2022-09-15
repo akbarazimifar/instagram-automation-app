@@ -1,7 +1,6 @@
 package in.semibit.media.common.igclientext.post;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.models.IGPayload;
 import com.github.instagram4j.instagram4j.models.location.Location;
@@ -9,10 +8,10 @@ import com.github.instagram4j.instagram4j.models.media.UserTags;
 import com.github.instagram4j.instagram4j.requests.IGPostRequest;
 import com.github.instagram4j.instagram4j.responses.media.MediaResponse;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
+import com.semibit.ezandroidutils.EzUtils;
 
 import java.util.Collections;
 
-import in.semibit.media.SemibitMediaApp;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Setter;
@@ -21,50 +20,30 @@ import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 
-public class MediaConfigureReelRemixRequest extends IGPostRequest<MediaResponse.MediaConfigureTimelineResponse> {
+public class MediaConfigureToClipsRequestExt extends IGPostRequest<MediaResponse.MediaConfigureToClipsResponse> {
     @NonNull
-    private MediaConfigureReelRemixRequest.MediaConfigurePayload payload;
+    private MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload payload;
+
+    public MediaConfigureToClipsRequestExt(@NonNull MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload payload) {
+        this.payload = payload;
+    }
 
     @Override
     protected RequestBody getRequestBody(IGClient client) {
         if (getPayload(client) == null) {
             return RequestBody.create("", null);
         }
-        String payloadStr = IGUtils.objectToJson(getPayload(client) instanceof IGPayload
+        String payload = IGUtils.objectToJson(getPayload(client) instanceof IGPayload
                 ? client.setIGPayloadDefaults((IGPayload) getPayload(client))
                 : getPayload(client));
-        if (SemibitMediaApp.TEST_MODE)
-            payloadStr = RemixPayload.getRemixPayload(
-                    (MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload) client.setIGPayloadDefaults(payload));
+        EzUtils.e("Payload", payload);
+        payload = RemixPayload.getRemixPayload((MediaConfigureToClipsPayload)(client.setIGPayloadDefaults((IGPayload) getPayload(client))));
         if (isSigned()) {
-            return RequestBody.create(IGUtils.generateSignature(payloadStr),
+            return RequestBody.create(IGUtils.generateSignature(payload),
                     MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8"));
         } else {
-            return RequestBody.create(payloadStr, MediaType.parse("application/json; charset=UTF-8"));
+            return RequestBody.create(payload, MediaType.parse("application/json; charset=UTF-8"));
         }
-    }
-
-    @Override
-    protected Request.Builder applyHeaders(IGClient client, Request.Builder builder) {
-        String UA = "Instagram 252.0.0.17.111 Android (29/10; 400dpi; 1080x2040; Google/google; Android SDK built for x86; generic_x86; ranchu; en_US; 397702078)";
-        String APPID = "56706734335242";
-        String CAPA = "3brTv10=";
-
-        Request.Builder req = super.applyHeaders(client, builder);
-        req.removeHeader("User-Agent");
-        req.addHeader("User-Agent", UA);
-
-        req.removeHeader("X-Ig-App-Id");
-        req.addHeader("X-Ig-App-Id", APPID);
-
-        req.removeHeader("X-Ig-Capabilities");
-        req.addHeader("X-Ig-Capabilities", CAPA);
-
-        return req;
-    }
-
-    public MediaConfigureReelRemixRequest(@NonNull MediaConfigureReelRemixRequest.MediaConfigurePayload payload) {
-        this.payload = payload;
     }
 
     @Override
@@ -78,42 +57,51 @@ public class MediaConfigureReelRemixRequest extends IGPostRequest<MediaResponse.
     }
 
     @Override
-    public Class<MediaResponse.MediaConfigureTimelineResponse> getResponseType() {
-        return MediaResponse.MediaConfigureTimelineResponse.class;
+    public Class<MediaResponse.MediaConfigureToClipsResponse> getResponseType() {
+        return MediaResponse.MediaConfigureToClipsResponse.class;
+    }
+
+    @Override
+    protected Request.Builder applyHeaders(IGClient client, Request.Builder req) {
+        Request.Builder builder = super.applyHeaders(client, req);
+        return builder;
     }
 
     @Data
     @Accessors(fluent = true)
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Setter
-    public static class MediaConfigurePayload extends IGPayload {
-        public String upload_id;
-        public String caption = "";
-        public String disable_comments;
-        public String location;
-        public String usertags;
-
-        public String caption() {
-            return caption;
-        }
+    public static class MediaConfigureToClipsPayload extends IGPayload {
+        private String upload_id;
+        private String caption = "";
+        private String source_type = "4";
+        private String feed_show = "1";
+        private String length;
+        private String retryContext =
+                "{\"num_step_auto_retry\":0,\"num_reupload\":0,\"num_step_manual_retry\":0}";
+        private String disable_comments;
+        private String location;
+        private String usertags;
 
         public String upload_id() {
             return upload_id;
         }
 
-        public MediaConfigurePayload upload_id(String upload_id) {
-            this.upload_id = upload_id;
-            return this;
+        public String caption() {
+            return caption;
         }
 
-        public MediaConfigurePayload caption(String caption) {
+        public MediaConfigureToClipsPayload caption(String caption) {
             this.caption = caption;
             return this;
         }
 
+        public MediaConfigureToClipsPayload upload_id(String upload_id) {
+            this.upload_id = upload_id;
+            return this;
+        }
 
-        public MediaConfigureReelRemixRequest.MediaConfigurePayload location(Location loc) {
+        public MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload location(Location loc) {
             Location payloadLoc = new Location();
 
             payloadLoc.setExternal_id(loc.getExternal_id());
@@ -133,7 +121,7 @@ public class MediaConfigureReelRemixRequest extends IGPostRequest<MediaResponse.
             return this;
         }
 
-        public MediaConfigureReelRemixRequest.MediaConfigurePayload usertags(UserTags.UserTagPayload... tags) {
+        public MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload usertags(UserTags.UserTagPayload... tags) {
             this.usertags = IGUtils.objectToJson(Collections.singletonMap("in", tags));
 
             return this;
@@ -142,7 +130,6 @@ public class MediaConfigureReelRemixRequest extends IGPostRequest<MediaResponse.
         public String usertags() {
             return this.usertags;
         }
-
     }
 
 }
