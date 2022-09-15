@@ -7,7 +7,7 @@ import com.semibit.ezandroidutils.App;
 
 public class SemibitMediaApp extends App {
 
-    public static final boolean TEST_MODE = true;
+    public static final boolean TEST_MODE = false;
     public static String CURRENT_TENANT = "semibitmedia";
 
     @Override

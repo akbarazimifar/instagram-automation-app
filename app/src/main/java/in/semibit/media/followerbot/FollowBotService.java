@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 
 import in.semibit.media.R;
+import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.GenricDataCallback;
@@ -44,7 +45,7 @@ import lombok.NonNull;
 
 public class FollowBotService {
 
-    public static final boolean TEST_MODE = true;
+    public static final boolean TEST_MODE = SemibitMediaApp.TEST_MODE;
     public static final String ACTION_BOT_START = "ACTION_BOT_START";
     public static final String ACTION_BOT_STOP = "ACTION_BOT_STOP";
     public static final String ACTION_BOT_LOG = "ACTION_BOT_LOG";

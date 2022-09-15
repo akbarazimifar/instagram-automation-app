@@ -141,7 +141,7 @@ public class InstagramPoster {
 
             try {
 
-                MediaResponse.MediaConfigureTimelineResponse onReels = uploadVideoToReels(Files.readAllBytes(Paths.get(file.toURI())),
+                MediaResponse.MediaConfigureToClipsResponse onReels = uploadVideoToReels(Files.readAllBytes(Paths.get(file.toURI())),
                         Files.readAllBytes(Paths.get(cover.toURI())),
                         new MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload()
                                 .caption(caption).originalMediaId(soundOriginalMedia)).join();
@@ -221,9 +221,9 @@ public class InstagramPoster {
     }
 
 
-    public CompletableFuture<MediaResponse.MediaConfigureTimelineResponse> uploadVideoToReels(byte[] videoData,
-                                                                                              byte[] coverData,
-                                                                                              MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload mediPayload) {
+    public CompletableFuture<MediaResponse.MediaConfigureToClipsResponse> uploadVideoToReels(byte[] videoData,
+                                                                                             byte[] coverData,
+                                                                                             MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload mediPayload) {
         String upload_id = String.valueOf(System.currentTimeMillis());
         MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload payload = new MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload().caption(mediPayload.caption());
         CompletableFuture<MediaResponse.MediaConfigureToClipsResponse> reelResponse = client.actions().upload()
@@ -237,7 +237,7 @@ public class InstagramPoster {
                         throw new CompletionException(tr.getCause());
                     return AsyncAction.retry(
                             () -> new MediaConfigureToClipsRequestExt(payload.upload_id(upload_id)).execute(client),
-                            tr, 3, 10,
+                            tr, 4, 10,
                             TimeUnit.SECONDS);
                 })
                 .thenCompose(Function.identity());
@@ -245,6 +245,7 @@ public class InstagramPoster {
         try {
             MediaResponse.MediaConfigureToClipsResponse mediaResponse = reelResponse.join();
             EzUtils.log(mediaResponse.toString());
+            return reelResponse;
         } catch (Exception exception) {
             exception.printStackTrace();
         }
