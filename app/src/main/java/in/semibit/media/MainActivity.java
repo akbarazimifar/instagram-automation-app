@@ -78,8 +78,8 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             binding.conturlOrUsername.setError(null);
-//            searchUserOrLink(binding.urlOrUsername.getText().toString());
-            postInBackground(new File(Insta4jClient.root,"clip.mp4"), "Test Caption", "video",new JSONObject());
+            searchUserOrLink(binding.urlOrUsername.getText().toString());
+//            postInBackground(new File(Insta4jClient.root,"clip.mp4"), "Test Caption", "video",new JSONObject());
         });
 
 

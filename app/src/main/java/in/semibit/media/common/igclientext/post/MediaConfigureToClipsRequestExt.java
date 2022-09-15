@@ -37,7 +37,8 @@ public class MediaConfigureToClipsRequestExt extends IGPostRequest<MediaResponse
                 ? client.setIGPayloadDefaults((IGPayload) getPayload(client))
                 : getPayload(client));
         EzUtils.e("Payload", payload);
-        payload = RemixPayload.getRemixPayload((MediaConfigureToClipsPayload)(client.setIGPayloadDefaults((IGPayload) getPayload(client))));
+        if (this.payload.originalMediaId != null)
+            payload = RemixPayload.getRemixPayload((MediaConfigureToClipsPayload) (client.setIGPayloadDefaults((IGPayload) getPayload(client))));
         if (isSigned()) {
             return RequestBody.create(IGUtils.generateSignature(payload),
                     MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8"));
@@ -83,12 +84,19 @@ public class MediaConfigureToClipsRequestExt extends IGPostRequest<MediaResponse
         private String location;
         private String usertags;
 
+        public String originalMediaId = "";
+
         public String upload_id() {
             return upload_id;
         }
 
         public String caption() {
             return caption;
+        }
+
+        public MediaConfigureToClipsPayload originalMediaId(String originalMediaId) {
+            this.caption = originalMediaId;
+            return this;
         }
 
         public MediaConfigureToClipsPayload caption(String caption) {

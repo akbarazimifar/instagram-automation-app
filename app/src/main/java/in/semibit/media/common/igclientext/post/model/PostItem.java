@@ -9,6 +9,18 @@ import com.google.gson.annotations.SerializedName;
 @Generated("jsonschema2pojo")
 public class PostItem {
 
+    public ClipsMetadata getClipsMetadata() {
+        return clipsMetadata;
+    }
+
+    public void setClipsMetadata(ClipsMetadata clipsMetadata) {
+        this.clipsMetadata = clipsMetadata;
+    }
+
+    @SerializedName("clips_metadata")
+    @Expose
+    private ClipsMetadata clipsMetadata;
+
     @SerializedName("taken_at")
     @Expose
     private Integer takenAt;

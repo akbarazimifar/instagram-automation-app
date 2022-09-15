@@ -129,7 +129,8 @@ public class BackgroundWorkerService extends Service {
 
         client.post(file, cover,
                 intent.getStringExtra("caption"),
-                intent.getStringExtra("mediaType"), intent.getStringExtra("post"));
+                intent.getStringExtra("mediaType"),
+                intent.getStringExtra("post"));
     }
 
 
@@ -158,18 +159,8 @@ public class BackgroundWorkerService extends Service {
     }
 
 
-    public void startForeground(Intent intent) {
+    public void startForeground(final Intent intent) {
         startForeground(NOTIF_ID, getMyActivityNotification(""));
-//        new Thread(
-//                () -> {
-//                    Log.e("Service", "Service is running...");
-//                    try {
-//                        work(intent);
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//        ).start();
         CommonAsyncExecutor.execute(()->work(intent));
     }
 
