@@ -12,6 +12,7 @@ import com.semibit.ezandroidutils.EzUtils;
 
 import java.util.Collections;
 
+import in.semibit.media.common.igclientext.post.model.PostItem;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Setter;
@@ -84,7 +85,7 @@ public class MediaConfigureToClipsRequestExt extends IGPostRequest<MediaResponse
         private String location;
         private String usertags;
 
-        public String originalMediaId = "";
+        public PostItem originalMediaId;
 
         public String upload_id() {
             return upload_id;
@@ -94,8 +95,8 @@ public class MediaConfigureToClipsRequestExt extends IGPostRequest<MediaResponse
             return caption;
         }
 
-        public MediaConfigureToClipsPayload originalMediaId(String originalMediaId) {
-            this.caption = originalMediaId;
+        public MediaConfigureToClipsPayload originalMediaId(PostItem originalMediaId) {
+            this.originalMediaId = originalMediaId;
             return this;
         }
 

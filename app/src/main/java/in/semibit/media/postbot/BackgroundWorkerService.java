@@ -1,4 +1,4 @@
-package in.semibit.media.contentcreation;
+package in.semibit.media.postbot;
 
 
 import android.app.Notification;

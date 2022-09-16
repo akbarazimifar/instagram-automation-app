@@ -40,8 +40,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 
 import in.semibit.media.common.AdvancedWebView;
-import in.semibit.media.common.Insta4jClient;
-import in.semibit.media.contentcreation.BackgroundWorkerService;
+import in.semibit.media.postbot.BackgroundWorkerService;
 import in.semibit.media.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
