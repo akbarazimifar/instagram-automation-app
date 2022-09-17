@@ -151,23 +151,24 @@ public class FollowerBotActivity extends AppCompatActivity {
 
                     followWebView = followerBotOrchestrator.generateAlert(context, "follow");
                     unfollowWebView = followerBotOrchestrator.generateAlert(context, "unfollow");
-
-                    followerBotOrchestrator.addBatchJob(new FollowUsersJob(logger, followWebView, followerBotOrchestrator.serverDb, followerUtil, context));
-                    followerBotOrchestrator.addBatchJob(new UnFollowUsersJob(logger, unfollowWebView, followerBotOrchestrator.serverDb, followerUtil, context));
-
                     followerBotOrchestrator.listenToTriggers(followWebView.second);
+
+
                     Intent intent = new Intent(context, FollowerBotForegroundService.class);
                     Map<String, Long> jobs = new ConcurrentHashMap<>();
-
-
+//
+//
+                    followerBotOrchestrator.addBatchJob(new FollowUsersJob(logger, followWebView, followerBotOrchestrator.serverDb, followerUtil, context));
                     jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
                     FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, FollowUsersJob.JOBNAME);
 
+                    followerBotOrchestrator.addBatchJob(new UnFollowUsersJob(logger, unfollowWebView, followerBotOrchestrator.serverDb, followerUtil, context));
                     jobs.put(UnFollowUsersJob.JOBNAME, UnFollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
                     FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, UnFollowUsersJob.JOBNAME);
 
                     intent.putExtra("jobSchedules", new Gson().toJson(jobs));
                     startForegroundService(intent);
+
                 } else
                     followerBotOrchestrator.killAll(null);
                 new Handler().postDelayed(this::updateButtonState, 1000);
