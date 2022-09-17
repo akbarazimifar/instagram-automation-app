@@ -9,7 +9,6 @@ import com.semibit.ezandroidutils.EzUtils;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,15 +17,11 @@ import java.util.concurrent.ThreadLocalRandom;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.igclientext.post.MediaConfigureToClipsRequestExt;
 import in.semibit.media.common.igclientext.post.model.PostItem;
-import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.internal.http.RealResponseBody;
-import okio.GzipSource;
-import okio.Okio;
 
 
 public class ReelRequestHelper {
@@ -42,6 +37,9 @@ public class ReelRequestHelper {
     String audioTitle = null;
 
     boolean isDoRemix = true;
+
+    String BASE_BODY_JSON_CONFIG = "";
+    String audioAssetStartTimeMs = "0", audioClusterId = "";
 
     public ReelRequestHelper(IGClient client, String upload_id, PostItem sourcePost) {
         this.api = new IGrequestHelper(client);
@@ -75,12 +73,24 @@ public class ReelRequestHelper {
                 audioAssetId = "" + postItem.getClipsMetadata().getOriginalSoundInfo().getAudioAssetId();
                 audioArtistUserName = postItem.getClipsMetadata().getOriginalSoundInfo().getIgArtist().getUsername();
                 audioTitle = postItem.getClipsMetadata().getOriginalSoundInfo().getOriginalAudioTitle();
+                BASE_BODY_JSON_CONFIG = TEMPLATE_REMIXED_SONG;
             } else if (postItem.getClipsMetadata().getMusicInfo() != null) {
                 LinkedTreeMap musicInfoMap = (LinkedTreeMap) postItem.getClipsMetadata().getMusicInfo();
                 LinkedTreeMap musicAssetInfoMap = (LinkedTreeMap) musicInfoMap.get("music_asset_info");
+                LinkedTreeMap musicConsumpInfoMap = (LinkedTreeMap) musicInfoMap.get("music_consumption_info");
+
                 audioAssetId = musicAssetInfoMap.get("audio_asset_id").toString();
                 audioArtistUserName = musicAssetInfoMap.get("ig_username").toString();
                 audioTitle = musicAssetInfoMap.get("title").toString();
+                audioClusterId = musicAssetInfoMap.get("audio_cluster_id").toString();
+
+                try {
+                    if (musicConsumpInfoMap != null)
+                        audioAssetStartTimeMs = musicConsumpInfoMap.get("audio_asset_start_time_in_ms").toString();
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+                BASE_BODY_JSON_CONFIG = TEMPLATE_MUSIC_SOUND;
             }
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -221,32 +231,37 @@ public class ReelRequestHelper {
             }
             if (remixOfPostMediaId == null || audioAssetId == null || audioArtistUserName == null)
                 return "Insufficient info";
-            String s_2906686555970937661 = remixOfPostMediaId;//"" + postItem.getClipsMetadata().getOriginalSoundInfo().getOriginalMediaId();
-            String s_347624030914642 = audioAssetId;//"" + postItem.getClipsMetadata().getOriginalSoundInfo().getAudioAssetId();
-            String soundArtistUserName = audioArtistUserName;// postItem.getClipsMetadata().getOriginalSoundInfo().getIgArtist().getUsername();
+//            String s_AORIGPOSTMEDIAID = remixOfPostMediaId;//"" + postItem.getClipsMetadata().getOriginalSoundInfo().getOriginalMediaId();
+//            String s_AAUDIOASSETID = audioAssetId;//"" + postItem.getClipsMetadata().getOriginalSoundInfo().getAudioAssetId();
+//            String soundArtistUserName = audioArtistUserName;// postItem.getClipsMetadata().getOriginalSoundInfo().getIgArtist().getUsername();
 
             OkHttpClient okHttpClient = igClient.getHttpClient();
             MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8");
 //            String bodyString = "signed_body=SIGNATURE."+BASE_BODY_JSON_CONFIG;
             String bodyString = BASE_BODY_JSON_CONFIG;
 
-            bodyString = bodyString.replaceAll("2906686555970937661", s_2906686555970937661);
-            bodyString = bodyString.replaceAll("347624030914642", s_347624030914642);
-            bodyString = bodyString.replaceAll("137624447800", upload_id);
-            bodyString = bodyString.replaceAll("51132554072", getUserId());
-            bodyString = bodyString.replaceAll("android-ba9156177f99d2ee", igClient.getDeviceId());
-            bodyString = bodyString.replaceAll("7397b647-0663-4d02-9746-8cd93c61e6f1", UUID.randomUUID().toString());
-            bodyString = bodyString.replaceAll("not_your_type_yt", soundArtistUserName);
+            bodyString = bodyString.replaceAll("AORIGPOSTMEDIAID", remixOfPostMediaId);
+            bodyString = bodyString.replaceAll("AAUDIOASSETID", audioAssetId);
+            bodyString = bodyString.replaceAll("AUPLOADID", upload_id);
+            bodyString = bodyString.replaceAll("AUSERID", getUserId());
+            bodyString = bodyString.replaceAll("ADEVICEID", igClient.getDeviceId());
+            bodyString = bodyString.replaceAll("AUUID", UUID.randomUUID().toString());
+            bodyString = bodyString.replaceAll("AAUDIOARTISTNAME", audioArtistUserName);
+
+            bodyString = bodyString.replaceAll("AAUDIOCLUSTERID", audioClusterId);
+            bodyString = bodyString.replaceAll("AUDIOASSETSTARTTIMEMS", audioAssetStartTimeMs);
+            bodyString = bodyString.replaceAll("AAUDIOCLUSTERID", audioArtistUserName);
+            bodyString = bodyString.replaceAll("AORIGINALAUDIOTITLE", audioTitle);
 
 //            caption = "baldurs \ngate\n\n\n";
             JSONObject clean = new JSONObject(bodyString);
-            clean.put("caption",caption);
+            clean.put("caption", caption);
             bodyString = clean.toString();//.replaceAll("ManualRemix",caption);
-            bodyString = bodyString.replaceAll("Originalaudio", audioTitle);
+
 
 //            bodyString = bodyString.replaceAll("\n","");
 
-            bodyString =  IGUtils.generateSignature(bodyString);
+            bodyString = IGUtils.generateSignature(bodyString);
 
 //            bodyString = bodyString.replaceAll("EZIKIEL2517","%0A");
 
@@ -268,9 +283,9 @@ public class ReelRequestHelper {
                     .addHeader("X-Bloks-Version-Id", "ed06b936be88562bdc1a13aa16ef14521a460edaf0bd1c6d45748e2c542525a1")
 //                .addHeader("X-Ig-Www-Claim", "hmac.AR24FJFvT95-zFkyiMmtSNfinGButbGI6Zyzo5TBsI_WfJ9t")
                     .addHeader("X-Bloks-Is-Layout-Rtl", "false")
-//                .addHeader("X-Ig-Device-Id", "7397b647-0663-4d02-9746-8cd93c61e6f1")
+//                .addHeader("X-Ig-Device-Id", "AUUID")
 //                .addHeader("X-Ig-Family-Device-Id", "f4a03c5e-a471-4c32-b97c-9d6f2995fcf8")
-//                .addHeader("X-Ig-Android-Id", "android-ba9156177f99d2ee")
+//                .addHeader("X-Ig-Android-Id", "ADEVICEID")
                     .addHeader("X-Ig-Timezone-Offset", "19800")
                     .addHeader("X-Ig-Nav-Chain", "SelfFragment:self_profile:2:main_profile::,ContextualFeedFragment:feed_contextual_self_profile:5:button::,ClipsViewerFragment:clips_viewer_feed_contextual_self_profile:6:feed_contextual_self_profile::,TRUNCATEDx3,ClipsRemixOptionsFragment:clips_remix_options:10:button::,IgCameraViewController:reel_composer_camera:11:button::,ClipsCameraFragment:clips_precapture_camera:12:button::,VideoViewController:clips_postcapture_camera:13:button::,ClipsShareSheetFragment:clips_share_sheet:14:button::,IgCameraViewController:reel_composer_camera:15:button::,ClipsViewerFragment:clips_viewer_clips_tab:16:clips_tab::")
 //                .addHeader("X-Ig-Salt-Ids", "51052545")
@@ -355,13 +370,13 @@ public class ReelRequestHelper {
         return null;
     }
 
-    public String BASE_BODY_JSON_CONFIG = "{\n" +
+    public String TEMPLATE_REMIXED_SONG = "{\n" +
             "    \"clips_share_preview_to_feed\": \"1\",\n" +
             "    \"is_shared_to_fb\": \"0\",\n" +
             "    \"is_clips_edited\": \"0\",\n" +
             "    \"like_and_view_counts_disabled\": \"0\",\n" +
             "    \"camera_entry_point\": \"299\",\n" +
-            "    \"tap_models\": \"[{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0,\\\"width\\\":0.0,\\\"height\\\":0.0,\\\"rotation\\\":0.0,\\\"type\\\":\\\"music\\\",\\\"tag\\\":\\\"386fc201-6d73-43ad-83a4-a3291ccf5488\\\",\\\"audio_asset_start_time_in_ms\\\":0,\\\"audio_asset_suggested_start_time_in_ms\\\":0,\\\"derived_content_start_time_in_ms\\\":0,\\\"overlap_duration_in_ms\\\":15000,\\\"browse_session_id\\\":\\\"d46be47e-3b30-479d-9403-166e1af80caf\\\",\\\"music_product\\\":\\\"clips_camera_format_v2\\\",\\\"audio_asset_id\\\":\\\"347624030914642\\\",\\\"progressive_download_url\\\":\\\"https://scontent-maa2-1.xx.fbcdn.net/v/t39.12897-6/299997302_1479800132448155_5706075520205073543_n.m4a?_nc_cat=106&ccb=1-7&_nc_sid=02c1ff&_nc_ohc=zHeGZvfYiKwAX8nMjJK&_nc_ad=z-m&_nc_cid=0&_nc_ht=scontent-maa2-1.xx&oh=00_AT-XviAjHpxHaf_VMd5VImEFTkxDvEXE3sB6sWrSg5nUsg&oe=6329E320\\\",\\\"duration_in_ms\\\":28026,\\\"dash_manifest\\\":\\\"<?xml version=\\\\\\\"1.0\\\\\\\" encoding=\\\\\\\"UTF-8\\\\\\\"?>\\\\n<!--Generated with https://github.com/google/shaka-packager version v1.6.0-release-->\\\\n<MPD xmlns=\\\\\\\"urn:mpeg:dash:schema:mpd:2011\\\\\\\" xmlns:xsi=\\\\\\\"http://www.w3.org/2001/XMLSchema-instance\\\\\\\" xmlns:xlink=\\\\\\\"http://www.w3.org/1999/xlink\\\\\\\" xmlns:cenc=\\\\\\\"urn:mpeg:cenc:2013\\\\\\\" xsi:schemaLocation=\\\\\\\"urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd\\\\\\\" profiles=\\\\\\\"urn:mpeg:dash:profile:isoff-on-demand:2011\\\\\\\" minBufferTime=\\\\\\\"PT2S\\\\\\\" type=\\\\\\\"static\\\\\\\" mediaPresentationDuration=\\\\\\\"PT28.025S\\\\\\\">\\\\n  <Period id=\\\\\\\"0\\\\\\\">\\\\n    <AdaptationSet id=\\\\\\\"0\\\\\\\" contentType=\\\\\\\"audio\\\\\\\" subsegmentAlignment=\\\\\\\"true\\\\\\\">\\\\n      <Representation id=\\\\\\\"0\\\\\\\" bandwidth=\\\\\\\"70239\\\\\\\" codecs=\\\\\\\"mp4a.40.2\\\\\\\" mimeType=\\\\\\\"audio/mp4\\\\\\\" audioSamplingRate=\\\\\\\"22050\\\\\\\">\\\\n        <AudioChannelConfiguration schemeIdUri=\\\\\\\"urn:mpeg:dash:23003:3:audio_channel_configuration:2011\\\\\\\" value=\\\\\\\"2\\\\\\\"/>\\\\n        <BaseURL>https://scontent-maa2-1.xx.fbcdn.net/v/t39.12897-6/300112693_1369990176858319_7851170966804425913_n.m4a?_nc_cat=100&amp;ccb=1-7&amp;_nc_sid=02c1ff&amp;_nc_ohc=ztGF8NvwPM0AX8Qecel&amp;_nc_ad=z-m&amp;_nc_cid=0&amp;_nc_ht=scontent-maa2-1.xx&amp;oh=00_AT-KYeTPtrqlaTT72PM4s9GPmTsSIYXNLzNRx9bz1u5SzA&amp;oe=6329985D</BaseURL>\\\\n        <SegmentBase indexRange=\\\\\\\"743-942\\\\\\\" timescale=\\\\\\\"44100\\\\\\\">\\\\n          <Initialization range=\\\\\\\"0-742\\\\\\\"/>\\\\n        </SegmentBase>\\\\n      </Representation>\\\\n    </AdaptationSet>\\\\n  </Period>\\\\n</MPD>\\\\n\\\",\\\"title\\\":\\\"Originalaudio\\\",\\\"display_artist\\\":\\\"not_your_type_yt\\\",\\\"cover_artwork_uri\\\":\\\"https://scontent-maa2-2.cdninstagram.com/v/t51.2885-19/272657676_2469488359849327_6306960314298840502_n.jpg?stp=dst-jpg_s150x150&efg=eyJybWQiOiJpZ19hbmRyb2lkX21vYmlsZV9uZXR3b3JrX3N0YWNrX3Bvd2VyX3N0YXRlX3FwbF9hbm5vdGF0aW9uc18zOmNvbnRyb2wifQ&_nc_ht=scontent-maa2-2.cdninstagram.com&_nc_cat=107&_nc_ohc=pxhM5guzEowAX-Vrx6j&edm=AOM4IUYBAAAA&ccb=7-5&oh=00_AT_t30Y8FMomzq6DrVqIj428BWXreiqt0sR0MyH-FycpjQ&oe=632AFEBF&_nc_sid=734323\\\",\\\"cover_artwork_thumbnail_uri\\\":\\\"https://scontent-maa2-2.cdninstagram.com/v/t51.2885-19/272657676_2469488359849327_6306960314298840502_n.jpg?stp=dst-jpg_s150x150&efg=eyJybWQiOiJpZ19hbmRyb2lkX21vYmlsZV9uZXR3b3JrX3N0YWNrX3Bvd2VyX3N0YXRlX3FwbF9hbm5vdGF0aW9uc18zOmNvbnRyb2wifQ&_nc_ht=scontent-maa2-2.cdninstagram.com&_nc_cat=107&_nc_ohc=pxhM5guzEowAX-Vrx6j&edm=AOM4IUYBAAAA&ccb=7-5&oh=00_AT_t30Y8FMomzq6DrVqIj428BWXreiqt0sR0MyH-FycpjQ&oe=632AFEBF&_nc_sid=734323\\\",\\\"is_explicit\\\":false,\\\"has_lyrics\\\":false,\\\"is_original_sound\\\":true,\\\"is_local_audio\\\":false,\\\"allows_saving\\\":false,\\\"original_media_id\\\":\\\"2906686555970937661\\\",\\\"hide_remixing\\\":false,\\\"picked_in_post_capture\\\":false,\\\"is_bookmarked\\\":false,\\\"should_mute_audio\\\":false,\\\"product\\\":\\\"story_camera_clips_v2\\\",\\\"is_sticker\\\":false,\\\"display_type\\\":\\\"HIDDEN\\\",\\\"tap_state\\\":0,\\\"tap_state_str_id\\\":\\\"\\\"}]\",\n" +
+            "    \"tap_models\": \"[{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0,\\\"width\\\":0.0,\\\"height\\\":0.0,\\\"rotation\\\":0.0,\\\"type\\\":\\\"music\\\",\\\"tag\\\":\\\"386fc201-6d73-43ad-83a4-a3291ccf5488\\\",\\\"audio_asset_start_time_in_ms\\\":0,\\\"audio_asset_suggested_start_time_in_ms\\\":0,\\\"derived_content_start_time_in_ms\\\":0,\\\"overlap_duration_in_ms\\\":15000,\\\"browse_session_id\\\":\\\"d46be47e-3b30-479d-9403-166e1af80caf\\\",\\\"music_product\\\":\\\"clips_camera_format_v2\\\",\\\"audio_asset_id\\\":\\\"AAUDIOASSETID\\\",\\\"progressive_download_url\\\":\\\"https://scontent-maa2-1.xx.fbcdn.net/v/t39.12897-6/299997302_1479800132448155_5706075520205073543_n.m4a?_nc_cat=106&ccb=1-7&_nc_sid=02c1ff&_nc_ohc=zHeGZvfYiKwAX8nMjJK&_nc_ad=z-m&_nc_cid=0&_nc_ht=scontent-maa2-1.xx&oh=00_AT-XviAjHpxHaf_VMd5VImEFTkxDvEXE3sB6sWrSg5nUsg&oe=6329E320\\\",\\\"duration_in_ms\\\":28026,\\\"dash_manifest\\\":\\\"<?xml version=\\\\\\\"1.0\\\\\\\" encoding=\\\\\\\"UTF-8\\\\\\\"?>\\\\n<!--Generated with https://github.com/google/shaka-packager version v1.6.0-release-->\\\\n<MPD xmlns=\\\\\\\"urn:mpeg:dash:schema:mpd:2011\\\\\\\" xmlns:xsi=\\\\\\\"http://www.w3.org/2001/XMLSchema-instance\\\\\\\" xmlns:xlink=\\\\\\\"http://www.w3.org/1999/xlink\\\\\\\" xmlns:cenc=\\\\\\\"urn:mpeg:cenc:2013\\\\\\\" xsi:schemaLocation=\\\\\\\"urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd\\\\\\\" profiles=\\\\\\\"urn:mpeg:dash:profile:isoff-on-demand:2011\\\\\\\" minBufferTime=\\\\\\\"PT2S\\\\\\\" type=\\\\\\\"static\\\\\\\" mediaPresentationDuration=\\\\\\\"PT28.025S\\\\\\\">\\\\n  <Period id=\\\\\\\"0\\\\\\\">\\\\n    <AdaptationSet id=\\\\\\\"0\\\\\\\" contentType=\\\\\\\"audio\\\\\\\" subsegmentAlignment=\\\\\\\"true\\\\\\\">\\\\n      <Representation id=\\\\\\\"0\\\\\\\" bandwidth=\\\\\\\"70239\\\\\\\" codecs=\\\\\\\"mp4a.40.2\\\\\\\" mimeType=\\\\\\\"audio/mp4\\\\\\\" audioSamplingRate=\\\\\\\"22050\\\\\\\">\\\\n        <AudioChannelConfiguration schemeIdUri=\\\\\\\"urn:mpeg:dash:23003:3:audio_channel_configuration:2011\\\\\\\" value=\\\\\\\"2\\\\\\\"/>\\\\n        <BaseURL>https://scontent-maa2-1.xx.fbcdn.net/v/t39.12897-6/300112693_1369990176858319_7851170966804425913_n.m4a?_nc_cat=100&amp;ccb=1-7&amp;_nc_sid=02c1ff&amp;_nc_ohc=ztGF8NvwPM0AX8Qecel&amp;_nc_ad=z-m&amp;_nc_cid=0&amp;_nc_ht=scontent-maa2-1.xx&amp;oh=00_AT-KYeTPtrqlaTT72PM4s9GPmTsSIYXNLzNRx9bz1u5SzA&amp;oe=6329985D</BaseURL>\\\\n        <SegmentBase indexRange=\\\\\\\"743-942\\\\\\\" timescale=\\\\\\\"44100\\\\\\\">\\\\n          <Initialization range=\\\\\\\"0-742\\\\\\\"/>\\\\n        </SegmentBase>\\\\n      </Representation>\\\\n    </AdaptationSet>\\\\n  </Period>\\\\n</MPD>\\\\n\\\",\\\"title\\\":\\\"AORIGINALAUDIOTITLE\\\",\\\"display_artist\\\":\\\"AAUDIOARTISTNAME\\\",\\\"cover_artwork_uri\\\":\\\"https://scontent-maa2-2.cdninstagram.com/v/t51.2885-19/272657676_2469488359849327_6306960314298840502_n.jpg?stp=dst-jpg_s150x150&efg=eyJybWQiOiJpZ19hbmRyb2lkX21vYmlsZV9uZXR3b3JrX3N0YWNrX3Bvd2VyX3N0YXRlX3FwbF9hbm5vdGF0aW9uc18zOmNvbnRyb2wifQ&_nc_ht=scontent-maa2-2.cdninstagram.com&_nc_cat=107&_nc_ohc=pxhM5guzEowAX-Vrx6j&edm=AOM4IUYBAAAA&ccb=7-5&oh=00_AT_t30Y8FMomzq6DrVqIj428BWXreiqt0sR0MyH-FycpjQ&oe=632AFEBF&_nc_sid=734323\\\",\\\"cover_artwork_thumbnail_uri\\\":\\\"https://scontent-maa2-2.cdninstagram.com/v/t51.2885-19/272657676_2469488359849327_6306960314298840502_n.jpg?stp=dst-jpg_s150x150&efg=eyJybWQiOiJpZ19hbmRyb2lkX21vYmlsZV9uZXR3b3JrX3N0YWNrX3Bvd2VyX3N0YXRlX3FwbF9hbm5vdGF0aW9uc18zOmNvbnRyb2wifQ&_nc_ht=scontent-maa2-2.cdninstagram.com&_nc_cat=107&_nc_ohc=pxhM5guzEowAX-Vrx6j&edm=AOM4IUYBAAAA&ccb=7-5&oh=00_AT_t30Y8FMomzq6DrVqIj428BWXreiqt0sR0MyH-FycpjQ&oe=632AFEBF&_nc_sid=734323\\\",\\\"is_explicit\\\":false,\\\"has_lyrics\\\":false,\\\"is_original_sound\\\":true,\\\"is_local_audio\\\":false,\\\"allows_saving\\\":false,\\\"original_media_id\\\":\\\"AORIGPOSTMEDIAID\\\",\\\"hide_remixing\\\":false,\\\"picked_in_post_capture\\\":false,\\\"is_bookmarked\\\":false,\\\"should_mute_audio\\\":false,\\\"product\\\":\\\"story_camera_clips_v2\\\",\\\"is_sticker\\\":false,\\\"display_type\\\":\\\"HIDDEN\\\",\\\"tap_state\\\":0,\\\"tap_state_str_id\\\":\\\"\\\"}]\",\n" +
             "    \"is_created_with_sound_sync\": \"0\",\n" +
             "    \"filter_type\": \"0\",\n" +
             "    \"camera_session_id\": \"0ddef447-b2de-426b-9b41-28a9c943a74e\",\n" +
@@ -372,28 +387,28 @@ public class ReelRequestHelper {
             "    \"camera_position\": \"unknown\",\n" +
             "    \"video_result\": \"\",\n" +
             "    \"is_created_with_contextual_music_recs\": \"0\",\n" +
-            "    \"_uid\": \"51132554072\",\n" +
-            "    \"device_id\": \"android-ba9156177f99d2ee\",\n" +
-            "    \"_uuid\": \"7397b647-0663-4d02-9746-8cd93c61e6f1\",\n" +
+            "    \"_uid\": \"AUSERID\",\n" +
+            "    \"device_id\": \"ADEVICEID\",\n" +
+            "    \"_uuid\": \"AUUID\",\n" +
             "    \"nav_chain\": \"SelfFragment:self_profile:2:main_profile::,ContextualFeedFragment:feed_contextual_self_profile:5:button::,ClipsViewerFragment:clips_viewer_feed_contextual_self_profile:6:feed_contextual_self_profile::,TRUNCATEDx1,ClipsRemixOptionsFragment:clips_remix_options:8:button::,ClipsViewerFragment:clips_viewer_original_creator_video:9:button::,ClipsRemixOptionsFragment:clips_remix_options:10:button::,IgCameraViewController:reel_composer_camera:11:button::,ClipsCameraFragment:clips_precapture_camera:12:button::,VideoViewController:clips_postcapture_camera:13:button::,ClipsShareSheetFragment:clips_share_sheet:14:button::\",\n" +
             "    \"caption\": \"ManualRemix\",\n" +
             "    \"video_subtitles_enabled\": \"1\",\n" +
             "    \"capture_type\": \"clips_v2\",\n" +
             "    \"audience\": \"default\",\n" +
-            "    \"upload_id\": \"137624447800\",\n" +
+            "    \"upload_id\": \"AUPLOADID\",\n" +
             "    \"template_clips_media_id\": \"null\",\n" +
             "    \"is_creator_requesting_mashup\": \"0\",\n" +
             "    \"additional_audio_info\": {\n" +
             "        \"has_voiceover_attribution\": \"0\"\n" +
             "    },\n" +
             "    \"device\": {\n" +
-            "        \"manufacturer\": \"Google\",\n" +
-            "        \"model\": \"Android SDK built for x86\",\n" +
+            "        \"manufacturer\": \"Samsung\",\n" +
+            "        \"model\": \"Samsung Galaxy\",\n" +
             "        \"android_version\": 29,\n" +
             "        \"android_release\": \"10\"\n" +
             "    },\n" +
             "    \"mashup_info\": {\n" +
-            "        \"original_media_id\": \"2906686555970937661\",\n" +
+            "        \"original_media_id\": \"AORIGPOSTMEDIAID\",\n" +
             "        \"original_media_duration\": 27957,\n" +
             "        \"original_media_is_shared_to_facebook\": false,\n" +
             "        \"are_remixes_crosspostable\": false,\n" +
@@ -414,7 +429,7 @@ public class ReelRequestHelper {
             "        \"source_height\": 1920\n" +
             "    },\n" +
             "    \"remixed_original_sound_params\": {\n" +
-            "        \"original_media_id\": \"2906686555970937661\"\n" +
+            "        \"original_media_id\": \"AORIGPOSTMEDIAID\"\n" +
             "    },\n" +
             "    \"audio_muted\": false,\n" +
             "    \"poster_frame_index\": 0,\n" +
@@ -456,13 +471,133 @@ public class ReelRequestHelper {
             "        \"remix\": {\n" +
             "            \"volume_level\": 1.0,\n" +
             "            \"is_saved\": \"0\",\n" +
-            "            \"artist_name\": \"not_your_type_yt\",\n" +
-            "            \"audio_asset_id\": \"347624030914642\",\n" +
+            "            \"artist_name\": \"AAUDIOARTISTNAME\",\n" +
+            "            \"audio_asset_id\": \"AAUDIOASSETID\",\n" +
             "            \"audio_cluster_id\": null,\n" +
             "            \"track_name\": \"Original audio\",\n" +
             "            \"is_picked_precapture\": \"1\",\n" +
-            "            \"original_media_id\": \"2906686555970937661\"\n" +
+            "            \"original_media_id\": \"AORIGPOSTMEDIAID\"\n" +
             "        }\n" +
+            "    }\n" +
+            "}";
+
+
+    String TEMPLATE_MUSIC_SOUND = "{\n" +
+            "    \"clips_share_preview_to_feed\": \"1\",\n" +
+            "    \"is_shared_to_fb\": \"0\",\n" +
+            "    \"is_clips_edited\": \"0\",\n" +
+            "    \"like_and_view_counts_disabled\": \"0\",\n" +
+            "    \"camera_entry_point\": \"299\",\n" +
+            "    \"tap_models\": \"[{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0,\\\"width\\\":0.0,\\\"height\\\":0.0,\\\"rotation\\\":0.0,\\\"type\\\":\\\"music\\\",\\\"tag\\\":\\\"93eb7713-58fa-4621-9fa9-9663283d09e7\\\",\\\"audio_asset_start_time_in_ms\\\":AUDIOASSETSTARTTIMEMS,\\\"audio_asset_suggested_start_time_in_ms\\\":32000,\\\"derived_content_start_time_in_ms\\\":0,\\\"overlap_duration_in_ms\\\":15000,\\\"browse_session_id\\\":\\\"a9304722-4734-4675-b1d3-90296712371c\\\",\\\"music_product\\\":\\\"clips_camera_format_v2\\\",\\\"audio_asset_id\\\":\\\"AAUDIOASSETID\\\",\\\"audio_cluster_id\\\":\\\"AAUDIOCLUSTERID\\\",\\\"progressive_download_url\\\":\\\"https://scontent-maa2-1.xx.fbcdn.net/v/t39.12897-6/241326306_547905612985617_1799686547546246321_n.m4a?_nc_cat=1&ccb=1-7&_nc_sid=02c1ff&_nc_ohc=pss4xvRe0TkAX_WRaYJ&_nc_ad=z-m&_nc_cid=0&_nc_ht=scontent-maa2-1.xx&oh=00_AT-Vn4MKHSMmqiO_QuBv3dCQEFKwbNxAAxhWgIZiS_c9VQ&oe=632ADD5F\\\",\\\"duration_in_ms\\\":188368,\\\"dash_manifest\\\":\\\"<?xml version=\\\\\\\"1.0\\\\\\\" encoding=\\\\\\\"UTF-8\\\\\\\"?>\\\\n<!--Generated with https://github.com/google/shaka-packager version v1.6.0-release-->\\\\n<MPD xmlns=\\\\\\\"urn:mpeg:dash:schema:mpd:2011\\\\\\\" xmlns:xsi=\\\\\\\"http://www.w3.org/2001/XMLSchema-instance\\\\\\\" xmlns:xlink=\\\\\\\"http://www.w3.org/1999/xlink\\\\\\\" xmlns:cenc=\\\\\\\"urn:mpeg:cenc:2013\\\\\\\" xsi:schemaLocation=\\\\\\\"urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd\\\\\\\" profiles=\\\\\\\"urn:mpeg:dash:profile:isoff-on-demand:2011\\\\\\\" minBufferTime=\\\\\\\"PT2S\\\\\\\" type=\\\\\\\"static\\\\\\\" mediaPresentationDuration=\\\\\\\"PT188.412S\\\\\\\">\\\\n  <Period id=\\\\\\\"0\\\\\\\">\\\\n    <AdaptationSet id=\\\\\\\"0\\\\\\\" contentType=\\\\\\\"audio\\\\\\\" subsegmentAlignment=\\\\\\\"true\\\\\\\">\\\\n      <Representation id=\\\\\\\"0\\\\\\\" bandwidth=\\\\\\\"130014\\\\\\\" codecs=\\\\\\\"mp4a.40.2\\\\\\\" mimeType=\\\\\\\"audio/mp4\\\\\\\" audioSamplingRate=\\\\\\\"48000\\\\\\\">\\\\n        <AudioChannelConfiguration schemeIdUri=\\\\\\\"urn:mpeg:dash:23003:3:audio_channel_configuration:2011\\\\\\\" value=\\\\\\\"2\\\\\\\"/>\\\\n        <BaseURL>https://scontent-maa2-1.xx.fbcdn.net/v/t39.12897-6/241264674_544578393299033_1055633617535453105_n.m4a?_nc_cat=1&amp;ccb=1-7&amp;_nc_sid=02c1ff&amp;_nc_ohc=lONrSb7QROYAX9zjNOF&amp;_nc_ad=z-m&amp;_nc_cid=0&amp;_nc_ht=scontent-maa2-1.xx&amp;oh=00_AT-M3rpxPa256CB4hO2P_7QQ31QK22RioG_hM8cABajmFQ&amp;oe=6329EE3B</BaseURL>\\\\n        <SegmentBase indexRange=\\\\\\\"741-1900\\\\\\\" timescale=\\\\\\\"48000\\\\\\\">\\\\n          <Initialization range=\\\\\\\"0-740\\\\\\\"/>\\\\n        </SegmentBase>\\\\n      </Representation>\\\\n    </AdaptationSet>\\\\n  </Period>\\\\n</MPD>\\\\n\\\",\\\"highlight_start_times_in_ms\\\":[32000,47000,11000],\\\"title\\\":\\\"AORIGINALAUDIOTITLE\\\",\\\"display_artist\\\":\\\"CKay\\\",\\\"cover_artwork_uri\\\":\\\"https://cdn.fbsbx.com/v/t65.14500-21/241201178_1189544901537377_7266854393852552594_n.jpg?stp=cp0_dst-jpg_e15_p526x296_q65&_nc_cat=1&ccb=1-7&_nc_sid=cbead8&_nc_ohc=lVNL6EfrlKIAX-vt8Ig&_nc_ht=cdn.fbsbx.com&oh=00_AT_TQfsoeWiPnxjGV04PeCKJnk9hvO7ow8TgE0tfiuezrw&oe=6327A3F2\\\",\\\"cover_artwork_thumbnail_uri\\\":\\\"https://cdn.fbsbx.com/v/t65.14500-21/241201178_1189544901537377_7266854393852552594_n.jpg?stp=cp0_dst-jpg_e15_q65_s168x128&_nc_cat=1&ccb=1-7&_nc_sid=cbead8&_nc_ohc=lVNL6EfrlKIAX-vt8Ig&_nc_ht=cdn.fbsbx.com&oh=00_AT9ChbPJ49c-p_FTSAbWmhW4x1CByLFT8E1y6GUXdxdbtQ&oe=6327A3F2\\\",\\\"is_explicit\\\":false,\\\"has_lyrics\\\":false,\\\"is_original_sound\\\":false,\\\"is_local_audio\\\":false,\\\"allows_saving\\\":true,\\\"hide_remixing\\\":false,\\\"picked_in_post_capture\\\":false,\\\"is_bookmarked\\\":false,\\\"should_mute_audio\\\":false,\\\"product\\\":\\\"story_camera_clips_v2\\\",\\\"is_sticker\\\":false,\\\"display_type\\\":\\\"HIDDEN\\\",\\\"tap_state\\\":0,\\\"tap_state_str_id\\\":\\\"\\\"}]\",\n" +
+            "    \"is_created_with_sound_sync\": \"0\",\n" +
+            "    \"filter_type\": \"0\",\n" +
+            "    \"camera_session_id\": \"6988583e-246e-471d-b624-e876c66d7a6f\",\n" +
+            "    \"disable_comments\": \"0\",\n" +
+            "    \"clips_creation_entry_point\": \"clips\",\n" +
+            "    \"timezone_offset\": \"19800\",\n" +
+            "    \"source_type\": \"3\",\n" +
+            "    \"camera_position\": \"unknown\",\n" +
+            "    \"video_result\": \"\",\n" +
+            "    \"is_created_with_contextual_music_recs\": \"0\",\n" +
+            "    \"_uid\": \"AUSERID\",\n" +
+            "    \"device_id\": \"ADEVICEID\",\n" +
+            "    \"_uuid\": \"AUUID\",\n" +
+            "    \"nav_chain\": \"MainFeedFragment:feed_timeline:1:cold_start::,ShortUrlFeedFragment:feed_short_url:5:warm_start::,MainFeedFragment:feed_timeline:6:button::,TRUNCATEDx4,IgCameraViewController:reel_composer_camera:11:button::,ClipsCameraFragment:clips_precapture_camera:12:button::,VideoViewController:clips_postcapture_camera:13:button::,ClipsShareSheetFragment:clips_share_sheet:14:button::,ClipsCoverPhotoPickerFragment:clips_cover_photo_picker_fragment:15:button::,ClipsShareSheetFragment:clips_share_sheet:16:button::,ClipsShareSheetFragment:clips_share_sheet:17:button::\",\n" +
+            "    \"caption\": \"GREENMANGOESYUM\",\n" +
+            "    \"video_subtitles_enabled\": \"1\",\n" +
+            "    \"capture_type\": \"clips_v2\",\n" +
+            "    \"audience\": \"default\",\n" +
+            "    \"upload_id\": \"AUPLOADID\",\n" +
+            "    \"template_clips_media_id\": \"null\",\n" +
+            "    \"is_creator_requesting_mashup\": \"0\",\n" +
+            "    \"additional_audio_info\": {\n" +
+            "        \"has_voiceover_attribution\": \"0\"\n" +
+            "    },\n" +
+            "    \"device\": {\n" +
+            "        \"manufacturer\": \"Samsung\",\n" +
+            "        \"model\": \"Samsung Galaxy\",\n" +
+            "        \"android_version\": 29,\n" +
+            "        \"android_release\": \"10\"\n" +
+            "    },\n" +
+            "    \"mashup_info\": {\n" +
+            "        \"original_media_id\": \"AORIGPOSTMEDIAID\",\n" +
+            "        \"original_media_duration\": 8267,\n" +
+            "        \"original_media_is_shared_to_facebook\": false,\n" +
+            "        \"are_remixes_crosspostable\": false,\n" +
+            "        \"source_media_creation_state\": \"SEQUENTIAL_REMIX\",\n" +
+            "        \"original_media_is_photo\": false,\n" +
+            "        \"mashup_type\": \"sequential\"\n" +
+            "    },\n" +
+            "    \"length\": 8.521,\n" +
+            "    \"clips\": [\n" +
+            "        {\n" +
+            "            \"length\": 8.521,\n" +
+            "            \"source_type\": \"3\",\n" +
+            "            \"camera_position\": \"back\"\n" +
+            "        }\n" +
+            "    ],\n" +
+            "    \"extra\": {\n" +
+            "        \"source_width\": 1080,\n" +
+            "        \"source_height\": 1920\n" +
+            "    },\n" +
+            "    \"audio_muted\": false,\n" +
+            "    \"poster_frame_index\": 0,\n" +
+            "    \"clips_segments_metadata\": {\n" +
+            "        \"num_segments\": 2,\n" +
+            "        \"clips_segments\": [\n" +
+            "            {\n" +
+            "                \"index\": 0,\n" +
+            "                \"face_effect_id\": null,\n" +
+            "                \"speed\": 100,\n" +
+            "                \"source_type\": \"0\",\n" +
+            "                \"duration_ms\": 8335,\n" +
+            "                \"audio_type\": \"music_selection\",\n" +
+            "                \"from_draft\": \"0\",\n" +
+            "                \"camera_position\": -1,\n" +
+            "                \"media_folder\": null,\n" +
+            "                \"media_type\": \"video\",\n" +
+            "                \"original_media_type\": 2\n" +
+            "            },\n" +
+            "            {\n" +
+            "                \"index\": 1,\n" +
+            "                \"face_effect_id\": null,\n" +
+            "                \"speed\": 100,\n" +
+            "                \"source_type\": \"1\",\n" +
+            "                \"duration_ms\": 186,\n" +
+            "                \"audio_type\": \"music_selection\",\n" +
+            "                \"from_draft\": \"0\",\n" +
+            "                \"camera_position\": 1,\n" +
+            "                \"media_folder\": null,\n" +
+            "                \"media_type\": \"video\",\n" +
+            "                \"original_media_type\": 2\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    },\n" +
+            "    \"clips_audio_metadata\": {\n" +
+            "        \"original\": {\n" +
+            "            \"volume_level\": 1.0\n" +
+            "        },\n" +
+            "        \"song\": {\n" +
+            "            \"volume_level\": 1.0,\n" +
+            "            \"is_saved\": \"0\",\n" +
+            "            \"artist_name\": \"AAUDIOARTISTNAME\",\n" +
+            "            \"audio_asset_id\": \"AAUDIOASSETID\",\n" +
+            "            \"audio_cluster_id\": \"AAUDIOCLUSTERID\",\n" +
+            "            \"track_name\": \"AORIGINALAUDIOTITLE\",\n" +
+            "            \"is_picked_precapture\": \"1\"\n" +
+            "        }\n" +
+            "    },\n" +
+            "    \"music_params\": {\n" +
+            "        \"audio_asset_id\": \"AAUDIOASSETID\",\n" +
+            "        \"audio_cluster_id\": \"AAUDIOCLUSTERID\",\n" +
+            "        \"audio_asset_start_time_in_ms\": AUDIOASSETSTARTTIMEMS,\n" +
+            "        \"derived_content_start_time_in_ms\": 0,\n" +
+            "        \"overlap_duration_in_ms\": 15000,\n" +
+            "        \"browse_session_id\": \"a9304722-4734-4675-b1d3-90296712371c\",\n" +
+            "        \"product\": \"story_camera_clips_v2\",\n" +
+            "        \"song_name\": \"AORIGINALAUDIOTITLE\",\n" +
+            "        \"artist_name\": \"AAUDIOARTISTNAME\",\n" +
+            "        \"alacorn_session_id\": null\n" +
             "    }\n" +
             "}";
 }
