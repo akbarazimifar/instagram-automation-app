@@ -71,7 +71,7 @@
             app:layout_constraintTop_toTopOf="parent">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:text="https://www.instagram.com/reel/ChWoAW6DSM9"
+                android:text="https://www.instagram.com/reel/CiZwZU4JKFR/"
                 android:id="@+id/urlOrUsername"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />

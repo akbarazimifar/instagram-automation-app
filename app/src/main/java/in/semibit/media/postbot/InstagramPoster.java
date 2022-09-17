@@ -235,7 +235,7 @@ public class InstagramPoster {
     public Media uploadVideoToReels(byte[] videoData, byte[] coverData,
                                     MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload mediPayload,
                                     PostItem sourcePost) {
-        String upload_id = String.valueOf(System.currentTimeMillis());
+        String upload_id = "1663413497260";//String.valueOf(System.currentTimeMillis());
 
         ReelRequestHelper reelRequestHelper = new ReelRequestHelper(client, upload_id, sourcePost);
         String clips_info_for_creation = reelRequestHelper.clips_info_for_creation();
@@ -243,7 +243,7 @@ public class InstagramPoster {
         String upload_settings = reelRequestHelper.upload_settings();
 
         CompletableFuture<String> reelResponse = CompletableFuture.completedFuture(null);
-        if (true) {
+        if (false) {
 
 
             reelResponse = client.actions().upload()
@@ -263,7 +263,7 @@ public class InstagramPoster {
                     })
                     .thenCompose(reelRequestHelperResp -> {
                         try {
-                            String config = reelRequestHelper.configureToClip(mediPayload.caption());
+                            String config = reelRequestHelper.configureToClip("TEST");
                             return CompletableFuture.completedFuture(config);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -287,8 +287,8 @@ public class InstagramPoster {
 //                .thenCompose(Function.identity());
 
         try {
-            String mediaResponse = reelResponse.join();
-//            String mediaResponse = reelRequestHelper.configureToClip(mediPayload.caption());//mediaResponseOrig
+//            String mediaResponse = reelResponse.join();
+            String mediaResponse = reelRequestHelper.configureToClip(mediPayload.caption());//mediaResponseOrig
             EzUtils.log("Reel Config Response" + mediaResponse);
             if (mediaResponse != null) {
                 try {

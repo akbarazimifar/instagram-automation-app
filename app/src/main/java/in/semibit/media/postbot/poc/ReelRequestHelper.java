@@ -225,7 +225,7 @@ public class ReelRequestHelper {
 
             OkHttpClient okHttpClient = igClient.getHttpClient();
             MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8");
-            String bodyString = "signed_body=SIGNATURE.%7B%22clips_share_preview_to_feed%22%3A%221%22%2C%22is_shared_to_fb%22%3A%220%22%2C%22is_clips_edited%22%3A%220%22%2C%22like_and_view_counts_disabled%22%3A%220%22%2C%22camera_entry_point%22%3A%22299%22%2C%22tap_models%22%3A%22%5B%7B%5C%22x%5C%22%3A0.0%2C%5C%22y%5C%22%3A0.0%2C%5C%22z%5C%22%3A0%2C%5C%22width%5C%22%3A0.0%2C%5C%22height%5C%22%3A0.0%2C%5C%22rotation%5C%22%3A0.0%2C%5C%22type%5C%22%3A%5C%22music%5C%22%2C%5C%22tag%5C%22%3A%5C%22386fc201-6d73-43ad-83a4-a3291ccf5488%5C%22%2C%5C%22audio_asset_start_time_in_ms%5C%22%3A0%2C%5C%22audio_asset_suggested_start_time_in_ms%5C%22%3A0%2C%5C%22derived_content_start_time_in_ms%5C%22%3A0%2C%5C%22overlap_duration_in_ms%5C%22%3A15000%2C%5C%22browse_session_id%5C%22%3A%5C%22d46be47e-3b30-479d-9403-166e1af80caf%5C%22%2C%5C%22music_product%5C%22%3A%5C%22clips_camera_format_v2%5C%22%2C%5C%22audio_asset_id%5C%22%3A%5C%22347624030914642%5C%22%2C%5C%22progressive_download_url%5C%22%3A%5C%22https%3A%2F%2Fscontent-maa2-1.xx.fbcdn.net%2Fv%2Ft39.12897-6%2F299997302_1479800132448155_5706075520205073543_n.m4a%3F_nc_cat%3D106%26ccb%3D1-7%26_nc_sid%3D02c1ff%26_nc_ohc%3DzHeGZvfYiKwAX8nMjJK%26_nc_ad%3Dz-m%26_nc_cid%3D0%26_nc_ht%3Dscontent-maa2-1.xx%26oh%3D00_AT-XviAjHpxHaf_VMd5VImEFTkxDvEXE3sB6sWrSg5nUsg%26oe%3D6329E320%5C%22%2C%5C%22duration_in_ms%5C%22%3A28026%2C%5C%22dash_manifest%5C%22%3A%5C%22%3C%3Fxml+version%3D%5C%5C%5C%221.0%5C%5C%5C%22+encoding%3D%5C%5C%5C%22UTF-8%5C%5C%5C%22%3F%3E%5C%5Cn%3C%21--Generated+with+https%3A%2F%2Fgithub.com%2Fgoogle%2Fshaka-packager+version+v1.6.0-release--%3E%5C%5Cn%3CMPD+xmlns%3D%5C%5C%5C%22urn%3Ampeg%3Adash%3Aschema%3Ampd%3A2011%5C%5C%5C%22+xmlns%3Axsi%3D%5C%5C%5C%22http%3A%2F%2Fwww.w3.org%2F2001%2FXMLSchema-instance%5C%5C%5C%22+xmlns%3Axlink%3D%5C%5C%5C%22http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%5C%5C%5C%22+xmlns%3Acenc%3D%5C%5C%5C%22urn%3Ampeg%3Acenc%3A2013%5C%5C%5C%22+xsi%3AschemaLocation%3D%5C%5C%5C%22urn%3Ampeg%3Adash%3Aschema%3Ampd%3A2011+DASH-MPD.xsd%5C%5C%5C%22+profiles%3D%5C%5C%5C%22urn%3Ampeg%3Adash%3Aprofile%3Aisoff-on-demand%3A2011%5C%5C%5C%22+minBufferTime%3D%5C%5C%5C%22PT2S%5C%5C%5C%22+type%3D%5C%5C%5C%22static%5C%5C%5C%22+mediaPresentationDuration%3D%5C%5C%5C%22PT28.025S%5C%5C%5C%22%3E%5C%5Cn++%3CPeriod+id%3D%5C%5C%5C%220%5C%5C%5C%22%3E%5C%5Cn++++%3CAdaptationSet+id%3D%5C%5C%5C%220%5C%5C%5C%22+contentType%3D%5C%5C%5C%22audio%5C%5C%5C%22+subsegmentAlignment%3D%5C%5C%5C%22true%5C%5C%5C%22%3E%5C%5Cn++++++%3CRepresentation+id%3D%5C%5C%5C%220%5C%5C%5C%22+bandwidth%3D%5C%5C%5C%2270239%5C%5C%5C%22+codecs%3D%5C%5C%5C%22mp4a.40.2%5C%5C%5C%22+mimeType%3D%5C%5C%5C%22audio%2Fmp4%5C%5C%5C%22+audioSamplingRate%3D%5C%5C%5C%2222050%5C%5C%5C%22%3E%5C%5Cn++++++++%3CAudioChannelConfiguration+schemeIdUri%3D%5C%5C%5C%22urn%3Ampeg%3Adash%3A23003%3A3%3Aaudio_channel_configuration%3A2011%5C%5C%5C%22+value%3D%5C%5C%5C%222%5C%5C%5C%22%2F%3E%5C%5Cn++++++++%3CBaseURL%3Ehttps%3A%2F%2Fscontent-maa2-1.xx.fbcdn.net%2Fv%2Ft39.12897-6%2F300112693_1369990176858319_7851170966804425913_n.m4a%3F_nc_cat%3D100%26amp%3Bccb%3D1-7%26amp%3B_nc_sid%3D02c1ff%26amp%3B_nc_ohc%3DztGF8NvwPM0AX8Qecel%26amp%3B_nc_ad%3Dz-m%26amp%3B_nc_cid%3D0%26amp%3B_nc_ht%3Dscontent-maa2-1.xx%26amp%3Boh%3D00_AT-KYeTPtrqlaTT72PM4s9GPmTsSIYXNLzNRx9bz1u5SzA%26amp%3Boe%3D6329985D%3C%2FBaseURL%3E%5C%5Cn++++++++%3CSegmentBase+indexRange%3D%5C%5C%5C%22743-942%5C%5C%5C%22+timescale%3D%5C%5C%5C%2244100%5C%5C%5C%22%3E%5C%5Cn++++++++++%3CInitialization+range%3D%5C%5C%5C%220-742%5C%5C%5C%22%2F%3E%5C%5Cn++++++++%3C%2FSegmentBase%3E%5C%5Cn++++++%3C%2FRepresentation%3E%5C%5Cn++++%3C%2FAdaptationSet%3E%5C%5Cn++%3C%2FPeriod%3E%5C%5Cn%3C%2FMPD%3E%5C%5Cn%5C%22%2C%5C%22title%5C%22%3A%5C%22Originalaudio%5C%22%2C%5C%22display_artist%5C%22%3A%5C%22not_your_type_yt%5C%22%2C%5C%22cover_artwork_uri%5C%22%3A%5C%22https%3A%2F%2Fscontent-maa2-2.cdninstagram.com%2Fv%2Ft51.2885-19%2F272657676_2469488359849327_6306960314298840502_n.jpg%3Fstp%3Ddst-jpg_s150x150%26efg%3DeyJybWQiOiJpZ19hbmRyb2lkX21vYmlsZV9uZXR3b3JrX3N0YWNrX3Bvd2VyX3N0YXRlX3FwbF9hbm5vdGF0aW9uc18zOmNvbnRyb2wifQ%26_nc_ht%3Dscontent-maa2-2.cdninstagram.com%26_nc_cat%3D107%26_nc_ohc%3DpxhM5guzEowAX-Vrx6j%26edm%3DAOM4IUYBAAAA%26ccb%3D7-5%26oh%3D00_AT_t30Y8FMomzq6DrVqIj428BWXreiqt0sR0MyH-FycpjQ%26oe%3D632AFEBF%26_nc_sid%3D734323%5C%22%2C%5C%22cover_artwork_thumbnail_uri%5C%22%3A%5C%22https%3A%2F%2Fscontent-maa2-2.cdninstagram.com%2Fv%2Ft51.2885-19%2F272657676_2469488359849327_6306960314298840502_n.jpg%3Fstp%3Ddst-jpg_s150x150%26efg%3DeyJybWQiOiJpZ19hbmRyb2lkX21vYmlsZV9uZXR3b3JrX3N0YWNrX3Bvd2VyX3N0YXRlX3FwbF9hbm5vdGF0aW9uc18zOmNvbnRyb2wifQ%26_nc_ht%3Dscontent-maa2-2.cdninstagram.com%26_nc_cat%3D107%26_nc_ohc%3DpxhM5guzEowAX-Vrx6j%26edm%3DAOM4IUYBAAAA%26ccb%3D7-5%26oh%3D00_AT_t30Y8FMomzq6DrVqIj428BWXreiqt0sR0MyH-FycpjQ%26oe%3D632AFEBF%26_nc_sid%3D734323%5C%22%2C%5C%22is_explicit%5C%22%3Afalse%2C%5C%22has_lyrics%5C%22%3Afalse%2C%5C%22is_original_sound%5C%22%3Atrue%2C%5C%22is_local_audio%5C%22%3Afalse%2C%5C%22allows_saving%5C%22%3Afalse%2C%5C%22original_media_id%5C%22%3A%5C%222906686555970937661%5C%22%2C%5C%22hide_remixing%5C%22%3Afalse%2C%5C%22picked_in_post_capture%5C%22%3Afalse%2C%5C%22is_bookmarked%5C%22%3Afalse%2C%5C%22should_mute_audio%5C%22%3Afalse%2C%5C%22product%5C%22%3A%5C%22story_camera_clips_v2%5C%22%2C%5C%22is_sticker%5C%22%3Afalse%2C%5C%22display_type%5C%22%3A%5C%22HIDDEN%5C%22%2C%5C%22tap_state%5C%22%3A0%2C%5C%22tap_state_str_id%5C%22%3A%5C%22%5C%22%7D%5D%22%2C%22is_created_with_sound_sync%22%3A%220%22%2C%22filter_type%22%3A%220%22%2C%22camera_session_id%22%3A%220ddef447-b2de-426b-9b41-28a9c943a74e%22%2C%22disable_comments%22%3A%220%22%2C%22clips_creation_entry_point%22%3A%22clips%22%2C%22timezone_offset%22%3A%2219800%22%2C%22source_type%22%3A%223%22%2C%22camera_position%22%3A%22unknown%22%2C%22video_result%22%3A%22%22%2C%22is_created_with_contextual_music_recs%22%3A%220%22%2C%22_uid%22%3A%2251132554072%22%2C%22device_id%22%3A%22android-ba9156177f99d2ee%22%2C%22_uuid%22%3A%227397b647-0663-4d02-9746-8cd93c61e6f1%22%2C%22nav_chain%22%3A%22SelfFragment%3Aself_profile%3A2%3Amain_profile%3A%3A%2CContextualFeedFragment%3Afeed_contextual_self_profile%3A5%3Abutton%3A%3A%2CClipsViewerFragment%3Aclips_viewer_feed_contextual_self_profile%3A6%3Afeed_contextual_self_profile%3A%3A%2CTRUNCATEDx1%2CClipsRemixOptionsFragment%3Aclips_remix_options%3A8%3Abutton%3A%3A%2CClipsViewerFragment%3Aclips_viewer_original_creator_video%3A9%3Abutton%3A%3A%2CClipsRemixOptionsFragment%3Aclips_remix_options%3A10%3Abutton%3A%3A%2CIgCameraViewController%3Areel_composer_camera%3A11%3Abutton%3A%3A%2CClipsCameraFragment%3Aclips_precapture_camera%3A12%3Abutton%3A%3A%2CVideoViewController%3Aclips_postcapture_camera%3A13%3Abutton%3A%3A%2CClipsShareSheetFragment%3Aclips_share_sheet%3A14%3Abutton%3A%3A%22%2C%22caption%22%3A%22ManualRemix%22%2C%22video_subtitles_enabled%22%3A%221%22%2C%22capture_type%22%3A%22clips_v2%22%2C%22audience%22%3A%22default%22%2C%22upload_id%22%3A%22137624447800%22%2C%22template_clips_media_id%22%3A%22null%22%2C%22is_creator_requesting_mashup%22%3A%220%22%2C%22additional_audio_info%22%3A%7B%22has_voiceover_attribution%22%3A%220%22%7D%2C%22device%22%3A%7B%22manufacturer%22%3A%22Google%22%2C%22model%22%3A%22Android+SDK+built+for+x86%22%2C%22android_version%22%3A29%2C%22android_release%22%3A%2210%22%7D%2C%22mashup_info%22%3A%7B%22original_media_id%22%3A%222906686555970937661%22%2C%22original_media_duration%22%3A27957%2C%22original_media_is_shared_to_facebook%22%3Afalse%2C%22are_remixes_crosspostable%22%3Afalse%2C%22source_media_creation_state%22%3A%22SEQUENTIAL_REMIX%22%2C%22original_media_is_photo%22%3Afalse%2C%22mashup_type%22%3A%22sequential%22%7D%2C%22length%22%3A28.118%2C%22clips%22%3A%5B%7B%22length%22%3A28.118%2C%22source_type%22%3A%223%22%2C%22camera_position%22%3A%22back%22%7D%5D%2C%22extra%22%3A%7B%22source_width%22%3A1080%2C%22source_height%22%3A1920%7D%2C%22remixed_original_sound_params%22%3A%7B%22original_media_id%22%3A%222906686555970937661%22%7D%2C%22audio_muted%22%3Afalse%2C%22poster_frame_index%22%3A0%2C%22clips_segments_metadata%22%3A%7B%22num_segments%22%3A2%2C%22clips_segments%22%3A%5B%7B%22index%22%3A0%2C%22face_effect_id%22%3Anull%2C%22speed%22%3A100%2C%22source_type%22%3A%220%22%2C%22duration_ms%22%3A28025%2C%22audio_type%22%3A%22original_remix%22%2C%22from_draft%22%3A%220%22%2C%22camera_position%22%3A-1%2C%22media_folder%22%3Anull%2C%22media_type%22%3A%22video%22%2C%22original_media_type%22%3A2%7D%2C%7B%22index%22%3A1%2C%22face_effect_id%22%3Anull%2C%22speed%22%3A100%2C%22source_type%22%3A%221%22%2C%22duration_ms%22%3A93%2C%22audio_type%22%3A%22original_remix%22%2C%22from_draft%22%3A%220%22%2C%22camera_position%22%3A1%2C%22media_folder%22%3Anull%2C%22media_type%22%3A%22video%22%2C%22original_media_type%22%3A2%7D%5D%7D%2C%22clips_audio_metadata%22%3A%7B%22original%22%3A%7B%22volume_level%22%3A1.0%7D%2C%22remix%22%3A%7B%22volume_level%22%3A1.0%2C%22is_saved%22%3A%220%22%2C%22artist_name%22%3A%22not_your_type_yt%22%2C%22audio_asset_id%22%3A%22347624030914642%22%2C%22audio_cluster_id%22%3Anull%2C%22track_name%22%3A%22Original+audio%22%2C%22is_picked_precapture%22%3A%221%22%2C%22original_media_id%22%3A%222906686555970937661%22%7D%7D%7D";
+            String bodyString = "signed_body=SIGNATURE."+BASE_BODY_JSON_CONFIG;
 
 
             bodyString = bodyString.replaceAll("2906686555970937661", s_2906686555970937661);
@@ -235,7 +235,7 @@ public class ReelRequestHelper {
             bodyString = bodyString.replaceAll("android-ba9156177f99d2ee", igClient.getDeviceId());
             bodyString = bodyString.replaceAll("7397b647-0663-4d02-9746-8cd93c61e6f1", UUID.randomUUID().toString());
             bodyString = bodyString.replaceAll("not_your_type_yt", soundArtistUserName);
-            bodyString = bodyString.replaceAll("ManualRemix", URLEncoder.encode(caption, "UTF-8"));
+//            bodyString = bodyString.replaceAll("ManualRemix", URLEncoder.encode(caption, "UTF-8"));
             bodyString = bodyString.replaceAll("Originalaudio", URLEncoder.encode(audioTitle, "UTF-8"));
 
 
@@ -340,9 +340,119 @@ public class ReelRequestHelper {
         } catch (Exception e) {
             e.printStackTrace();
             LogsViewModel.addToLog("REEL CONFIGURE ERROR " + e.getMessage());
-
         }
         return null;
     }
+
+    public String BASE_BODY_JSON_CONFIG = "{\n" +
+            "    \"clips_share_preview_to_feed\": \"1\",\n" +
+            "    \"is_shared_to_fb\": \"0\",\n" +
+            "    \"is_clips_edited\": \"0\",\n" +
+            "    \"like_and_view_counts_disabled\": \"0\",\n" +
+            "    \"camera_entry_point\": \"299\",\n" +
+            "    \"tap_models\": \"[{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0,\\\"width\\\":0.0,\\\"height\\\":0.0,\\\"rotation\\\":0.0,\\\"type\\\":\\\"music\\\",\\\"tag\\\":\\\"386fc201-6d73-43ad-83a4-a3291ccf5488\\\",\\\"audio_asset_start_time_in_ms\\\":0,\\\"audio_asset_suggested_start_time_in_ms\\\":0,\\\"derived_content_start_time_in_ms\\\":0,\\\"overlap_duration_in_ms\\\":15000,\\\"browse_session_id\\\":\\\"d46be47e-3b30-479d-9403-166e1af80caf\\\",\\\"music_product\\\":\\\"clips_camera_format_v2\\\",\\\"audio_asset_id\\\":\\\"347624030914642\\\",\\\"progressive_download_url\\\":\\\"https://scontent-maa2-1.xx.fbcdn.net/v/t39.12897-6/299997302_1479800132448155_5706075520205073543_n.m4a?_nc_cat=106&ccb=1-7&_nc_sid=02c1ff&_nc_ohc=zHeGZvfYiKwAX8nMjJK&_nc_ad=z-m&_nc_cid=0&_nc_ht=scontent-maa2-1.xx&oh=00_AT-XviAjHpxHaf_VMd5VImEFTkxDvEXE3sB6sWrSg5nUsg&oe=6329E320\\\",\\\"duration_in_ms\\\":28026,\\\"dash_manifest\\\":\\\"<?xml version=\\\\\\\"1.0\\\\\\\" encoding=\\\\\\\"UTF-8\\\\\\\"?>\\\\n<!--Generated with https://github.com/google/shaka-packager version v1.6.0-release-->\\\\n<MPD xmlns=\\\\\\\"urn:mpeg:dash:schema:mpd:2011\\\\\\\" xmlns:xsi=\\\\\\\"http://www.w3.org/2001/XMLSchema-instance\\\\\\\" xmlns:xlink=\\\\\\\"http://www.w3.org/1999/xlink\\\\\\\" xmlns:cenc=\\\\\\\"urn:mpeg:cenc:2013\\\\\\\" xsi:schemaLocation=\\\\\\\"urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd\\\\\\\" profiles=\\\\\\\"urn:mpeg:dash:profile:isoff-on-demand:2011\\\\\\\" minBufferTime=\\\\\\\"PT2S\\\\\\\" type=\\\\\\\"static\\\\\\\" mediaPresentationDuration=\\\\\\\"PT28.025S\\\\\\\">\\\\n  <Period id=\\\\\\\"0\\\\\\\">\\\\n    <AdaptationSet id=\\\\\\\"0\\\\\\\" contentType=\\\\\\\"audio\\\\\\\" subsegmentAlignment=\\\\\\\"true\\\\\\\">\\\\n      <Representation id=\\\\\\\"0\\\\\\\" bandwidth=\\\\\\\"70239\\\\\\\" codecs=\\\\\\\"mp4a.40.2\\\\\\\" mimeType=\\\\\\\"audio/mp4\\\\\\\" audioSamplingRate=\\\\\\\"22050\\\\\\\">\\\\n        <AudioChannelConfiguration schemeIdUri=\\\\\\\"urn:mpeg:dash:23003:3:audio_channel_configuration:2011\\\\\\\" value=\\\\\\\"2\\\\\\\"/>\\\\n        <BaseURL>https://scontent-maa2-1.xx.fbcdn.net/v/t39.12897-6/300112693_1369990176858319_7851170966804425913_n.m4a?_nc_cat=100&amp;ccb=1-7&amp;_nc_sid=02c1ff&amp;_nc_ohc=ztGF8NvwPM0AX8Qecel&amp;_nc_ad=z-m&amp;_nc_cid=0&amp;_nc_ht=scontent-maa2-1.xx&amp;oh=00_AT-KYeTPtrqlaTT72PM4s9GPmTsSIYXNLzNRx9bz1u5SzA&amp;oe=6329985D</BaseURL>\\\\n        <SegmentBase indexRange=\\\\\\\"743-942\\\\\\\" timescale=\\\\\\\"44100\\\\\\\">\\\\n          <Initialization range=\\\\\\\"0-742\\\\\\\"/>\\\\n        </SegmentBase>\\\\n      </Representation>\\\\n    </AdaptationSet>\\\\n  </Period>\\\\n</MPD>\\\\n\\\",\\\"title\\\":\\\"Originalaudio\\\",\\\"display_artist\\\":\\\"not_your_type_yt\\\",\\\"cover_artwork_uri\\\":\\\"https://scontent-maa2-2.cdninstagram.com/v/t51.2885-19/272657676_2469488359849327_6306960314298840502_n.jpg?stp=dst-jpg_s150x150&efg=eyJybWQiOiJpZ19hbmRyb2lkX21vYmlsZV9uZXR3b3JrX3N0YWNrX3Bvd2VyX3N0YXRlX3FwbF9hbm5vdGF0aW9uc18zOmNvbnRyb2wifQ&_nc_ht=scontent-maa2-2.cdninstagram.com&_nc_cat=107&_nc_ohc=pxhM5guzEowAX-Vrx6j&edm=AOM4IUYBAAAA&ccb=7-5&oh=00_AT_t30Y8FMomzq6DrVqIj428BWXreiqt0sR0MyH-FycpjQ&oe=632AFEBF&_nc_sid=734323\\\",\\\"cover_artwork_thumbnail_uri\\\":\\\"https://scontent-maa2-2.cdninstagram.com/v/t51.2885-19/272657676_2469488359849327_6306960314298840502_n.jpg?stp=dst-jpg_s150x150&efg=eyJybWQiOiJpZ19hbmRyb2lkX21vYmlsZV9uZXR3b3JrX3N0YWNrX3Bvd2VyX3N0YXRlX3FwbF9hbm5vdGF0aW9uc18zOmNvbnRyb2wifQ&_nc_ht=scontent-maa2-2.cdninstagram.com&_nc_cat=107&_nc_ohc=pxhM5guzEowAX-Vrx6j&edm=AOM4IUYBAAAA&ccb=7-5&oh=00_AT_t30Y8FMomzq6DrVqIj428BWXreiqt0sR0MyH-FycpjQ&oe=632AFEBF&_nc_sid=734323\\\",\\\"is_explicit\\\":false,\\\"has_lyrics\\\":false,\\\"is_original_sound\\\":true,\\\"is_local_audio\\\":false,\\\"allows_saving\\\":false,\\\"original_media_id\\\":\\\"2906686555970937661\\\",\\\"hide_remixing\\\":false,\\\"picked_in_post_capture\\\":false,\\\"is_bookmarked\\\":false,\\\"should_mute_audio\\\":false,\\\"product\\\":\\\"story_camera_clips_v2\\\",\\\"is_sticker\\\":false,\\\"display_type\\\":\\\"HIDDEN\\\",\\\"tap_state\\\":0,\\\"tap_state_str_id\\\":\\\"\\\"}]\",\n" +
+            "    \"is_created_with_sound_sync\": \"0\",\n" +
+            "    \"filter_type\": \"0\",\n" +
+            "    \"camera_session_id\": \"0ddef447-b2de-426b-9b41-28a9c943a74e\",\n" +
+            "    \"disable_comments\": \"0\",\n" +
+            "    \"clips_creation_entry_point\": \"clips\",\n" +
+            "    \"timezone_offset\": \"19800\",\n" +
+            "    \"source_type\": \"3\",\n" +
+            "    \"camera_position\": \"unknown\",\n" +
+            "    \"video_result\": \"\",\n" +
+            "    \"is_created_with_contextual_music_recs\": \"0\",\n" +
+            "    \"_uid\": \"51132554072\",\n" +
+            "    \"device_id\": \"android-ba9156177f99d2ee\",\n" +
+            "    \"_uuid\": \"7397b647-0663-4d02-9746-8cd93c61e6f1\",\n" +
+            "    \"nav_chain\": \"SelfFragment:self_profile:2:main_profile::,ContextualFeedFragment:feed_contextual_self_profile:5:button::,ClipsViewerFragment:clips_viewer_feed_contextual_self_profile:6:feed_contextual_self_profile::,TRUNCATEDx1,ClipsRemixOptionsFragment:clips_remix_options:8:button::,ClipsViewerFragment:clips_viewer_original_creator_video:9:button::,ClipsRemixOptionsFragment:clips_remix_options:10:button::,IgCameraViewController:reel_composer_camera:11:button::,ClipsCameraFragment:clips_precapture_camera:12:button::,VideoViewController:clips_postcapture_camera:13:button::,ClipsShareSheetFragment:clips_share_sheet:14:button::\",\n" +
+            "    \"caption\": \"ManualRemix\",\n" +
+            "    \"video_subtitles_enabled\": \"1\",\n" +
+            "    \"capture_type\": \"clips_v2\",\n" +
+            "    \"audience\": \"default\",\n" +
+            "    \"upload_id\": \"137624447800\",\n" +
+            "    \"template_clips_media_id\": \"null\",\n" +
+            "    \"is_creator_requesting_mashup\": \"0\",\n" +
+            "    \"additional_audio_info\": {\n" +
+            "        \"has_voiceover_attribution\": \"0\"\n" +
+            "    },\n" +
+            "    \"device\": {\n" +
+            "        \"manufacturer\": \"Google\",\n" +
+            "        \"model\": \"Android SDK built for x86\",\n" +
+            "        \"android_version\": 29,\n" +
+            "        \"android_release\": \"10\"\n" +
+            "    },\n" +
+            "    \"mashup_info\": {\n" +
+            "        \"original_media_id\": \"2906686555970937661\",\n" +
+            "        \"original_media_duration\": 27957,\n" +
+            "        \"original_media_is_shared_to_facebook\": false,\n" +
+            "        \"are_remixes_crosspostable\": false,\n" +
+            "        \"source_media_creation_state\": \"SEQUENTIAL_REMIX\",\n" +
+            "        \"original_media_is_photo\": false,\n" +
+            "        \"mashup_type\": \"sequential\"\n" +
+            "    },\n" +
+            "    \"length\": 28.118,\n" +
+            "    \"clips\": [\n" +
+            "        {\n" +
+            "            \"length\": 28.118,\n" +
+            "            \"source_type\": \"3\",\n" +
+            "            \"camera_position\": \"back\"\n" +
+            "        }\n" +
+            "    ],\n" +
+            "    \"extra\": {\n" +
+            "        \"source_width\": 1080,\n" +
+            "        \"source_height\": 1920\n" +
+            "    },\n" +
+            "    \"remixed_original_sound_params\": {\n" +
+            "        \"original_media_id\": \"2906686555970937661\"\n" +
+            "    },\n" +
+            "    \"audio_muted\": false,\n" +
+            "    \"poster_frame_index\": 0,\n" +
+            "    \"clips_segments_metadata\": {\n" +
+            "        \"num_segments\": 2,\n" +
+            "        \"clips_segments\": [\n" +
+            "            {\n" +
+            "                \"index\": 0,\n" +
+            "                \"face_effect_id\": null,\n" +
+            "                \"speed\": 100,\n" +
+            "                \"source_type\": \"0\",\n" +
+            "                \"duration_ms\": 28025,\n" +
+            "                \"audio_type\": \"original_remix\",\n" +
+            "                \"from_draft\": \"0\",\n" +
+            "                \"camera_position\": -1,\n" +
+            "                \"media_folder\": null,\n" +
+            "                \"media_type\": \"video\",\n" +
+            "                \"original_media_type\": 2\n" +
+            "            },\n" +
+            "            {\n" +
+            "                \"index\": 1,\n" +
+            "                \"face_effect_id\": null,\n" +
+            "                \"speed\": 100,\n" +
+            "                \"source_type\": \"1\",\n" +
+            "                \"duration_ms\": 93,\n" +
+            "                \"audio_type\": \"original_remix\",\n" +
+            "                \"from_draft\": \"0\",\n" +
+            "                \"camera_position\": 1,\n" +
+            "                \"media_folder\": null,\n" +
+            "                \"media_type\": \"video\",\n" +
+            "                \"original_media_type\": 2\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    },\n" +
+            "    \"clips_audio_metadata\": {\n" +
+            "        \"original\": {\n" +
+            "            \"volume_level\": 1.0\n" +
+            "        },\n" +
+            "        \"remix\": {\n" +
+            "            \"volume_level\": 1.0,\n" +
+            "            \"is_saved\": \"0\",\n" +
+            "            \"artist_name\": \"not_your_type_yt\",\n" +
+            "            \"audio_asset_id\": \"347624030914642\",\n" +
+            "            \"audio_cluster_id\": null,\n" +
+            "            \"track_name\": \"Original audio\",\n" +
+            "            \"is_picked_precapture\": \"1\",\n" +
+            "            \"original_media_id\": \"2906686555970937661\"\n" +
+            "        }\n" +
+            "    }\n" +
+            "}";
 }
 
