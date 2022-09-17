@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
 //            //todo remove
             JSONObject sampel = new JSONObject();
             try {
-                sampel.put("source_short_code","ChWoAW6DSM9");
+                sampel.put("source_short_code","CiQDZiZPNvm");
             } catch (JSONException e) {
                 e.printStackTrace();
             }

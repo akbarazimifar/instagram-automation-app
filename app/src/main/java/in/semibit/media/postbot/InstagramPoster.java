@@ -16,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -236,17 +237,17 @@ public class InstagramPoster {
 
         ReelRequestHelper reelRequestHelper = new ReelRequestHelper(client,upload_id);
         reelRequestHelper.clips_info_for_creation();
-        reelRequestHelper.write_seen_state();
+        reelRequestHelper.write_seen_state(soundOriginalMedia);
         reelRequestHelper.upload_settings();
 //        reelRequestHelper.configureToClip(soundOriginalMedia);
 
 //
-        //todo remove
-        if(true)
-            return null;
+//        //todo remove
+//        if(true)
+//            return null;
 
 
-        CompletableFuture<MediaResponse.MediaConfigureToClipsResponse> reelResponse = client.actions().upload()
+        String reelResponse = client.actions().upload()
                 .videoWithCover(videoData, coverData, UploadParameters.forClip(upload_id))
                 .thenCompose(response -> {
                     try {
@@ -260,9 +261,15 @@ public class InstagramPoster {
 
                 .thenCompose(reelRequestHelperResp->{
 
-                    reelRequestHelper.configureToClip(soundOriginalMedia);
-                    return CompletableFuture.completedFuture(null);
-                });
+                    try {
+                       String config =  reelRequestHelper.configureToClip(soundOriginalMedia);
+                        return CompletableFuture.completedFuture(null);
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return CompletableFuture.completedFuture("didnt work");
+                }).join();
 
 
 //                .thenCompose(response -> new MediaConfigureToClipsRequestExt(mediPayload.upload_id(upload_id)).execute(client))

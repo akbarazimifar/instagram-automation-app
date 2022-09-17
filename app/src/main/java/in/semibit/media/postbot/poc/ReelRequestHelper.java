@@ -2,6 +2,7 @@ package in.semibit.media.postbot.poc;
 
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
+import com.semibit.ezandroidutils.EzUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -23,12 +24,28 @@ public class ReelRequestHelper {
     IGrequestHelper api;
     String upload_id;
 
+    String audioAssetId = null;
+    String remixOfPostMediaId = null;
+    String audioArtistUserName = null;
+
     public ReelRequestHelper(IGClient client, String upload_id) {
         this.api = new IGrequestHelper(client);
         this.upload_id = upload_id;
         this.igClient = client;
+        EzUtils.e("Bot UPLOAD ID", upload_id);
     }
 
+
+
+    public void parsePost(PostItem postItem) {
+
+        // if you want to remix with the original sound artist
+        //originalMediaId = "" + postItem.getClipsMetadata().getOriginalSoundInfo().getOriginalMediaId();
+
+        remixOfPostMediaId = "" + postItem.getPk();
+        audioAssetId = "" + postItem.getClipsMetadata().getOriginalSoundInfo().getAudioAssetId();
+        audioArtistUserName = postItem.getClipsMetadata().getOriginalSoundInfo().getIgArtist().getUsername();
+    }
 
     private HashMap<String, String> getFromSplitString(String split) {
         HashMap<String, String> map = new HashMap<>();
@@ -45,7 +62,7 @@ public class ReelRequestHelper {
     }
 
     private String getUserId() {
-        return ""+igClient.getSelfProfile().getPk();
+        return "" + igClient.getSelfProfile().getPk();
     }
 
     private HashMap<String, String> getBasicHeaders() {
@@ -64,8 +81,9 @@ public class ReelRequestHelper {
         return response;
     }
 
-    public String write_seen_state() {
-        String mediaId = "2921908601451486156";
+    public String write_seen_state(PostItem postItem) {
+        parsePost(postItem);
+        String mediaId = remixOfPostMediaId;
         String response = api.doIGPost("api/v1/clips/write_seen_state/",
                 "{\"impressions\":\"[\\\"" + mediaId + "\\\"]\",\"_uid\":\"" + getUserId() + "\",\"_uuid\":\"" + UUID.randomUUID() + "\"}"
                 , getBasicHeaders());
@@ -143,10 +161,14 @@ public class ReelRequestHelper {
         return "";
     }
 
-    public String configureToClip(PostItem postItem) {
 
-        String s_2906686555970937661 = "" + postItem.getClipsMetadata().getOriginalSoundInfo().getOriginalMediaId();
-        String s_347624030914642 = "" + postItem.getClipsMetadata().getOriginalSoundInfo().getAudioAssetId();
+    public String configureToClip(PostItem postItem) throws IOException {
+        parsePost(postItem);
+        if (remixOfPostMediaId == null || audioAssetId == null || audioArtistUserName == null)
+            return "Insufficient info";
+        String s_2906686555970937661 = remixOfPostMediaId;//"" + postItem.getClipsMetadata().getOriginalSoundInfo().getOriginalMediaId();
+        String s_347624030914642 = audioAssetId;//"" + postItem.getClipsMetadata().getOriginalSoundInfo().getAudioAssetId();
+        String soundArtistUserName = audioArtistUserName;// postItem.getClipsMetadata().getOriginalSoundInfo().getIgArtist().getUsername();
 
         OkHttpClient okHttpClient = igClient.getHttpClient();
         MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8");
@@ -159,7 +181,7 @@ public class ReelRequestHelper {
         bodyString = bodyString.replaceAll(getUserId(), getUserId());
         bodyString = bodyString.replaceAll("android-ba9156177f99d2ee", igClient.getDeviceId());
         bodyString = bodyString.replaceAll("7397b647-0663-4d02-9746-8cd93c61e6f1", UUID.randomUUID().toString());
-        bodyString = bodyString.replaceAll("not_your_type_yt", postItem.getClipsMetadata().getOriginalSoundInfo().getIgArtist().getUsername());
+        bodyString = bodyString.replaceAll("not_your_type_yt", soundArtistUserName);
 
 
         RequestBody body = RequestBody.create(mediaType, bodyString);
@@ -172,10 +194,10 @@ public class ReelRequestHelper {
                 .addHeader("X-Ig-Device-Locale", "en_US")
                 .addHeader("X-Ig-Mapped-Locale", "en_US")
 //                .addHeader("X-Pigeon-Session-Id", "UFS-f02b8f26-63cb-4b86-b51a-84b373dc86b4-0")
-                .addHeader("X-Pigeon-Rawclienttime", (System.currentTimeMillis()/1000)+".236")
-                .addHeader("X-Ig-Bandwidth-Speed-Kbps", "994.000")
-                .addHeader("X-Ig-Bandwidth-Totalbytes-B", "5300594")
-                .addHeader("X-Ig-Bandwidth-Totaltime-Ms", "5381")
+                .addHeader("X-Pigeon-Rawclienttime", (System.currentTimeMillis() / 1000) + ".236")
+                .addHeader("X-Ig-Bandwidth-Speed-Kbps", ThreadLocalRandom.current().nextInt(2000, 4000) + ".000")
+                .addHeader("X-Ig-Bandwidth-Totalbytes-B", "" + ThreadLocalRandom.current().nextInt(2000, 4000) + "243")
+                .addHeader("X-Ig-Bandwidth-Totaltime-Ms", "" + ThreadLocalRandom.current().nextInt(2000, 4000))
                 .addHeader("X-Ig-App-Startup-Country", "IN")
                 .addHeader("X-Bloks-Version-Id", "ed06b936be88562bdc1a13aa16ef14521a460edaf0bd1c6d45748e2c542525a1")
 //                .addHeader("X-Ig-Www-Claim", "hmac.AR24FJFvT95-zFkyiMmtSNfinGButbGI6Zyzo5TBsI_WfJ9t")
@@ -193,17 +215,17 @@ public class ReelRequestHelper {
                 .addHeader("X-Ig-Capabilities", "3brTv10=")
                 .addHeader("X-Ig-App-Id", "567067343352427")
                 .addHeader("Priority", "u=3")
-                .addHeader("User-Agent", "Instagram 252.0.0.17.111 Android (29/10; 400dpi; 1080x2040; Google/google; Android SDK built for x86; generic_x86; ranchu; en_US; 397702078)")
+//                .addHeader("User-Agent", "Instagram 252.0.0.17.111 Android (29/10; 400dpi; 1080x2040; Google/google; Android SDK built for x86; generic_x86; ranchu; en_US; 397702078)")
                 .addHeader("Accept-Language", "en-US")
                 .addHeader("X-Mid", "YyImQwABAAHTYa3KnckXVbkVIu87")
-                .addHeader("Ig-U-Ig-Direct-Region-Hint", "ASH,"+getUserId()+",1694884196:01f76ac04d49354aade2c1ceca113231926e6917cb8322307c1424cedec080f5894dc0dc")
-                .addHeader("Ig-U-Shbid", "15628,"+getUserId()+",1694718419:01f7c629116c0471f0b16e94af3908231b4315e64199848a706e936feea04805efbe7b29")
-                .addHeader("Ig-U-Shbts", "1663182419,"+getUserId()+",1694718419:01f7391ecb88b7b7f31a5e39bf0f9d7d77835aaa77df3703e08d5f25af21a8721ca059da")
+                .addHeader("Ig-U-Ig-Direct-Region-Hint", "ASH," + getUserId() + ",1694884196:01f76ac04d49354aade2c1ceca113231926e6917cb8322307c1424cedec080f5894dc0dc")
+                .addHeader("Ig-U-Shbid", "15628," + getUserId() + ",1694718419:01f7c629116c0471f0b16e94af3908231b4315e64199848a706e936feea04805efbe7b29")
+                .addHeader("Ig-U-Shbts", "1663182419," + getUserId() + ",1694718419:01f7391ecb88b7b7f31a5e39bf0f9d7d77835aaa77df3703e08d5f25af21a8721ca059da")
                 .addHeader("Ig-U-Ds-User-Id", getUserId())
-                .addHeader("Ig-U-Rur", "EAG,"+getUserId()+",1694885399:01f79f261246f155e3834c8515adb93ae55a03b1370c4933546f5625a588886f6c799b25")
+                .addHeader("Ig-U-Rur", "EAG," + getUserId() + ",1694885399:01f79f261246f155e3834c8515adb93ae55a03b1370c4933546f5625a588886f6c799b25")
                 .addHeader("Ig-Intended-User-Id", getUserId())
                 .addHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-                .addHeader("Content-Length", "9178")
+                .addHeader("Content-Length", String.valueOf(body.contentLength()))
                 .addHeader("Accept-Encoding", "gzip, deflate")
                 .addHeader("X-Fb-Http-Engine", "Liger")
                 .addHeader("X-Fb-Client-Ip", "True")
