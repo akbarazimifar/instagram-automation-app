@@ -73,7 +73,6 @@ import org.checkerframework.checker.nullness.compatqual.NullableDecl;
  * @author Dimitris Andreou
  * @since 13.0
  */
-// TODO(user): switch to nano precision. A natural unit of cost is "bytes", and a micro precision
 // would mean a maximum rate of "1MB/s", which might be small in some cases.
 @Beta
 @GwtIncompatible
@@ -93,7 +92,6 @@ public abstract class RateLimiter {
      *     permits become available per second
      * @throws IllegalArgumentException if {@code permitsPerSecond} is negative or zero
      */
-    // TODO(user): "This is equivalent to
     // {@code createWithCapacity(permitsPerSecond, 1, TimeUnit.SECONDS)}".
     public static RateLimiter create(double permitsPerSecond) {
         /*
@@ -386,7 +384,7 @@ public abstract class RateLimiter {
         protected SleepingStopwatch() {}
 
         /*
-         * We always hold the mutex when calling this. TODO(cpovirk): Is that important? Perhaps we need
+         * We always hold the mutex when calling this.
          * to guarantee that each call to reserveEarliestAvailable, etc. sees a value >= the previous?
          * Also, is it OK that we don't hold the mutex when sleeping?
          */

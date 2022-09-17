@@ -16,7 +16,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,7 +23,6 @@ import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.GenricDataCallback;
@@ -117,10 +115,10 @@ public class InstagramPoster {
 
     }
 
-    private PostItem getAudioInfo(String shortCode) {
+    private PostItem getOriginalPostInfo(String shortCode) {
 
         try {
-            PostInfoResponse postInfo =  new PostInfoRequest(shortCode).execute(client).join();
+            PostInfoResponse postInfo = new PostInfoRequest(shortCode).execute(client).join();
             return postInfo.getFirstPost();
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -129,23 +127,21 @@ public class InstagramPoster {
     }
 
 
-    private void processVideo(File file, File cover, String caption, String postBodyProcessed,long startTime) {
+    private void processVideo(File file, File cover, String caption, String postBodyProcessed, long startTime) {
         try {
             JSONObject postJsn = new JSONObject(postBodyProcessed);
             String short_code = postJsn.getString("source_short_code");
-            //todo uncomment
-            PostItem soundOriginalMedia =getAudioInfo(short_code);
-
+            PostItem soundOriginalMedia = getOriginalPostInfo(short_code);
             try {
 
 
-                MediaResponse.MediaConfigureToClipsResponse onReels = uploadVideoToReels(
+                String onReelsConfiguredResponse = uploadVideoToReels(
                         Files.readAllBytes(Paths.get(file.toURI())),
                         Files.readAllBytes(Paths.get(cover.toURI())),
                         new MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload()
-                                .caption("Reel "+caption).originalMediaId(soundOriginalMedia),
+                                .caption("Reel " + caption).originalMediaId(soundOriginalMedia),
                         soundOriginalMedia);
-                if (onReels.getMedia() != null) {
+                if (onReelsConfiguredResponse != null) {
                     this.callback.onStart("Uploaded to reels");
                 }
             } catch (Exception e) {
@@ -155,12 +151,12 @@ public class InstagramPoster {
 
 
             //todo remove
-            if(true)
+            if (true)
                 return;
             CompletableFuture<MediaResponse.MediaConfigureTimelineResponse> onMediaConfiguredResult =
                     uploadVideoToTimeline(Files.readAllBytes(Paths.get(file.toURI())),
                             Files.readAllBytes(Paths.get(cover.toURI())),
-                            new MediaConfigureTimelineRequest.MediaConfigurePayload().caption("Post "+caption));
+                            new MediaConfigureTimelineRequest.MediaConfigurePayload().caption("Post " + caption));
 
             onMediaConfiguredResult.exceptionally(throwable -> {
                 this.callback.onStart("stop: error in upload " + throwable.getMessage());
@@ -229,47 +225,47 @@ public class InstagramPoster {
     }
 
 
-    public MediaResponse.MediaConfigureToClipsResponse uploadVideoToReels(byte[] videoData,
-                                                                          byte[] coverData,
-                                                                          MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload mediPayload, PostItem soundOriginalMedia) {
-        String upload_id =String.valueOf(System.currentTimeMillis());
-//"1663396816753";//
+    public String uploadVideoToReels(byte[] videoData, byte[] coverData,
+                                     MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload mediPayload,
+                                     PostItem sourcePost) {
+        String upload_id = String.valueOf(System.currentTimeMillis());
 
-        ReelRequestHelper reelRequestHelper = new ReelRequestHelper(client,upload_id);
-        reelRequestHelper.clips_info_for_creation();
-        reelRequestHelper.write_seen_state(soundOriginalMedia);
-        reelRequestHelper.upload_settings();
-//        reelRequestHelper.configureToClip(soundOriginalMedia);
+        ReelRequestHelper reelRequestHelper = new ReelRequestHelper(client, upload_id,sourcePost);
+//        reelRequestHelper.clips_info_for_creation();
+//        reelRequestHelper.write_seen_state();
+//        reelRequestHelper.upload_settings();
 
-//
+
+//        reelRequestHelper.configureToClip(mediPayload.caption());
 //        //todo remove
-//        if(true)
-//            return null;
+        if(true)
+            return null;
 
 
-        String reelResponse = client.actions().upload()
+        CompletableFuture<String> reelResponse = client.actions().upload()
                 .videoWithCover(videoData, coverData, UploadParameters.forClip(upload_id))
                 .thenCompose(response -> {
                     try {
-                        Thread.sleep(40000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        return client.actions().upload().finish(upload_id);
+                    } catch (Exception tr) {
+                        if (IGResponseException.IGFailedResponse.of(tr.getCause()).getStatusCode() != 202 &&
+                                !(tr.getCause() instanceof SocketTimeoutException))
+                            throw new CompletionException(tr.getCause());
+                        return AsyncAction.retry(
+                                () -> client.actions().upload().finish(upload_id),
+                                tr, 4, 10,
+                                TimeUnit.SECONDS);
                     }
-                    return client.actions().upload().finish(upload_id);
                 })
-
-
-                .thenCompose(reelRequestHelperResp->{
-
+                .thenCompose(reelRequestHelperResp -> {
                     try {
-                       String config =  reelRequestHelper.configureToClip(soundOriginalMedia);
-                        return CompletableFuture.completedFuture(null);
-
-                    } catch (IOException e) {
+                        String config = reelRequestHelper.configureToClip(mediPayload.caption());
+                        return CompletableFuture.completedFuture(config);
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    return CompletableFuture.completedFuture("didnt work");
-                }).join();
+                    return CompletableFuture.completedFuture(null);
+                });
 
 
 //                .thenCompose(response -> new MediaConfigureToClipsRequestExt(mediPayload.upload_id(upload_id)).execute(client))
@@ -285,13 +281,13 @@ public class InstagramPoster {
 //                })
 //                .thenCompose(Function.identity());
 
-//        try {
-//            MediaResponse.MediaConfigureToClipsResponse mediaResponse = reelResponse.join();
-//            EzUtils.log(mediaResponse.toString());
-//            return mediaResponse;
-//        } catch (Exception exception) {
-//            exception.printStackTrace();
-//        }
+        try {
+            String mediaResponse = reelResponse.join();
+            EzUtils.log("Reel Config Response" + mediaResponse);
+            return mediaResponse;
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
         return null;
     }
 
