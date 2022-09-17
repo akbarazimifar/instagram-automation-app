@@ -6,6 +6,8 @@ import com.github.instagram4j.instagram4j.utils.IGUtils;
 import com.google.gson.internal.LinkedTreeMap;
 import com.semibit.ezandroidutils.EzUtils;
 
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -225,8 +227,8 @@ public class ReelRequestHelper {
 
             OkHttpClient okHttpClient = igClient.getHttpClient();
             MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8");
-            String bodyString = "signed_body=SIGNATURE."+BASE_BODY_JSON_CONFIG;
-
+//            String bodyString = "signed_body=SIGNATURE."+BASE_BODY_JSON_CONFIG;
+            String bodyString = BASE_BODY_JSON_CONFIG;
 
             bodyString = bodyString.replaceAll("2906686555970937661", s_2906686555970937661);
             bodyString = bodyString.replaceAll("347624030914642", s_347624030914642);
@@ -235,9 +237,18 @@ public class ReelRequestHelper {
             bodyString = bodyString.replaceAll("android-ba9156177f99d2ee", igClient.getDeviceId());
             bodyString = bodyString.replaceAll("7397b647-0663-4d02-9746-8cd93c61e6f1", UUID.randomUUID().toString());
             bodyString = bodyString.replaceAll("not_your_type_yt", soundArtistUserName);
-//            bodyString = bodyString.replaceAll("ManualRemix", URLEncoder.encode(caption, "UTF-8"));
-            bodyString = bodyString.replaceAll("Originalaudio", URLEncoder.encode(audioTitle, "UTF-8"));
 
+//            caption = "baldurs \ngate\n\n\n";
+            JSONObject clean = new JSONObject(bodyString);
+            clean.put("caption",caption);
+            bodyString = clean.toString();//.replaceAll("ManualRemix",caption);
+            bodyString = bodyString.replaceAll("Originalaudio", audioTitle);
+
+//            bodyString = bodyString.replaceAll("\n","");
+
+            bodyString =  IGUtils.generateSignature(bodyString);
+
+//            bodyString = bodyString.replaceAll("EZIKIEL2517","%0A");
 
             RequestBody body = RequestBody.create(mediaType, bodyString);
 
@@ -279,7 +290,7 @@ public class ReelRequestHelper {
                     .addHeader("Ig-U-Ds-User-Id", getUserId())
                     .addHeader("Ig-U-Rur", "EAG," + getUserId() + ",1694885399:01f79f261246f155e3834c8515adb93ae55a03b1370c4933546f5625a588886f6c799b25")
                     .addHeader("Ig-Intended-User-Id", getUserId())
-                    .addHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+//                    .addHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
                     .addHeader("Content-Length", String.valueOf(body.contentLength()))
                     .addHeader("X-Fb-Http-Engine", "Liger")
                     .addHeader("X-Fb-Client-Ip", "True")

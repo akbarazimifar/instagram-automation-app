@@ -235,14 +235,14 @@ public class InstagramPoster {
     public Media uploadVideoToReels(byte[] videoData, byte[] coverData,
                                     MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload mediPayload,
                                     PostItem sourcePost) {
-        String upload_id = "1663413497260";//String.valueOf(System.currentTimeMillis());
+        String upload_id ="1663414646757";// String.valueOf(System.currentTimeMillis());
 
         ReelRequestHelper reelRequestHelper = new ReelRequestHelper(client, upload_id, sourcePost);
         String clips_info_for_creation = reelRequestHelper.clips_info_for_creation();
         String write_seen_state = reelRequestHelper.write_seen_state();
         String upload_settings = reelRequestHelper.upload_settings();
 
-        CompletableFuture<String> reelResponse = CompletableFuture.completedFuture(null);
+        CompletableFuture<String> reelResponse = CompletableFuture.completedFuture("{}");
         if (false) {
 
 
@@ -263,7 +263,7 @@ public class InstagramPoster {
                     })
                     .thenCompose(reelRequestHelperResp -> {
                         try {
-                            String config = reelRequestHelper.configureToClip("TEST");
+                            String config = reelRequestHelper.configureToClip(mediPayload.caption());
                             return CompletableFuture.completedFuture(config);
                         } catch (Exception e) {
                             e.printStackTrace();
