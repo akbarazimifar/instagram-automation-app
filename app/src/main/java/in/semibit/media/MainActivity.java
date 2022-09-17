@@ -25,11 +25,14 @@ import com.androidnetworking.AndroidNetworking;
 import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.DownloadListener;
 import com.androidnetworking.interfaces.StringRequestListener;
+import com.github.instagram4j.instagram4j.IGClient;
 import com.google.android.gms.common.util.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
+import com.semibit.ezandroidutils.EzUtils;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -40,6 +43,8 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 
 import in.semibit.media.common.AdvancedWebView;
+import in.semibit.media.common.GenricDataCallback;
+import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.postbot.BackgroundWorkerService;
 import in.semibit.media.databinding.ActivityMainBinding;
 
@@ -56,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.SYSTEM_ALERT_WINDOW}, 1234);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        driver();
+//        driver();
 
         binding.searchButton.setOnClickListener(v -> {
 
@@ -77,10 +82,32 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             binding.conturlOrUsername.setError(null);
-            searchUserOrLink(binding.urlOrUsername.getText().toString());
-//            postInBackground(new File(Insta4jClient.root,"clip.mp4"), "Test Caption", "video",new JSONObject());
-        });
+//            searchUserOrLink(binding.urlOrUsername.getText().toString());
 
+//
+//            //todo remove
+//            JSONObject sampel = new JSONObject();
+//            try {
+//                sampel.put("source_short_code","ChWoAW6DSM9");
+//            } catch (JSONException e) {
+//                e.printStackTrace();
+//            }
+//            postInBackground(new File(Insta4jClient.root,"clip.mp4"), "Test Caption", "video",sampel);
+
+            IGClient client =Insta4jClient.
+                    getClient(getString(R.string.username),getString( R.string.password),true, new GenricDataCallback() {
+                @Override
+                public void onStart(String s) {
+                }
+            });
+
+            client.actions().account().currentUser().thenAccept(user->{
+                EzUtils.log(user);
+            });
+
+        });
+        //todo remove
+        binding.searchButton.callOnClick();
 
         binding.searchButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -400,6 +427,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void driver() {
+
         binding.webview.loadUrl("https://www.instagram.com/accounts/edit/");
         binding.heaederText.setText("Logging In");
         binding.webview.addJavascriptInterface(new JS_INTERFACE(), "android");

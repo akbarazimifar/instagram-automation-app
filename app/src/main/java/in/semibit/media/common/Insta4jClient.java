@@ -4,13 +4,16 @@ import android.os.Environment;
 
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
+import com.github.instagram4j.instagram4j.utils.SerializeUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
+import in.semibit.media.common.igclientext.IGClientWrapper;
 import okhttp3.OkHttpClient;
 
 public class Insta4jClient {
@@ -19,6 +22,10 @@ public class Insta4jClient {
     public static File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
 
     public static synchronized IGClient getClient(String username, String passwd, GenricDataCallback callback) {
+        return getClient(username, passwd, false, callback);
+    }
+
+    public static synchronized IGClient getClient(String username, String passwd, boolean forceLogin, GenricDataCallback callback) {
         if (callback == null) {
             callback = (s) -> {
             };
@@ -43,11 +50,14 @@ public class Insta4jClient {
             try {
                 File sessionFile = new File(root, "instagram_session.json");
                 File fileClient = new File(root, "instagram_client.json");
-//                sessionFile.delete();
-//                fileClient.delete();
+
 
                 try {
                     if (fileClient.exists() && sessionFile.exists()) {
+                        if (forceLogin) {
+                            sessionFile.delete();
+                            fileClient.delete();
+                        }
                         LogsViewModel.addToLog("IG Client saved Login");
                         client = IGClient.deserialize(fileClient, sessionFile,
                                 IGUtils.defaultHttpClientBuilder()
@@ -74,8 +84,13 @@ public class Insta4jClient {
                             .password(passwd)
                             .login();
 
+                    IGClientWrapper igClientWrapper = new IGClientWrapper(username,passwd,okHttpClient);
+
                     client.serialize(fileClient, sessionFile);
 
+
+                        SerializeUtil.serialize(client, fileClient);
+                        SerializeUtil.serialize(client.getHttpClient().cookieJar(), sessionFile);
                 }
 
                 callback.onStart("Logged In");
@@ -83,8 +98,7 @@ public class Insta4jClient {
                 e.printStackTrace();
                 callback.onStart(e.getMessage());
             }
-        }
-        else {
+        } else {
             callback.onStart("Logged In");
         }
 

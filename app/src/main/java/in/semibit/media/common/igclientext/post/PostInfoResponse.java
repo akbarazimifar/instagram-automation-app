@@ -13,6 +13,9 @@ public class PostInfoResponse extends IGResponse {
         return post;
     }
 
+    public PostInfoResponse() {
+    }
+
     public void setPost(PostInfoModel post) {
         this.post = post;
     }

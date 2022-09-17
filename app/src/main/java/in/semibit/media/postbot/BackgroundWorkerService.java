@@ -138,16 +138,19 @@ public class BackgroundWorkerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         context = getApplicationContext();
-        if (client == null) {
-            client = new InstagramPoster(Insta4jClient.getClient(context.getString(R.string.username),
-                    context.getString(R.string.password), null));
-        }
 
-        if (intent == null || ACTION_STOP_SERVICE.equals(intent.getAction())) {
-            context.getSystemService(NotificationManager.class).cancel(NOTIF_ID);
-            stopSelf();
-        }
-        this.startForeground(intent);
+//        CommonAsyncExecutor.execute(()->{
+            if (client == null) {
+                client = new InstagramPoster(Insta4jClient.getClient(context.getString(R.string.username),
+                        context.getString(R.string.password), null));
+            }
+
+            if (intent == null || ACTION_STOP_SERVICE.equals(intent.getAction())) {
+                context.getSystemService(NotificationManager.class).cancel(NOTIF_ID);
+                stopSelf();
+            }
+            this.startForeground(intent);
+//        });
 
         return super.onStartCommand(intent, flags, startId);
     }
