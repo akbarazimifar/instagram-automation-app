@@ -246,7 +246,7 @@ public class InstagramPoster {
         String upload_settings = reelRequestHelper.upload_settings();
 
         CompletableFuture<String> reelResponse = CompletableFuture.completedFuture("{}");
-        if (false) {
+        if (true) {
 
 
             reelResponse = client.actions().upload()
@@ -290,8 +290,8 @@ public class InstagramPoster {
 //                .thenCompose(Function.identity());
 
         try {
-//            String mediaResponse = reelResponse.join();
-            String mediaResponse = reelRequestHelper.configureToClip(mediPayload.caption());//mediaResponseOrig
+            String mediaResponse = reelResponse.join();
+//            String mediaResponse = reelRequestHelper.configureToClip(mediPayload.caption());//mediaResponseOrig
             EzUtils.log("Reel Config Response" + mediaResponse);
             if (mediaResponse != null) {
                 try {
