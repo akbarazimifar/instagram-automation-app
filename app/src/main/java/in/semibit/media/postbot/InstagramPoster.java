@@ -141,7 +141,7 @@ public class InstagramPoster {
                         Files.readAllBytes(Paths.get(file.toURI())),
                         Files.readAllBytes(Paths.get(cover.toURI())),
                         new MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload()
-                                .caption("Reel " + caption).originalMediaId(soundOriginalMedia),
+                                .caption(caption).originalMediaId(soundOriginalMedia),
                         soundOriginalMedia);
 
                 if (shortCode != null) {
