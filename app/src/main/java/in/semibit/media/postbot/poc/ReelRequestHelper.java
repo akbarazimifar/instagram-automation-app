@@ -16,11 +16,15 @@ import java.util.concurrent.ThreadLocalRandom;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.igclientext.post.MediaConfigureToClipsRequestExt;
 import in.semibit.media.common.igclientext.post.model.PostItem;
+import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.internal.http.RealResponseBody;
+import okio.GzipSource;
+import okio.Okio;
 
 
 public class ReelRequestHelper {
@@ -227,7 +231,7 @@ public class ReelRequestHelper {
             bodyString = bodyString.replaceAll("2906686555970937661", s_2906686555970937661);
             bodyString = bodyString.replaceAll("347624030914642", s_347624030914642);
             bodyString = bodyString.replaceAll("137624447800", upload_id);
-            bodyString = bodyString.replaceAll(getUserId(), getUserId());
+            bodyString = bodyString.replaceAll("51132554072", getUserId());
             bodyString = bodyString.replaceAll("android-ba9156177f99d2ee", igClient.getDeviceId());
             bodyString = bodyString.replaceAll("7397b647-0663-4d02-9746-8cd93c61e6f1", UUID.randomUUID().toString());
             bodyString = bodyString.replaceAll("not_your_type_yt", soundArtistUserName);
@@ -277,7 +281,6 @@ public class ReelRequestHelper {
                     .addHeader("Ig-Intended-User-Id", getUserId())
                     .addHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
                     .addHeader("Content-Length", String.valueOf(body.contentLength()))
-                    .addHeader("Accept-Encoding", "gzip, deflate")
                     .addHeader("X-Fb-Http-Engine", "Liger")
                     .addHeader("X-Fb-Client-Ip", "True")
                     .addHeader("X-Fb-Server-Cluster", "True")
@@ -288,7 +291,8 @@ public class ReelRequestHelper {
                     .addHeader("Ig-U-Ds-User-Id", getUserId())
                     .addHeader("Ig-Intended-User-Id", getUserId())
                     .addHeader("Content-Type", "application/json")
-                    .addHeader("Accept-Encoding", "gzip, deflate")
+//                    .addHeader("Accept-Encoding", "gzip, deflate")
+                    .addHeader("Accept-Encoding", "utf-8")
                     .addHeader("X-Fb-Http-Engine", "Liger")
                     .addHeader("X-Fb-Client-Ip", "True")
                     .addHeader("X-Fb-Server-Cluster", "True")
@@ -331,7 +335,6 @@ public class ReelRequestHelper {
 
             Response response = okHttpClient.newCall(request).execute();
             String res = response.body().string();
-            res.length();
             LogsViewModel.addToLog("REEL CONFIGURE RESPONSE " + res);
             return res;
         } catch (Exception e) {

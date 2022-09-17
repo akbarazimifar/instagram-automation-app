@@ -2,6 +2,7 @@ package in.semibit.media;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
@@ -30,7 +31,6 @@ import com.google.android.gms.common.util.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
-import com.semibit.ezandroidutils.EzUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,9 +41,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 
 import in.semibit.media.common.AdvancedWebView;
-import in.semibit.media.common.GenricDataCallback;
+import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.postbot.BackgroundWorkerService;
 import in.semibit.media.databinding.ActivityMainBinding;
@@ -82,20 +83,21 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             binding.conturlOrUsername.setError(null);
-//            searchUserOrLink(binding.urlOrUsername.getText().toString());
+
+            // if you want to get data using webview
+//            processUsingWebView(binding.urlOrUsername.getText().toString());
 
 
-//            //todo remove
             JSONObject sampel = new JSONObject();
             try {
-                sampel.put("source_short_code","CfZJkoIglBE");
+                // working Post ID = CfZJkoIglBE
+                sampel.put("source_short_code","ChWoAW6DSM9");
             } catch (JSONException e) {
                 e.printStackTrace();
             }
             postInBackground(new File(Insta4jClient.root,"clip.mp4"), "Test Caption", "video",sampel);
 
         });
-        //todo remove
         binding.searchButton.callOnClick();
 
         binding.searchButton.setOnLongClickListener(new View.OnLongClickListener() {
@@ -106,6 +108,40 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        binding.heaederText.setText("Reposter");
+        binding.contBottom.setVisibility(View.VISIBLE);
+        binding.watchAd.setText("FollowerBot Init");
+        binding.watchAd.setOnClickListener(v -> {
+            binding.contBottom.setVisibility(View.GONE);
+            driver();
+        });
+        binding.showHideBot.setOnClickListener(c->{
+            getClient(true);
+        });
+        binding.watchAd.callOnClick();
+        getClient(false);
+    }
+    IGClient client;
+    public CompletableFuture<IGClient> getClient(boolean forceLogin){
+        if(client != null){
+            return CompletableFuture.completedFuture(client);
+        }
+        ProgressDialog progressDialog = new ProgressDialog(MainActivity.this);
+        progressDialog.setCancelable(true);
+        progressDialog.setMessage("Init IG Client...");
+        progressDialog.show();
+
+        CompletableFuture<IGClient> igc = new CompletableFuture<>();
+        CommonAsyncExecutor.execute(()->{
+           client =  Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password),forceLogin, null);
+           MainActivity.this.runOnUiThread(()->{
+               progressDialog.hide();
+           });
+           igc.complete(client);
+
+        });
+        return igc;
     }
 
     public boolean isDownloadAndPost = true;
@@ -251,7 +287,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void searchUserOrLink(String userOrLink) {
+    public void processUsingWebView(String userOrLink) {
         String split[] = userOrLink.replace("https://", "").split("/");
         if (userOrLink.contains("instagram.com") && split.length > 2) {
             String shortCode = split[2];
@@ -444,6 +480,7 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(String url) {
                 if (url.contains("https://www.instagram.com/accounts/edit")) {
                     binding.heaederText.setText("Logged In");
+                    binding.watchAd.setText("Follower Bot");
                     binding.contBottom.setVisibility(View.VISIBLE);
                     binding.watchAd.setOnClickListener(v -> {
                         startActivity(new Intent(context, FollowerBotActivity.class));
