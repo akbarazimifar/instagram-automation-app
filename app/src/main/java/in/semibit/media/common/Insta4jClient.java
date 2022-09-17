@@ -7,13 +7,11 @@ import com.github.instagram4j.instagram4j.utils.IGUtils;
 import com.github.instagram4j.instagram4j.utils.SerializeUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-import in.semibit.media.common.igclientext.IGClientWrapper;
 import okhttp3.OkHttpClient;
 
 public class Insta4jClient {
@@ -84,7 +82,6 @@ public class Insta4jClient {
                             .password(passwd)
                             .login();
 
-                    IGClientWrapper igClientWrapper = new IGClientWrapper(username,passwd,okHttpClient);
 
                     client.serialize(fileClient, sessionFile);
 

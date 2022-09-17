@@ -231,30 +231,38 @@ public class InstagramPoster {
     public MediaResponse.MediaConfigureToClipsResponse uploadVideoToReels(byte[] videoData,
                                                                           byte[] coverData,
                                                                           MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload mediPayload, PostItem soundOriginalMedia) {
-        String upload_id = "1663361663077";//String.valueOf(System.currentTimeMillis());
-
+        String upload_id =String.valueOf(System.currentTimeMillis());
+//"1663396816753";//
 
         ReelRequestHelper reelRequestHelper = new ReelRequestHelper(client,upload_id);
         reelRequestHelper.clips_info_for_creation();
         reelRequestHelper.write_seen_state();
         reelRequestHelper.upload_settings();
-        reelRequestHelper.configureToClip(soundOriginalMedia);
+//        reelRequestHelper.configureToClip(soundOriginalMedia);
 
 //
-//        //todo remove
-//        if(true)
-//            return null;
+        //todo remove
+        if(true)
+            return null;
 
-//
-//        CompletableFuture<MediaResponse.MediaConfigureToClipsResponse> reelResponse = client.actions().upload()
-//                .videoWithCover(videoData, coverData, UploadParameters.forClip(upload_id))
-//                .thenCompose(response -> client.actions().upload().finish(upload_id))
-//
-//
-//                .thenCompose(reelRequestHelperResp->{
-//                    reelRequestHelper.configureToClip(soundOriginalMedia);
-//                    return CompletableFuture.completedFuture(null);
-//                });
+
+        CompletableFuture<MediaResponse.MediaConfigureToClipsResponse> reelResponse = client.actions().upload()
+                .videoWithCover(videoData, coverData, UploadParameters.forClip(upload_id))
+                .thenCompose(response -> {
+                    try {
+                        Thread.sleep(40000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    return client.actions().upload().finish(upload_id);
+                })
+
+
+                .thenCompose(reelRequestHelperResp->{
+
+                    reelRequestHelper.configureToClip(soundOriginalMedia);
+                    return CompletableFuture.completedFuture(null);
+                });
 
 
 //                .thenCompose(response -> new MediaConfigureToClipsRequestExt(mediPayload.upload_id(upload_id)).execute(client))

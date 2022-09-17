@@ -84,26 +84,15 @@ public class MainActivity extends AppCompatActivity {
             binding.conturlOrUsername.setError(null);
 //            searchUserOrLink(binding.urlOrUsername.getText().toString());
 
-//
+
 //            //todo remove
-//            JSONObject sampel = new JSONObject();
-//            try {
-//                sampel.put("source_short_code","ChWoAW6DSM9");
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//            postInBackground(new File(Insta4jClient.root,"clip.mp4"), "Test Caption", "video",sampel);
-
-            IGClient client =Insta4jClient.
-                    getClient(getString(R.string.username),getString( R.string.password),true, new GenricDataCallback() {
-                @Override
-                public void onStart(String s) {
-                }
-            });
-
-            client.actions().account().currentUser().thenAccept(user->{
-                EzUtils.log(user);
-            });
+            JSONObject sampel = new JSONObject();
+            try {
+                sampel.put("source_short_code","ChWoAW6DSM9");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            postInBackground(new File(Insta4jClient.root,"clip.mp4"), "Test Caption", "video",sampel);
 
         });
         //todo remove

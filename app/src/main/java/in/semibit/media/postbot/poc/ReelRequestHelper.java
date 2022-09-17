@@ -172,7 +172,7 @@ public class ReelRequestHelper {
                 .addHeader("X-Ig-Device-Locale", "en_US")
                 .addHeader("X-Ig-Mapped-Locale", "en_US")
 //                .addHeader("X-Pigeon-Session-Id", "UFS-f02b8f26-63cb-4b86-b51a-84b373dc86b4-0")
-                .addHeader("X-Pigeon-Rawclienttime", "1663349442.236")
+                .addHeader("X-Pigeon-Rawclienttime", (System.currentTimeMillis()/1000)+".236")
                 .addHeader("X-Ig-Bandwidth-Speed-Kbps", "994.000")
                 .addHeader("X-Ig-Bandwidth-Totalbytes-B", "5300594")
                 .addHeader("X-Ig-Bandwidth-Totaltime-Ms", "5381")
@@ -240,28 +240,29 @@ public class ReelRequestHelper {
                 .addHeader("X-IG-Device-ID", igClient.getGuid())
                 .addHeader("X-IG-Android-ID", igClient.getDeviceId())
                 .addHeader("X-FB-HTTP-engine", "Liger")
-
+//                .addHeader("X-Ig-Www-Claim","hmac.AR2_73UwszrOua4bBYwNRU0cPHGM0aA2Qd--mtVft0mnoEcD")
+                .addHeader("Authorization", igClient.getAuthorization())
 
                 .build();
-
-        try {
-            String response = api.doIGPost("api/v1/media/configure_to_clips/?video=1",
-                    bodyString,
-                    false
-                    , getBasicHeaders());
-            return response;
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
 //
 //        try {
-//            Response response = okHttpClient.newCall(request).execute();
-//            String res = response.body().string();
-//            res.length();
-//            return res;
-//        } catch (IOException e) {
-//            e.printStackTrace();
+//            String response = api.doIGPost("api/v1/media/configure_to_clips/?video=1",
+//                    bodyString,
+//                    false
+//                    , getBasicHeaders());
+//            return response;
+//        } catch (Exception exception) {
+//            exception.printStackTrace();
 //        }
+//
+        try {
+            Response response = okHttpClient.newCall(request).execute();
+            String res = response.body().string();
+            res.length();
+            return res;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return "";
     }
 }

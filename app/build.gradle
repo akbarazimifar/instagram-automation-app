@@ -49,7 +49,7 @@ dependencies {
     implementation 'com.github.shiveshnavin:ezandroidutils:1.2.0'
 
 //    implementation 'com.github.instagram4j:instagram4j:2.0.7'
-    implementation 'com.github.shiveshnavin:instagram4j:534c7de363'
+    implementation 'com.github.shiveshnavin:instagram4j:6942321d7a'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
