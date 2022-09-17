@@ -80,7 +80,7 @@ public class FollowBotService {
 
         GenericCompletableFuture<FollowerUtil> future = new GenericCompletableFuture<>();
         CommonAsyncExecutor.execute(() -> {
-            igClient = Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), (s) -> {
+            igClient = Insta4jClient.getClient(context, (s) -> {
             });
             uiLogger.onStart("IG Client Ready");
             FollowerUtil followerUtil = new FollowerUtil(igClient, serverDb, uiLogger);
@@ -215,7 +215,7 @@ public class FollowBotService {
 
     public IGClient getIgClient() {
         if (igClient == null)
-            igClient = Insta4jClient.getClient(context.getString(R.string.username), context.getString(R.string.password), null);
+            igClient = Insta4jClient.getClient(context, null);
         return igClient;
     }
 

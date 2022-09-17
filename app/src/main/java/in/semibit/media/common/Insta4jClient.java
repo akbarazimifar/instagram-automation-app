@@ -1,10 +1,9 @@
 package in.semibit.media.common;
 
-import android.os.Environment;
+import android.content.Context;
 
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
-import com.github.instagram4j.instagram4j.utils.SerializeUtil;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -12,22 +11,26 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
+import in.semibit.media.R;
 import okhttp3.OkHttpClient;
 
 public class Insta4jClient {
 
     private static IGClient client;
-    public static File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
+    public static File root = new File("/sdcard/" + "instadp");
 
-    public static synchronized IGClient getClient(String username, String passwd, GenricDataCallback callback) {
-        return getClient(username, passwd, false, callback);
+    public static synchronized IGClient getClient(Context context, GenricDataCallback callback) {
+        return getClient(context, false, callback);
     }
 
-    public static synchronized IGClient getClient(String username, String passwd, boolean forceLogin, GenricDataCallback callback) {
+    public static synchronized IGClient getClient(Context context, boolean forceLogin, GenricDataCallback callback) {
         if (callback == null) {
             callback = (s) -> {
             };
         }
+        String username = context.getString(R.string.username);
+        String passwd = context.getString(R.string.password);
+        root = new File(context.getFilesDir(), "instadp");
         if (client == null) {
 
             try {
@@ -51,11 +54,12 @@ public class Insta4jClient {
 
 
                 try {
+                    if (forceLogin) {
+                        sessionFile.delete();
+                        fileClient.delete();
+                    }
                     if (fileClient.exists() && sessionFile.exists()) {
-                        if (forceLogin) {
-                            sessionFile.delete();
-                            fileClient.delete();
-                        }
+
                         LogsViewModel.addToLog("IG Client saved Login");
                         client = IGClient.deserialize(fileClient, sessionFile,
                                 IGUtils.defaultHttpClientBuilder()
@@ -84,10 +88,10 @@ public class Insta4jClient {
 
 
                     client.serialize(fileClient, sessionFile);
-
-
-                        SerializeUtil.serialize(client, fileClient);
-                        SerializeUtil.serialize(client.getHttpClient().cookieJar(), sessionFile);
+//
+//
+//                        SerializeUtil.serialize(client, fileClient);
+//                        SerializeUtil.serialize(client.getHttpClient().cookieJar(), sessionFile);
                 }
 
                 callback.onStart("Logged In");

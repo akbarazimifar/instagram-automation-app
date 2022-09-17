@@ -141,8 +141,7 @@ public class BackgroundWorkerService extends Service {
 
 //        CommonAsyncExecutor.execute(()->{
             if (client == null) {
-                client = new InstagramPoster(Insta4jClient.getClient(context.getString(R.string.username),
-                        context.getString(R.string.password), null));
+                client = new InstagramPoster(Insta4jClient.getClient(context, null));
             }
 
             if (intent == null || ACTION_STOP_SERVICE.equals(intent.getAction())) {

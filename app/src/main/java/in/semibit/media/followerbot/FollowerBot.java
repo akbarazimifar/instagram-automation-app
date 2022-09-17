@@ -182,7 +182,7 @@ public class FollowerBot {
                         logger.onStart("ERR " + e.getMessage());
                     }
                 }
-                if (consoleMessage.message().contains("unconnectcompleted")) {
+               else if (consoleMessage.message().contains("unconnectcompleted")) {
                     try {
                         logger.onStart("UFW COMPLETE");
                         onFollowCompleted.onStart(username);
@@ -190,7 +190,7 @@ public class FollowerBot {
                         logger.onStart("ERR " + e.getMessage());
                     }
                 }
-                if (consoleMessage.message().contains("unabletocomplete")) {
+                else if (consoleMessage.message().contains("unabletocomplete")) {
                     try {
                         logger.onStart("UFW ERROR");
                         onFollowCompleted.onStart("unabletocomplete");
