@@ -154,9 +154,8 @@ public class InstagramPoster {
             }
 
 
-            //todo remove
-            if (true)
-                return;
+            //uncomment if you want to post to timeline instead of reels
+     /*
             CompletableFuture<MediaResponse.MediaConfigureTimelineResponse> onMediaConfiguredResult =
                     uploadVideoToTimeline(Files.readAllBytes(Paths.get(file.toURI())),
                             Files.readAllBytes(Paths.get(cover.toURI())),
@@ -169,6 +168,10 @@ public class InstagramPoster {
             }).thenAccept(response -> {
                 postProcess(startTime, response.getStatusCode(), response.getMedia(), postBodyProcessed);
             }).join();
+
+      */
+
+
         } catch (Exception e) {
             e.printStackTrace();
             this.callback.onStart("stop: upload failed" + e.getMessage());
@@ -235,7 +238,7 @@ public class InstagramPoster {
     public Media uploadVideoToReels(byte[] videoData, byte[] coverData,
                                     MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload mediPayload,
                                     PostItem sourcePost) {
-        String upload_id ="1663414646757";// String.valueOf(System.currentTimeMillis());
+        String upload_id =  String.valueOf(System.currentTimeMillis());
 
         ReelRequestHelper reelRequestHelper = new ReelRequestHelper(client, upload_id, sourcePost);
         String clips_info_for_creation = reelRequestHelper.clips_info_for_creation();
@@ -243,7 +246,7 @@ public class InstagramPoster {
         String upload_settings = reelRequestHelper.upload_settings();
 
         CompletableFuture<String> reelResponse = CompletableFuture.completedFuture("{}");
-        if (false) {
+        if (true) {
 
 
             reelResponse = client.actions().upload()
@@ -287,8 +290,8 @@ public class InstagramPoster {
 //                .thenCompose(Function.identity());
 
         try {
-//            String mediaResponse = reelResponse.join();
-            String mediaResponse = reelRequestHelper.configureToClip(mediPayload.caption());//mediaResponseOrig
+            String mediaResponse = reelResponse.join();
+//            String mediaResponse = reelRequestHelper.configureToClip(mediPayload.caption());//mediaResponseOrig
             EzUtils.log("Reel Config Response" + mediaResponse);
             if (mediaResponse != null) {
                 try {

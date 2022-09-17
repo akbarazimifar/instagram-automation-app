@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         binding.searchButton.postDelayed(()->{
-            binding.searchButton.callOnClick();
+//            binding.searchButton.callOnClick();
         },1000);
 
         binding.searchButton.setOnLongClickListener(new View.OnLongClickListener() {
