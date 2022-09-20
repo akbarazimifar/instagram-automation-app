@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
 import in.semibit.media.R;
+import in.semibit.media.postbot.BackgroundWorkerService;
 import okhttp3.OkHttpClient;
 
 public class Insta4jClient {
@@ -36,6 +37,12 @@ public class Insta4jClient {
             try {
                 if (!root.exists()) {
                     root.mkdir();
+
+                    try {
+                        BackgroundWorkerService.copyAssets(context);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
                 File file = new File(root.getAbsoluteFile(), "instagram.txt");
                 if (file.exists()) {

@@ -40,7 +40,7 @@ public class BackgroundWorkerService extends Service {
 
     VideoMerger videoMerger;
 
-    private void copyAssets() {
+    public static void copyAssets(Context context) {
         AssetManager assetManager = context.getAssets();
         String[] files = null;
         try {
@@ -75,7 +75,7 @@ public class BackgroundWorkerService extends Service {
         }
     }
 
-    private void copyFile(InputStream in, OutputStream out) throws IOException {
+    private static void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
         int read;
         while ((read = in.read(buffer)) != -1) {
@@ -117,11 +117,6 @@ public class BackgroundWorkerService extends Service {
                 stopSelf();
             }
         };
-        try {
-            copyAssets();
-        } catch (Exception e) {
-
-        }
         File videoFile = new File(intent.getStringExtra("file"));
         File cover;
         try {

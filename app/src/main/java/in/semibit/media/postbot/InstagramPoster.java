@@ -58,8 +58,6 @@ public class InstagramPoster {
 
     public void post(File file, File cover, String caption, String mediaType, String postBodyProcessed) {
 
-        if (true)
-            return;
         long startTime = System.currentTimeMillis();
         if (last.equals(file.getAbsolutePath()) && !SemibitMediaApp.TEST_MODE) {
             System.out.println("Skip reption !");
