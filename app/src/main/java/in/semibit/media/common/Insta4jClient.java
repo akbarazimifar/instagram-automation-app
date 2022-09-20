@@ -31,7 +31,6 @@ public class Insta4jClient {
         }
         String username = context.getString(R.string.username);
         String passwd = context.getString(R.string.password);
-        root = new File(context.getFilesDir(), "instadp");
         if (client == null) {
 
             try {

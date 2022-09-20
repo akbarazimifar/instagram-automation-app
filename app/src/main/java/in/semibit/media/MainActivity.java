@@ -48,6 +48,7 @@ import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.postbot.BackgroundWorkerService;
 import in.semibit.media.databinding.ActivityMainBinding;
+import in.semibit.media.videoprocessor.VideoMerger;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.SYSTEM_ALERT_WINDOW}, 1234);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-//        driver();
+//      driver();
 
         binding.searchButton.setOnClickListener(v -> {
 
@@ -100,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         binding.searchButton.postDelayed(()->{
-//            binding.searchButton.callOnClick();
+            binding.searchButton.callOnClick();
         },1000);
 
         binding.searchButton.setOnLongClickListener(new View.OnLongClickListener() {
@@ -112,18 +113,28 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        binding.refresh.setOnClickListener(e->{
+            driver();
+            binding.webview.setVisibility(View.VISIBLE);
+        });
+
         binding.heaederText.setText("Reposter");
         binding.contBottom.setVisibility(View.VISIBLE);
-        binding.watchAd.setText("FollowerBot Init");
-        binding.watchAd.setOnClickListener(v -> {
+        binding.startBot.setText("FollowerBot Init");
+        binding.startBot.setOnClickListener(v -> {
             binding.contBottom.setVisibility(View.GONE);
             driver();
         });
         binding.showHideBot.setOnClickListener(c->{
             getClient(true);
         });
-        binding.watchAd.callOnClick();
+        binding.startBot.callOnClick();
         getClient(false);
+
+
+        CommonAsyncExecutor.execute(()->{
+            VideoMerger.load(context);
+        });
     }
     IGClient client;
     public CompletableFuture<IGClient> getClient(boolean forceLogin){
@@ -273,7 +284,7 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         JSONObject json = new JSONObject(body);
                         binding.log.setText(json.toString(4));
-                        json.put("username",client.$username);
+                        json.put("username",context.getString(R.string.username));
                         toast(MainActivity.this, "Posting using strategy : " + (isDownloadAndPost ? "Local Upload" : "Remote API"));
                         if (isDownloadAndPost)
                             getInfo(body);
@@ -377,7 +388,7 @@ public class MainActivity extends AppCompatActivity {
             url = post.optString("firebaseUrl");
         }
 
-        File tmpDir = getCacheDir();
+        File tmpDir = new File(Insta4jClient.root,"temp");
         AndroidNetworking.download(url, tmpDir.getAbsolutePath(), fileName)
                 .build()
                 .startDownload(new DownloadListener() {
@@ -482,9 +493,9 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(String url) {
                 if (url.contains("https://www.instagram.com/accounts/edit")) {
                     binding.heaederText.setText("Logged In");
-                    binding.watchAd.setText("Follower Bot");
+                    binding.startBot.setText("Follower Bot");
                     binding.contBottom.setVisibility(View.VISIBLE);
-                    binding.watchAd.setOnClickListener(v -> {
+                    binding.startBot.setOnClickListener(v -> {
                         startActivity(new Intent(context, FollowerBotActivity.class));
                     });
                     binding.webview.setVisibility(View.GONE);

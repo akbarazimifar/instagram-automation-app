@@ -13,7 +13,6 @@ import android.content.Intent;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
-import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -25,11 +24,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import in.semibit.media.R;
 import in.semibit.media.common.CommonAsyncExecutor;
-import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.Insta4jClient;
+import in.semibit.media.videoprocessor.VideoMerger;
 
 public class BackgroundWorkerService extends Service {
     public InstagramPoster client;
@@ -37,6 +38,7 @@ public class BackgroundWorkerService extends Service {
     public String ACTION_STOP_SERVICE = "199213";
     public static int NOTIF_ID = 1;
 
+    VideoMerger videoMerger;
 
     private void copyAssets() {
         AssetManager assetManager = context.getAssets();
@@ -47,6 +49,11 @@ public class BackgroundWorkerService extends Service {
             Log.e("tag", "Failed to get asset file list.", e);
         }
         for (String filename : files) {
+            if (!(filename.contains("mp4") || filename.contains("mp3") || filename.contains("jpg") ||
+                    filename.contains("png") || filename.contains("jpeg") || filename.contains("json") ||
+                    filename.contains("txt"))) {
+                continue;
+            }
             InputStream in = null;
             OutputStream out = null;
             try {
@@ -77,7 +84,7 @@ public class BackgroundWorkerService extends Service {
     }
 
     private File getCover(File video) throws Exception {
-        File cover = new File(root, "cover_" + System.currentTimeMillis() + ".jpg");
+        File cover = new File(root, "cover_" +video.getName() + ".jpg");
         ArrayList<Bitmap> frameList;
         int numeroFrameCaptured = 0;
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
@@ -103,35 +110,49 @@ public class BackgroundWorkerService extends Service {
     public void work(Intent intent) {
         System.out.println("work started");
 
-        client.callback = new GenricDataCallback() {
-            @Override
-            public void onStart(String s) {
+        client.callback = s -> {
+            updateNotification(s);
+            if (s.contains("stop")) {
                 updateNotification(s);
-                if (s.contains("stop")) {
-                    updateNotification(s);
-                    stopSelf();
-                }
+                stopSelf();
             }
         };
-        File file = new File(intent.getStringExtra("file"));
+        try {
+            copyAssets();
+        } catch (Exception e) {
+
+        }
+        File videoFile = new File(intent.getStringExtra("file"));
         File cover;
         try {
-            cover = getCover(file);
+            cover = getCover(videoFile);
 
         } catch (Exception e) {
             e.printStackTrace();
             cover = new File(root, "cover_end.jpg");
             if (!cover.exists()) {
                 updateNotification("Using stock cover file " + cover.getAbsolutePath());
-                copyAssets();
             }
             System.out.println("assets copied");
         }
+        videoMerger.setOnLog(client.callback);
 
-        client.post(file, cover,
-                intent.getStringExtra("caption"),
-                intent.getStringExtra("mediaType"),
-                intent.getStringExtra("post"));
+
+        String endScreenFile= intent.getStringExtra("endscreen");
+        if(endScreenFile == null || endScreenFile.isEmpty()){
+            endScreenFile = "linkinbio.mp4";
+        }
+        File endScreen = new File(root,endScreenFile);
+
+        CompletableFuture<File> onFileProcessed = videoMerger.merge("processed_"+videoFile.getName(), List.of(videoFile,endScreen));
+        File finalCover = cover;
+        onFileProcessed.exceptionally(e-> videoFile).thenAccept(outputFile->{
+            client.post(outputFile, finalCover,
+                    intent.getStringExtra("caption"),
+                    intent.getStringExtra("mediaType"),
+                    intent.getStringExtra("post"));
+        });
+
     }
 
 
@@ -139,17 +160,17 @@ public class BackgroundWorkerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         context = getApplicationContext();
-
+        videoMerger  = new VideoMerger(context);
 //        CommonAsyncExecutor.execute(()->{
-            if (client == null) {
-                client = new InstagramPoster(Insta4jClient.getClient(context, null));
-            }
+        if (client == null) {
+            client = new InstagramPoster(Insta4jClient.getClient(context, null));
+        }
 
-            if (intent == null || ACTION_STOP_SERVICE.equals(intent.getAction())) {
-                context.getSystemService(NotificationManager.class).cancel(NOTIF_ID);
-                stopSelf();
-            }
-            this.startForeground(intent);
+        if (intent == null || ACTION_STOP_SERVICE.equals(intent.getAction())) {
+            context.getSystemService(NotificationManager.class).cancel(NOTIF_ID);
+            stopSelf();
+        }
+        this.startForeground(intent);
 //        });
 
         return super.onStartCommand(intent, flags, startId);
@@ -164,7 +185,7 @@ public class BackgroundWorkerService extends Service {
 
     public void startForeground(final Intent intent) {
         startForeground(NOTIF_ID, getMyActivityNotification(""));
-        CommonAsyncExecutor.execute(()->work(intent));
+        CommonAsyncExecutor.execute(() -> work(intent));
     }
 
     public Notification getMyActivityNotification(String text) {

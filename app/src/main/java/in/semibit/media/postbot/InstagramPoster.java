@@ -58,6 +58,8 @@ public class InstagramPoster {
 
     public void post(File file, File cover, String caption, String mediaType, String postBodyProcessed) {
 
+        if (true)
+            return;
         long startTime = System.currentTimeMillis();
         if (last.equals(file.getAbsolutePath()) && !SemibitMediaApp.TEST_MODE) {
             System.out.println("Skip reption !");
@@ -240,7 +242,7 @@ public class InstagramPoster {
     public Media uploadVideoToReels(byte[] videoData, byte[] coverData,
                                     MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload mediPayload,
                                     PostItem sourcePost) {
-        String upload_id =  String.valueOf(System.currentTimeMillis());
+        String upload_id = String.valueOf(System.currentTimeMillis());
 
         ReelRequestHelper reelRequestHelper = new ReelRequestHelper(client, upload_id, sourcePost);
         String clips_info_for_creation = reelRequestHelper.clips_info_for_creation();
