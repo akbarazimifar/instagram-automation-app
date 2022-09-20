@@ -287,8 +287,6 @@ public class MainActivity extends AppCompatActivity {
 //                post(body);
             }
         }
-
-
     }
 
     public void processUsingWebView(String userOrLink) {

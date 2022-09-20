@@ -1,6 +1,8 @@
 package in.semibit.media.postbot;
 
 
+import static in.semibit.media.common.Insta4jClient.root;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -32,7 +34,6 @@ import in.semibit.media.common.Insta4jClient;
 public class BackgroundWorkerService extends Service {
     public InstagramPoster client;
     public Context context;
-    File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
     public String ACTION_STOP_SERVICE = "199213";
     public static int NOTIF_ID = 1;
 

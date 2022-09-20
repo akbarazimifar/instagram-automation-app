@@ -147,6 +147,8 @@ public class InstagramPoster {
                 if (shortCode != null) {
                     this.callback.onStart("Uploaded to reels");
                     postProcess(startTime, 200, shortCode, postBodyProcessed);
+                    file.delete();
+                    cover.delete();
                 }
             } catch (Exception e) {
                 e.printStackTrace();

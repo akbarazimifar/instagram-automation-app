@@ -1,6 +1,7 @@
 package in.semibit.media.common;
 
 import android.content.Context;
+import android.os.Environment;
 
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
@@ -17,7 +18,7 @@ import okhttp3.OkHttpClient;
 public class Insta4jClient {
 
     private static IGClient client;
-    public static File root = new File("/sdcard/" + "instadp");
+    public static File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
 
     public static synchronized IGClient getClient(Context context, GenricDataCallback callback) {
         return getClient(context, false, callback);
