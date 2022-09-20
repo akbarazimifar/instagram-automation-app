@@ -273,6 +273,7 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         JSONObject json = new JSONObject(body);
                         binding.log.setText(json.toString(4));
+                        json.put("username",client.$username);
                         toast(MainActivity.this, "Posting using strategy : " + (isDownloadAndPost ? "Local Upload" : "Remote API"));
                         if (isDownloadAndPost)
                             getInfo(body);

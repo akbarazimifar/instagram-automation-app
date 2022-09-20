@@ -50,6 +50,7 @@ dependencies {
 
 //    implementation 'com.github.instagram4j:instagram4j:2.0.7'
     implementation 'com.github.shiveshnavin:instagram4j:6942321d7a'
+    implementation 'com.arthenica:ffmpeg-kit-full:4.5.1-1'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
