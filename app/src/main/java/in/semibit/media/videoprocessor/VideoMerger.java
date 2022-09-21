@@ -47,7 +47,7 @@ public class VideoMerger {
             for (int i = 0; i < mp4Files.size(); i++) {
                 File tsFile = new File(tempDir.getAbsoluteFile(), mp4Files.get(i).getName() + ".ts");
                 temps.add(tsFile.getAbsolutePath());
-                tsProcessorsFutures[i] = run("-i " + mp4Files.get(0).getAbsolutePath() + " -c copy -bsf:v h264_mp4toannexb -f mpegts -y " + tsFile.getAbsolutePath());
+                tsProcessorsFutures[i] = run("-i " + mp4Files.get(i).getAbsolutePath() + " -c copy -bsf:v h264_mp4toannexb -f mpegts -y " + tsFile.getAbsolutePath());
             }
             CompletableFuture.allOf(tsProcessorsFutures).join();
             run("-i \"concat:"+ String.join("|", temps) +"\" -c copy -bsf:a aac_adtstoasc -y "+outputFile.getAbsolutePath());
