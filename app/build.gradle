@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId "in.semibit.media"
         minSdk 28
-        targetSdk 31
+        targetSdk 28
         versionCode 1
         versionName "1.0"
 
@@ -52,7 +52,9 @@ dependencies {
     implementation 'com.github.shiveshnavin:instagram4j:6942321d7a'
     implementation 'org.mp4parser:isoparser:1.9.41'
     implementation 'org.mp4parser:muxer:1.9.41'
-    implementation 'nl.bravobit:android-ffmpeg:1.1.7'
+//    implementation 'nl.bravobit:android-ffmpeg:1.1.7'
+
+    implementation 'com.arthenica:ffmpeg-kit-full:4.5.1-1'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

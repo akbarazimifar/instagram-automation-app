@@ -1,19 +1,15 @@
 package in.semibit.media.videoprocessor;
 
 import android.content.Context;
+import android.util.Log;
 
+import com.arthenica.ffmpegkit.FFmpegKit;
+import com.arthenica.ffmpegkit.FFmpegSession;
+import com.arthenica.ffmpegkit.FFmpegSessionCompleteCallback;
+import com.arthenica.ffmpegkit.ReturnCode;
 import com.semibit.ezandroidutils.EzUtils;
 
-import org.mp4parser.Container;
-import org.mp4parser.muxer.Movie;
-import org.mp4parser.muxer.Track;
-import org.mp4parser.muxer.builder.DefaultMp4Builder;
-import org.mp4parser.muxer.container.mp4.MovieCreator;
-import org.mp4parser.muxer.tracks.AppendTrack;
-
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -41,55 +37,46 @@ public class VideoMerger {
             onLog = EzUtils::l;
         }
         File outputFile = new File(Insta4jClient.root, fileName);
+        File tempDir = new File(Insta4jClient.root, "temp");
+        if (!tempDir.exists()) {
+            tempDir.mkdir();
+        }
         CompletableFuture<File> onRes = new CompletableFuture<>();
         try {
 
-            MovieCreator mc = new MovieCreator();
-            List<Movie> movies = mp4Files.stream().map(mp -> {
-                try {
-                    return mc.build(mp.getAbsolutePath());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }).collect(Collectors.toList());
+            CompletableFuture<Boolean>[] tsProcessorsFutures = new CompletableFuture[mp4Files.size()];
+            List<String>  temps = new ArrayList<>();
+            for (int i = 0; i < mp4Files.size(); i++) {
+                File tsFile = new File(tempDir.getAbsoluteFile(), mp4Files.get(i).getName() + ".ts");
+                temps.add(tsFile.getAbsolutePath());
+                tsProcessorsFutures[i] = run("-i " + mp4Files.get(0).getAbsolutePath() + " -c copy -bsf:v h264_mp4toannexb -f mpegts -y " + tsFile.getAbsolutePath());
+            }
+            CompletableFuture.allOf(tsProcessorsFutures).join();
+            run("-i \"concat:"+ String.join("|", temps) +"\" -c copy -bsf:a aac_adtstoasc -y "+outputFile.getAbsolutePath());
 
-            //Fetching the video tracks from the movies and storing them into an array
-            Track[] vetTrackVideo = new Track[0];
-            vetTrackVideo = movies.stream()
-                    .flatMap(movie -> movie.getTracks().stream())
-                    .filter(movie -> movie.getHandler().equals("vide"))
-                    .collect(Collectors.toList())
-                    .toArray(vetTrackVideo);
-
-            //Fetching the audio tracks from the movies and storing them into an array
-            Track[] vetTrackAudio = new Track[0];
-            vetTrackAudio = movies.stream()
-                    .flatMap(movie -> movie.getTracks().stream())
-                    .filter(movie -> movie.getHandler().equals("soun"))
-                    .collect(Collectors.toList())
-                    .toArray(vetTrackAudio);
-
-            //Creating the output movie by setting a list with both video and audio tracks
-            Movie movieOutput = new Movie();
-            List<Track> listTracks = new ArrayList<>(List.of(new AppendTrack(vetTrackVideo), new AppendTrack(vetTrackAudio)));
-            movieOutput.setTracks(listTracks);
-
-            //Building the output movie and storing it into a Container
-            DefaultMp4Builder mp4Builder = new DefaultMp4Builder();
-            Container c = mp4Builder.build(movieOutput);
-
-            //Writing the output file
-            FileOutputStream fos = new FileOutputStream(outputFile);
-            c.writeContainer(fos.getChannel());
-            fos.close();
-            onRes.complete(outputFile);
         } catch (Exception e) {
             e.printStackTrace();
             onRes.completeExceptionally(e);
         }
 
         return onRes;
+    }
+
+    public CompletableFuture<Boolean> run(String cmd) {
+        CompletableFuture<Boolean> onRun = new CompletableFuture<>();
+        FFmpegSession session = FFmpegKit.executeAsync(cmd, session1 -> {
+            if (ReturnCode.isSuccess(session1.getReturnCode())) {
+                Log.d("VideoMerger", String.format("Command success with state %s and rc %s", session1.getState(), session1.getReturnCode()));
+                onRun.complete(true);
+            } else if (ReturnCode.isCancel(session1.getReturnCode())) {
+                onRun.complete(false);
+            } else {
+                onRun.complete(false);
+                Log.d("VideoMerger", String.format("Command failed with state %s and rc %s.%s", session1.getState(), session1.getReturnCode(), session1.getFailStackTrace()));
+            }
+        }, log -> EzUtils.l(log.getMessage()), statistics -> EzUtils.l(statistics.toString()));
+
+        return onRun;
     }
 
     public static void load(Context context) {

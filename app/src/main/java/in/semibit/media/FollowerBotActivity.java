@@ -70,13 +70,17 @@ public class FollowerBotActivity extends AppCompatActivity {
 
         try {
             LogsViewModel.getLiveLogData().observe(this, pairs -> {
-                List<Pair<Instant, String>> newLogs = LogsViewModel.filterAfter(lastLog);
-                if (newLogs != null && !newLogs.isEmpty())
-                {
-                    lastLog = newLogs.get(newLogs.size() - 1).first;
-                    for(Pair<Instant, String> log:newLogs){
-                        binding.logs.append(LogsViewModel.formattedLog(log));
+                try {
+                    List<Pair<Instant, String>> newLogs = LogsViewModel.filterAfter(lastLog);
+                    if (newLogs != null && !newLogs.isEmpty())
+                    {
+                        lastLog = newLogs.get(newLogs.size() - 1).first;
+                        for(Pair<Instant, String> log:newLogs){
+                            binding.logs.append(LogsViewModel.formattedLog(log));
+                        }
                     }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
 
             });

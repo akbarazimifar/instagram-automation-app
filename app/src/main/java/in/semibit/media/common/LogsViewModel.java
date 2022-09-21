@@ -8,11 +8,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public class LogsViewModel {
     private static MutableLiveData<List<Pair<Instant, String>>> liveLogData =
-            new MutableLiveData<>(new ArrayList<>(getInitialData()));
+            new MutableLiveData<>(new CopyOnWriteArrayList<>(getInitialData()));
 
     public static List<Pair<Instant, String>> getInitialData() {
         List<Pair<Instant, String>> initialData = new ArrayList<>();
