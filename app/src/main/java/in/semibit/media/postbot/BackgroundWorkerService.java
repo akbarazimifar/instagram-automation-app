@@ -18,6 +18,8 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.semibit.ezandroidutils.EzUtils;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -142,10 +144,11 @@ public class BackgroundWorkerService extends Service {
         CompletableFuture<File> onFileProcessed = videoMerger.merge("processed_"+videoFile.getName(), List.of(videoFile,endScreen));
         File finalCover = cover;
         onFileProcessed.exceptionally(e-> videoFile).thenAccept(outputFile->{
-            client.post(outputFile, finalCover,
-                    intent.getStringExtra("caption"),
-                    intent.getStringExtra("mediaType"),
-                    intent.getStringExtra("post"));
+            EzUtils.l(outputFile.getAbsolutePath());
+//            client.post(outputFile, finalCover,
+//                    intent.getStringExtra("caption"),
+//                    intent.getStringExtra("mediaType"),
+//                    intent.getStringExtra("post"));
         });
 
     }

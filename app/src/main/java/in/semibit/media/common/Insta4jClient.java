@@ -19,7 +19,7 @@ import okhttp3.OkHttpClient;
 public class Insta4jClient {
 
     private static IGClient client;
-    public static File root = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "instadp");
+    public static File root = new File(Environment.getExternalStorageDirectory(), "instadp");
 
     public static synchronized IGClient getClient(Context context, GenricDataCallback callback) {
         return getClient(context, false, callback);
