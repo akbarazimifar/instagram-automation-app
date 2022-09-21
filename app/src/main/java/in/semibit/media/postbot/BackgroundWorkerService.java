@@ -135,20 +135,20 @@ public class BackgroundWorkerService extends Service {
         videoMerger.setOnLog(client.callback);
 
 
-        String endScreenFile= intent.getStringExtra("endscreen");
-        if(endScreenFile == null || endScreenFile.isEmpty()){
-            endScreenFile = "linkinbio.mp4";
+        File endScreen = new File(root,"endscreen.mp4");
+        List<File> filesToJoin = List.of(videoFile,endScreen);
+        if(!endScreen.exists()){
+            filesToJoin = List.of(videoFile);
         }
-        File endScreen = new File(root,endScreenFile);
 
-        CompletableFuture<File> onFileProcessed = videoMerger.merge("processed_"+videoFile.getName(), List.of(videoFile,endScreen));
+        CompletableFuture<File> onFileProcessed = videoMerger.merge("processed_"+videoFile.getName(),filesToJoin );
         File finalCover = cover;
         onFileProcessed.exceptionally(e-> videoFile).thenAccept(outputFile->{
             EzUtils.l(outputFile.getAbsolutePath());
-//            client.post(outputFile, finalCover,
-//                    intent.getStringExtra("caption"),
-//                    intent.getStringExtra("mediaType"),
-//                    intent.getStringExtra("post"));
+            client.post(outputFile, finalCover,
+                    intent.getStringExtra("caption"),
+                    intent.getStringExtra("mediaType"),
+                    intent.getStringExtra("post"));
         });
 
     }

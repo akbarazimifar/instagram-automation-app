@@ -68,41 +68,41 @@ public class MainActivity extends AppCompatActivity {
         binding.searchButton.setOnClickListener(v -> {
 
 //
-//            if (binding.urlOrUsername.getText() == null || Strings.isEmptyOrWhitespace(binding.urlOrUsername.getText().toString())) {
-//                binding.conturlOrUsername.setError("Please enter post url");
-//
-//                try {
-//                    String textToPaste = readFromClipboard(this);
-//                    if (textToPaste != null && textToPaste.contains("instagram.com/")) {
-//                        binding.urlOrUsername.setText(textToPaste.toString());
-//                        binding.conturlOrUsername.setError(null);
-//
-//                    }
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//                return;
-//            }
-//            binding.conturlOrUsername.setError(null);
+            if (binding.urlOrUsername.getText() == null || Strings.isEmptyOrWhitespace(binding.urlOrUsername.getText().toString())) {
+                binding.conturlOrUsername.setError("Please enter post url");
+
+                try {
+                    String textToPaste = readFromClipboard(this);
+                    if (textToPaste != null && textToPaste.contains("instagram.com/")) {
+                        binding.urlOrUsername.setText(textToPaste.toString());
+                        binding.conturlOrUsername.setError(null);
+
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+            binding.conturlOrUsername.setError(null);
 
             // if you want to get data using webview
-//            processUsingWebView(binding.urlOrUsername.getText().toString());
+            processUsingWebView(binding.urlOrUsername.getText().toString());
 
-
-            JSONObject sampel = new JSONObject();
-            try {
-                // working Post ID = CfZJkoIglBE
-                sampel.put("source_short_code","ChWoAW6DSM9");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            postInBackground(new File(Insta4jClient.root,"clip.mp4"), "Test Caption", "video",sampel);
+//
+//            JSONObject sampel = new JSONObject();
+//            try {
+//                // working Post ID = CfZJkoIglBE
+//                sampel.put("source_short_code","ChWoAW6DSM9");
+//            } catch (JSONException e) {
+//                e.printStackTrace();
+//            }
+//            postInBackground(new File(Insta4jClient.root,"clip.mp4"), "Test Caption", "video",sampel);
 
 
         });
 
         binding.searchButton.postDelayed(()->{
-            binding.searchButton.callOnClick();
+//            binding.searchButton.callOnClick();
         },1000);
 
         binding.searchButton.setOnLongClickListener(new View.OnLongClickListener() {

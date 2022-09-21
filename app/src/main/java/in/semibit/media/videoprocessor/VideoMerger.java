@@ -5,7 +5,6 @@ import android.util.Log;
 
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.FFmpegSession;
-import com.arthenica.ffmpegkit.FFmpegSessionCompleteCallback;
 import com.arthenica.ffmpegkit.ReturnCode;
 import com.semibit.ezandroidutils.EzUtils;
 
@@ -13,7 +12,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.Insta4jClient;
