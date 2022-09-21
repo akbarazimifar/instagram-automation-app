@@ -50,8 +50,13 @@ public class VideoMerger {
                 tsProcessorsFutures[i] = run("-i " + mp4Files.get(i).getAbsolutePath() + " -c copy -bsf:v h264_mp4toannexb -f mpegts -y " + tsFile.getAbsolutePath());
             }
             CompletableFuture.allOf(tsProcessorsFutures).join();
-            run("-i \"concat:"+ String.join("|", temps) +"\" -c copy -bsf:a aac_adtstoasc -y "+outputFile.getAbsolutePath());
+            run("-i \"concat:"+ String.join("|", temps) +"\" -c copy -bsf:a aac_adtstoasc -y "+outputFile.getAbsolutePath()).join();
             onLog.onStart("Video processing done");
+            onRes.complete(outputFile);
+            temps.forEach(fn->{
+                new File(fn).delete();
+            });
+
         } catch (Exception e) {
             e.printStackTrace();
             onRes.completeExceptionally(e);

@@ -10,6 +10,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -17,6 +19,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.igclientext.post.MediaConfigureToClipsRequestExt;
 import in.semibit.media.common.igclientext.post.model.PostItem;
+import kotlin.Pair;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -214,6 +217,7 @@ public class ReelRequestHelper {
 
     public String configureToClip(String caption) {
         try {
+            LogsViewModel.addToLog("configureToClip executing");
 
             if (!isDoRemix()) {
                 MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload medPayload = new MediaConfigureToClipsRequestExt.MediaConfigureToClipsPayload()
@@ -267,7 +271,7 @@ public class ReelRequestHelper {
 
             RequestBody body = RequestBody.create(mediaType, bodyString);
 
-            Request request = new Request.Builder()
+            Request.Builder requestBuilder = new Request.Builder()
                     .url("https://i.instagram.com/api/v1/media/configure_to_clips/?video=1")
                     .method("POST", body)
                     .addHeader("Host", "i.instagram.com")
@@ -298,7 +302,7 @@ public class ReelRequestHelper {
                     .addHeader("Priority", "u=3")
 //                .addHeader("User-Agent", "Instagram 252.0.0.17.111 Android (29/10; 400dpi; 1080x2040; Google/google; Android SDK built for x86; generic_x86; ranchu; en_US; 397702078)")
                     .addHeader("Accept-Language", "en-US")
-                    .addHeader("X-Mid", "YyImQwABAAHTYa3KnckXVbkVIu87")
+//                    .addHeader("X-Mid", "YyImQwABAAHTYa3KnckXVbkVIu87")
                     .addHeader("Ig-U-Ig-Direct-Region-Hint", "ASH," + getUserId() + ",1694884196:01f76ac04d49354aade2c1ceca113231926e6917cb8322307c1424cedec080f5894dc0dc")
                     .addHeader("Ig-U-Shbid", "15628," + getUserId() + ",1694718419:01f7c629116c0471f0b16e94af3908231b4315e64199848a706e936feea04805efbe7b29")
                     .addHeader("Ig-U-Shbts", "1663182419," + getUserId() + ",1694718419:01f7391ecb88b7b7f31a5e39bf0f9d7d77835aaa77df3703e08d5f25af21a8721ca059da")
@@ -346,7 +350,13 @@ public class ReelRequestHelper {
 //                .addHeader("X-Ig-Www-Claim","hmac.AR2_73UwszrOua4bBYwNRU0cPHGM0aA2Qd--mtVft0mnoEcD")
                     .addHeader("Authorization", igClient.getAuthorization())
 
-                    .build();
+                   ;
+
+            for(Map.Entry<String, String> header:igClient.getDynamicHeaders().entrySet()){
+                requestBuilder.addHeader(header.getKey(),header.getValue());
+            }
+
+            Request request = requestBuilder.build();
 //
 //        try {
 //            String response = api.doIGPost("api/v1/media/configure_to_clips/?video=1",

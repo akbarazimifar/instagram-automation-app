@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.GenricDataCallback;
+import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.igclientext.post.MediaConfigureToClipsRequestExt;
 import in.semibit.media.common.igclientext.post.MediaUploadFinishRequestExt;
 import in.semibit.media.common.igclientext.post.PostInfoRequest;
@@ -96,6 +97,8 @@ public class InstagramPoster {
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
+                            file.delete();
+
                             return;
                         }
                         try {
@@ -131,6 +134,8 @@ public class InstagramPoster {
 
     private void processVideo(File file, File cover, String caption, String postBodyProcessed, long startTime) {
         try {
+            LogsViewModel.addToLog("Upload start");
+
             JSONObject postJsn = new JSONObject(postBodyProcessed);
             String short_code = postJsn.getString("source_short_code");
             PostItem soundOriginalMedia = getOriginalPostInfo(short_code);
@@ -255,13 +260,19 @@ public class InstagramPoster {
                     .videoWithCover(videoData, coverData, UploadParameters.forClip(upload_id))
                     .thenCompose(response -> {
                         try {
+                            LogsViewModel.addToLog("MediaUploadFinishRequestExt executing");
+
                             return new MediaUploadFinishRequestExt(upload_id).execute(client);
                         } catch (Exception tr) {
                             if (IGResponseException.IGFailedResponse.of(tr.getCause()).getStatusCode() != 202 &&
                                     !(tr.getCause() instanceof SocketTimeoutException))
                                 throw new CompletionException(tr.getCause());
                             return AsyncAction.retry(
-                                    () -> new MediaUploadFinishRequestExt(upload_id).execute(client),
+                                    () -> {
+                                        LogsViewModel.addToLog("Retry MediaUploadFinishRequestExt executing");
+
+                                        return new MediaUploadFinishRequestExt(upload_id).execute(client);
+                                    },
                                     tr, 4, 10,
                                     TimeUnit.SECONDS);
                         }

@@ -32,7 +32,7 @@ public class Insta4jClient {
         }
         String username = context.getString(R.string.username);
         String passwd = context.getString(R.string.password);
-        if (client == null) {
+        if (client == null || forceLogin) {
 
             try {
                 if (!root.exists()) {
@@ -64,6 +64,7 @@ public class Insta4jClient {
                     if (forceLogin) {
                         sessionFile.delete();
                         fileClient.delete();
+                        client = null;
                     }
                     if (fileClient.exists() && sessionFile.exists()) {
 

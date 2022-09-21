@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
     }
     IGClient client;
     public CompletableFuture<IGClient> getClient(boolean forceLogin){
-        if(client != null){
+        if(client != null && !forceLogin){
             return CompletableFuture.completedFuture(client);
         }
         ProgressDialog progressDialog = new ProgressDialog(MainActivity.this);

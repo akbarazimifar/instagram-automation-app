@@ -49,7 +49,7 @@ dependencies {
     implementation 'com.github.shiveshnavin:ezandroidutils:1.2.0'
 
 //    implementation 'com.github.instagram4j:instagram4j:2.0.7'
-    implementation 'com.github.shiveshnavin:instagram4j:6942321d7a'
+    implementation 'com.github.shiveshnavin:instagram4j:dabc4c3'
     implementation 'org.mp4parser:isoparser:1.9.41'
     implementation 'org.mp4parser:muxer:1.9.41'
 //    implementation 'nl.bravobit:android-ffmpeg:1.1.7'

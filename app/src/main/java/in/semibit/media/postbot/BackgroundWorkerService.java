@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import in.semibit.media.R;
 import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.Insta4jClient;
+import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.videoprocessor.VideoMerger;
 
 public class BackgroundWorkerService extends Service {
@@ -145,6 +146,7 @@ public class BackgroundWorkerService extends Service {
         File finalCover = cover;
         onFileProcessed.exceptionally(e-> videoFile).thenAccept(outputFile->{
             EzUtils.l(outputFile.getAbsolutePath());
+            LogsViewModel.addToLog("Video processing done "+outputFile.getAbsolutePath());
             client.post(outputFile, finalCover,
                     intent.getStringExtra("caption"),
                     intent.getStringExtra("mediaType"),
