@@ -1,18 +1,18 @@
 package com.github.instagram4j.instagram4j.requests;
 
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.IGConstants;
 import com.github.instagram4j.instagram4j.exceptions.IGResponseException;
 import com.github.instagram4j.instagram4j.responses.IGResponse;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
+
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 
 import kotlin.Pair;
 import lombok.SneakyThrows;
@@ -115,9 +115,9 @@ public abstract class IGRequest<T extends IGResponse> {
         Optional.ofNullable(client.getAuthorization())
                 .ifPresent(s -> req.addHeader("Authorization".toLowerCase(), s));
 
-          for(Map.Entry<String, String> header:client.getDynamicHeaders().entrySet()){
-              req.addHeader(header.getKey().toLowerCase(),header.getValue());
-          }
+        for (Map.Entry<String, String> header : client.getDynamicHeaders().entrySet()) {
+            req.addHeader(header.getKey().toLowerCase(), header.getValue());
+        }
 
         return req;
     }

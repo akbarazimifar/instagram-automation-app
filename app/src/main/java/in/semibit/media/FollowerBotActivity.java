@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.Pair;
+import androidx.lifecycle.Observer;
 
 import com.google.android.gms.common.util.Strings;
 import com.google.gson.Gson;
@@ -69,20 +70,23 @@ public class FollowerBotActivity extends AppCompatActivity {
         }
 
         try {
-            LogsViewModel.getLiveLogData().observe(this, pairs -> {
-                try {
-                    List<Pair<Instant, String>> newLogs = LogsViewModel.filterAfter(lastLog);
-                    if (newLogs != null && !newLogs.isEmpty())
-                    {
-                        lastLog = newLogs.get(newLogs.size() - 1).first;
-                        for(Pair<Instant, String> log:newLogs){
-                            binding.logs.append(LogsViewModel.formattedLog(log));
+            LogsViewModel.getLiveLogData().observe(this, new Observer<List<Pair<Instant, String>>>() {
+                @Override
+                public synchronized void onChanged(List<Pair<Instant, String>> pairs) {
+                    try {
+                        List<Pair<Instant, String>> newLogs = LogsViewModel.filterAfter(lastLog);
+                        if (newLogs != null && !newLogs.isEmpty())
+                        {
+                            lastLog = newLogs.get(newLogs.size() - 1).first;
+                            for (int i = 0; i < newLogs.size(); i++) {
+                                Pair<Instant, String> log = newLogs.get(i);
+                                binding.logs.append(LogsViewModel.formattedLog(log));
+                            }
                         }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
-
             });
 
         } catch (Exception exception) {

@@ -248,6 +248,8 @@ public class InstagramPoster {
         String upload_id = String.valueOf(System.currentTimeMillis());
 
         ReelRequestHelper reelRequestHelper = new ReelRequestHelper(client, upload_id, sourcePost);
+        LogsViewModel.addToLog("Video upload prerequisites started.");
+
         String clips_info_for_creation = reelRequestHelper.clips_info_for_creation();
         String write_seen_state = reelRequestHelper.write_seen_state();
         String upload_settings = reelRequestHelper.upload_settings();
@@ -255,6 +257,7 @@ public class InstagramPoster {
         CompletableFuture<String> reelResponse = CompletableFuture.completedFuture("{}");
         if (true) {
 
+            LogsViewModel.addToLog("Upload video assets started");
 
             reelResponse = client.actions().upload()
                     .videoWithCover(videoData, coverData, UploadParameters.forClip(upload_id))
@@ -287,7 +290,6 @@ public class InstagramPoster {
                         return CompletableFuture.completedFuture(null);
                     });
 
-        }
 
 //                .thenCompose(response -> new MediaConfigureToClipsRequestExt(mediPayload.upload_id(upload_id)).execute(client))
 //                .thenApply(CompletableFuture::completedFuture)
@@ -302,22 +304,23 @@ public class InstagramPoster {
 //                })
 //                .thenCompose(Function.identity());
 
-        try {
-            String mediaResponse = reelResponse.join();
+            try {
+                String mediaResponse = reelResponse.join();
 //            String mediaResponse = reelRequestHelper.configureToClip(mediPayload.caption());//mediaResponseOrig
-            EzUtils.log("Reel Config Response" + mediaResponse);
-            if (mediaResponse != null) {
-                try {
-                    JSONObject jsonObject = new JSONObject(mediaResponse);
-                    Media media = gson.fromJson(jsonObject.getJSONObject("media").toString(), Media.class);
-                    return media;
-                } catch (Exception exception) {
-                    exception.printStackTrace();
-                    callback.onStart("Error in config " + mediaResponse);
+                EzUtils.log("Reel Config Response" + mediaResponse);
+                if (mediaResponse != null) {
+                    try {
+                        JSONObject jsonObject = new JSONObject(mediaResponse);
+                        Media media = gson.fromJson(jsonObject.getJSONObject("media").toString(), Media.class);
+                        return media;
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                        callback.onStart("Error in config " + mediaResponse);
+                    }
                 }
+            } catch (Exception exception) {
+                exception.printStackTrace();
             }
-        } catch (Exception exception) {
-            exception.printStackTrace();
         }
         return null;
     }

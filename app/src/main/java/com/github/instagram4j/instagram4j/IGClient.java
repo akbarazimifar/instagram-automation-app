@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -195,8 +194,10 @@ public class IGClient implements Serializable {
                 .ifPresent(s -> this.authorization = s);
         for (Iterator<Pair<String, String>> it = res.headers().iterator(); it.hasNext(); ) {
             Pair<String, String> header = it.next();
-            if (!header.getFirst().toLowerCase().startsWith("content-"))
+            if (header.getFirst().toLowerCase().startsWith("ig-set-ig") || header.getFirst().toLowerCase().startsWith("ig-set-x"))
                 getDynamicHeaders().put(header.getFirst().toLowerCase().replace("ig-set-", ""), header.getSecond());
+            if (header.getFirst().toLowerCase().contains("www-claim"))
+                getDynamicHeaders().put("x-ig-www-claim".toLowerCase(), header.getSecond());
         }
     }
 
