@@ -51,7 +51,7 @@ public class VideoMerger {
             }
             CompletableFuture.allOf(tsProcessorsFutures).join();
             run("-i \"concat:"+ String.join("|", temps) +"\" -c copy -bsf:a aac_adtstoasc -y "+outputFile.getAbsolutePath());
-
+            onLog.onStart("Video processing done");
         } catch (Exception e) {
             e.printStackTrace();
             onRes.completeExceptionally(e);
