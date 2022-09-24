@@ -190,8 +190,10 @@ public class IGClient implements Serializable {
                 .ifPresent(s -> this.encryptionId = s);
         Optional.ofNullable(res.header("ig-set-password-encryption-pub-key"))
                 .ifPresent(s -> this.encryptionKey = s);
-        Optional.ofNullable(res.header("ig-set-authorization"))
-                .ifPresent(s -> this.authorization = s);
+        if(res.header("ig-set-authorization")!= null && res.header("ig-set-authorization").length()>15){
+            this.authorization =  res.header("ig-set-authorization");
+            dynamicHeaders.put("authorization",this.authorization);
+        }
         for (Iterator<Pair<String, String>> it = res.headers().iterator(); it.hasNext(); ) {
             Pair<String, String> header = it.next();
             if (header.getFirst().toLowerCase().startsWith("ig-set-ig") || header.getFirst().toLowerCase().startsWith("ig-set-x"))

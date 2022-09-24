@@ -79,7 +79,7 @@ public class Insta4jClient {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                if (client == null) {
+               if (client == null) {
 
                     LogsViewModel.addToLog("IG Client WEB Login");
                     OkHttpClient okHttpClient = IGUtils.defaultHttpClientBuilder()
@@ -88,6 +88,7 @@ public class Insta4jClient {
                             .writeTimeout(duration)
                             .connectTimeout(duration).build();
 
+                    LogsViewModel.addToLog("Logging in to "+username);
                     client = IGClient.builder()
                             .client(okHttpClient)
                             .username(username)
@@ -105,6 +106,7 @@ public class Insta4jClient {
                 callback.onStart("Logged In");
             } catch (Exception e) {
                 e.printStackTrace();
+                LogsViewModel.addToLog("IGClient error logging in : "+e.getMessage());
                 callback.onStart(e.getMessage());
             }
         } else {

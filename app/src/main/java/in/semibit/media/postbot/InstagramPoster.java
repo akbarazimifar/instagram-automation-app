@@ -68,7 +68,6 @@ public class InstagramPoster {
         System.out.println("Posting started !");
         this.callback.onStart("Posting " + mediaType);
 
-        last = file.getAbsolutePath();
         if (mediaType.equals("image")) {
             client.actions()
                     .timeline()
@@ -97,6 +96,8 @@ public class InstagramPoster {
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
+                            last = file.getAbsolutePath();
+
                             file.delete();
 
                             return;
@@ -116,6 +117,8 @@ public class InstagramPoster {
         } else {
 
             processVideo(file, cover, caption, postBodyProcessed, startTime);
+            last = file.getAbsolutePath();
+
         }
 
     }
@@ -154,10 +157,12 @@ public class InstagramPoster {
                     postProcess(startTime, 200, shortCode, postBodyProcessed);
                     file.delete();
                     cover.delete();
+                } else {
+                    this.callback.onStart("Upload to reels failed");
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                this.callback.onStart("Upload to reels failed");
+                this.callback.onStart("stop: Upload to reels failed");
             }
 
 
@@ -261,8 +266,16 @@ public class InstagramPoster {
 
             reelResponse = client.actions().upload()
                     .videoWithCover(videoData, coverData, UploadParameters.forClip(upload_id))
+                    .exceptionally(e -> {
+                        LogsViewModel.addToLog("Uploading video assets failed " + e.getMessage());
+                        callback.onStart("stop: Upload failed"+e.getMessage());
+                        return null;
+                    })
                     .thenCompose(response -> {
                         try {
+                            if (response == null) {
+                                return null;
+                            }
                             LogsViewModel.addToLog("MediaUploadFinishRequestExt executing");
 
                             return new MediaUploadFinishRequestExt(upload_id).execute(client);
@@ -281,6 +294,9 @@ public class InstagramPoster {
                         }
                     })
                     .thenCompose(reelRequestHelperResp -> {
+                        if (reelRequestHelperResp == null) {
+                            return null;
+                        }
                         try {
                             String config = reelRequestHelper.configureToClip(mediPayload.caption());
                             return CompletableFuture.completedFuture(config);
@@ -315,11 +331,13 @@ public class InstagramPoster {
                         return media;
                     } catch (Exception exception) {
                         exception.printStackTrace();
-                        callback.onStart("Error in config " + mediaResponse);
+                        callback.onStart("stop: Error in config " + mediaResponse);
                     }
                 }
             } catch (Exception exception) {
                 exception.printStackTrace();
+                LogsViewModel.addToLog("Error posting reels");
+                callback.onStart("stop: Error in config ");
             }
         }
         return null;

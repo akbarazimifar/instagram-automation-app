@@ -31,6 +31,7 @@ import com.google.android.gms.common.util.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
+import com.semibit.ezandroidutils.EzUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -285,12 +286,16 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         JSONObject json = new JSONObject(body);
                         binding.log.setText(json.toString(4));
-                        json.put("username",context.getString(R.string.username));
+                        json.put("username",client.$username);
                         toast(MainActivity.this, "Posting using strategy : " + (isDownloadAndPost ? "Local Upload" : "Remote API"));
-                        if (isDownloadAndPost)
-                            getInfo(body);
-                        else
-                            post(body);
+//                        if (isDownloadAndPost)
+//                            getInfo(body,isDownloadAndPost);
+//                        else
+//                        {
+//                            //post(body);
+//                        }
+                        getInfo(json.toString(),isDownloadAndPost);
+
                     } catch (Exception e) {
                         e.printStackTrace();
                         binding.log.setText(body);
@@ -435,7 +440,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void getInfo(String bboy) {
+    public void getInfo(String bboy,boolean isDownloadAndPost) {
 
         HashMap<String, String> ma = new HashMap<>();
         ma.put("body", bboy);
@@ -443,11 +448,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(String body) {
                 try {
+                    body = body.replace("sassyfull.memes", client.$username);
+                    body = body.replace(getString(R.string.username), client.$username);
                     JSONObject json = new JSONObject(body);
                     binding.log.setText(json.toString(4));
                     Toast.makeText(MainActivity.this, "Downloading", Toast.LENGTH_LONG).show();
 
-                    downloadFile(json);
+                    if(isDownloadAndPost){
+                        downloadFile(json);
+                    }
+                    else {
+                        EzUtils.copyToClipBoard("Caption",json.optString("text"),context);
+                    }
                     binding.urlOrUsername.setText("");
 
                 } catch (Exception e) {

@@ -112,10 +112,16 @@ public abstract class IGRequest<T extends IGResponse> {
         req.addHeader("X-IG-Device-ID".toLowerCase(), client.getGuid());
         req.addHeader("X-IG-Android-ID".toLowerCase(), client.getDeviceId());
         req.addHeader("X-FB-HTTP-engine".toLowerCase(), "Liger");
-        Optional.ofNullable(client.getAuthorization())
-                .ifPresent(s -> req.addHeader("Authorization".toLowerCase(), s));
+        if(client.getAuthorization()!= null && client.getAuthorization().length()>13){
+            req.addHeader("Authorization".toLowerCase(), client.getAuthorization());
+        }
 
         for (Map.Entry<String, String> header : client.getDynamicHeaders().entrySet()) {
+            if(header.getKey().toLowerCase().equals("authorization")){
+                if(client.getAuthorization()!=null && client.getAuthorization().length()>13){
+                    continue;
+                }
+            }
             req.addHeader(header.getKey().toLowerCase(), header.getValue());
         }
 
