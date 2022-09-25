@@ -487,10 +487,12 @@ public class MainActivity extends AppCompatActivity {
 
         binding.webview.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-                Log.d("MyApplication", consoleMessage.message() + " -- From line "
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {Log.d("MyApplication", consoleMessage.message() + " -- From line "
                         + consoleMessage.lineNumber() + " of "
                         + consoleMessage.sourceId());
+                if(consoleMessage.message().contains("require_login")){
+                    EzUtils.toast(context,""+consoleMessage.message());
+                }
                 return super.onConsoleMessage(consoleMessage);
             }
         });
