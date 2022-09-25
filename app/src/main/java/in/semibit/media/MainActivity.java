@@ -103,8 +103,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         binding.searchButton.postDelayed(()->{
+//            binding.urlOrUsername.setText("https://www.instagram.com/p/CddSYo6jTk4/");
 //            binding.searchButton.callOnClick();
-        },1000);
+        },3000);
 
         binding.searchButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -122,21 +123,22 @@ public class MainActivity extends AppCompatActivity {
 
         binding.heaederText.setText("Reposter");
         binding.contBottom.setVisibility(View.VISIBLE);
-        binding.startBot.setText("FollowerBot Init");
+        binding.startBot.setText("Follower Bot");
         binding.startBot.setOnClickListener(v -> {
-            binding.contBottom.setVisibility(View.GONE);
-            driver();
+            startActivity(new Intent(context, FollowerBotActivity.class));
         });
         binding.showHideBot.setOnClickListener(c->{
             getClient(true);
         });
-        binding.startBot.callOnClick();
+
+        driver();
         getClient(false);
 
 
         CommonAsyncExecutor.execute(()->{
             VideoMerger.load(context);
         });
+
     }
     IGClient client;
     public CompletableFuture<IGClient> getClient(boolean forceLogin){

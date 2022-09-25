@@ -273,7 +273,7 @@ public class InstagramPoster {
                     })
                     .thenCompose(response -> {
                         try {
-                            if (response == null) {
+                            if ( response == null) {
                                 return null;
                             }
                             LogsViewModel.addToLog("MediaUploadFinishRequestExt executing");
@@ -298,6 +298,8 @@ public class InstagramPoster {
                             return null;
                         }
                         try {
+                            LogsViewModel.addToLog("reelRequestHelper configureToClip executing");
+
                             String config = reelRequestHelper.configureToClip(mediPayload.caption());
                             return CompletableFuture.completedFuture(config);
                         } catch (Exception e) {

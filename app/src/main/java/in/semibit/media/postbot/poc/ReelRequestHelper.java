@@ -10,7 +10,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,7 +18,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.igclientext.post.MediaConfigureToClipsRequestExt;
 import in.semibit.media.common.igclientext.post.model.PostItem;
-import kotlin.Pair;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -346,14 +344,22 @@ public class ReelRequestHelper {
                     .addHeader("X-IG-Extended-CDN-Thumbnail-Cache-Busting-Value", "1000")
                     .addHeader("X-IG-Device-ID", igClient.getGuid())
                     .addHeader("X-IG-Android-ID", igClient.getDeviceId())
-                    .addHeader("X-FB-HTTP-engine", "Liger")
+                    .addHeader("X-FB-HTTP-engine", "Liger");
 //                .addHeader("X-Ig-Www-Claim","hmac.AR2_73UwszrOua4bBYwNRU0cPHGM0aA2Qd--mtVft0mnoEcD")
-                    .addHeader("Authorization", igClient.getAuthorization())
 
-                   ;
 
-            for(Map.Entry<String, String> header:igClient.getDynamicHeaders().entrySet()){
-                requestBuilder.addHeader(header.getKey(),header.getValue());
+            if (igClient.getAuthorization() != null && igClient.getAuthorization().length() > 14) {
+                requestBuilder = requestBuilder.addHeader("Authorization", igClient.getAuthorization());
+            }
+
+            for (Map.Entry<String, String> header : igClient.getDynamicHeaders().entrySet()) {
+                if (igClient.getAuthorization() != null
+                        && igClient.getAuthorization().length() > 14
+                        && header.getKey().toLowerCase().equals("authorization")
+                ) {
+                    continue;
+                }
+                requestBuilder.addHeader(header.getKey(), header.getValue());
             }
 
             Request request = requestBuilder.build();
