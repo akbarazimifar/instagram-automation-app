@@ -52,6 +52,8 @@ public class FollowBotService {
 
     public Activity context;
     public DatabaseHelper serverDb;
+    IGClient igClient;
+
     public DatabaseHelper localDb;
     public final Map<String, View> widgetsMap = new HashMap<>();
     public String tenant;
@@ -59,7 +61,6 @@ public class FollowBotService {
     GenricDataCallback uiLogger;
     final Map<String, BatchJob> jobs = new ConcurrentHashMap<>();
     boolean isRunning = false;
-    IGClient igClient;
 
     GenricDataCallback logCatLogger = s -> Log.e("FollowerBot", s);
 
@@ -68,7 +69,7 @@ public class FollowBotService {
         this.context = context;
         serverDb = new DatabaseHelper(Source.SERVER);
         localDb = new DatabaseHelper(Source.CACHE);
-        tenant = "semibitmedia";
+        tenant = SemibitMediaApp.CURRENT_TENANT;
         getFollowerUtil();
     }
 
@@ -80,10 +81,10 @@ public class FollowBotService {
 
         GenericCompletableFuture<FollowerUtil> future = new GenericCompletableFuture<>();
         CommonAsyncExecutor.execute(() -> {
-            igClient = Insta4jClient.getClient(context, (s) -> {
+            igClient = Insta4jClient.getClient(context,tenant, (s) -> {
             });
             uiLogger.onStart("IG Client Ready");
-            FollowerUtil followerUtil = new FollowerUtil(igClient, serverDb, uiLogger);
+            FollowerUtil followerUtil = new FollowerUtil(igClient,tenant, serverDb, uiLogger);
             future.complete(followerUtil);
         });
         return future;
@@ -215,7 +216,7 @@ public class FollowBotService {
 
     public IGClient getIgClient() {
         if (igClient == null)
-            igClient = Insta4jClient.getClient(context, null);
+            igClient = Insta4jClient.getClient(context,tenant, null);
         return igClient;
     }
 

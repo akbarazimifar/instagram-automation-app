@@ -10,7 +10,6 @@ import com.github.instagram4j.instagram4j.utils.IGUtils;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -101,7 +100,7 @@ public abstract class IGRequest<T extends IGResponse> {
         req.addHeader("X-CM-Latency".toLowerCase(), "-1.000");
         req.addHeader("X-IG-App-Locale".toLowerCase(), "en_US");
         req.addHeader("X-IG-Device-Locale".toLowerCase(), "en_US");
-        req.addHeader("X-Pigeon-Session-Id".toLowerCase(), IGUtils.randomUuid());
+        req.addHeader("X-Pigeon-Session-Id".toLowerCase(), client.currentPegionSession());
         req.addHeader("X-Pigeon-Rawclienttime".toLowerCase(), System.currentTimeMillis() + "");
         req.addHeader("X-IG-Connection-Speed".toLowerCase(),
                 ThreadLocalRandom.current().nextInt(2000, 4000) + "kbps");

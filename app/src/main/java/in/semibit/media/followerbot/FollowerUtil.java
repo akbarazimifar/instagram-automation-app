@@ -50,11 +50,11 @@ public class FollowerUtil {
     public Context context;
     public String  tenant;
 
-    public FollowerUtil(IGClient igClient, DatabaseHelper serverDb, GenricDataCallback logger) {
+    public FollowerUtil(IGClient igClient,String tenant, DatabaseHelper serverDb, GenricDataCallback logger) {
         this.igClient = igClient;
         this.serverDb = serverDb;
         this.logger = logger;
-        tenant = SemibitMediaApp.CURRENT_TENANT;
+        this.tenant =tenant;
     }
 
     public static List<FollowUserModel> getUsersThatDontFollowMe(List<FollowUserModel> usersFollowingMe,

@@ -98,6 +98,10 @@ public abstract class BatchScheduler {
         nextSchedules.forEach((jobName, instant) -> {
             if (isJobScheduleNowOrPassed(jobName)) {
                 Instant next = startBatchJob(jobName);
+                if(next == null){
+                    nextSchedules.remove(jobName);
+                    return;
+                }
                 logger.onStart("Triggering batch job " + jobName + " next exec at "
                         + next.atZone(ZoneOffset.systemDefault()).toLocalDateTime().toString());
                 addToSchedule(jobName, next);

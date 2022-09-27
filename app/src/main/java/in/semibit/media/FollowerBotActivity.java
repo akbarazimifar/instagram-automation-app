@@ -35,6 +35,7 @@ import in.semibit.media.followerbot.FollowerBotForegroundService;
 import in.semibit.media.followerbot.FollowerUtil;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
+import in.semibit.media.followerbot.jobs.FollowUsersViaAPIJob;
 import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
 import in.semibit.media.followerbot.jobs.MarkUserFromPostJob;
 import in.semibit.media.followerbot.jobs.MarkUsersFromFollowersJob;
@@ -157,22 +158,26 @@ public class FollowerBotActivity extends AppCompatActivity {
                         return;
                     }
 
-                    followWebView = followerBotOrchestrator.generateAlert(context, "follow");
-                    unfollowWebView = followerBotOrchestrator.generateAlert(context, "unfollow");
-                    followerBotOrchestrator.listenToTriggers(followWebView.second);
-
-
                     Intent intent = new Intent(context, FollowerBotForegroundService.class);
                     Map<String, Long> jobs = new ConcurrentHashMap<>();
 //
-//
-                    followerBotOrchestrator.addBatchJob(new FollowUsersJob(logger, followWebView, followerBotOrchestrator.serverDb, followerUtil, context));
-                    jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
-                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, FollowUsersJob.JOBNAME);
+                    if(SemibitMediaApp.FOLLOW_VIA_WEBUI){
+                        followWebView = followerBotOrchestrator.generateAlert(context, "follow");
+                        unfollowWebView = followerBotOrchestrator.generateAlert(context, "unfollow");
+                        followerBotOrchestrator.listenToTriggers(followWebView.second);
 
-                    followerBotOrchestrator.addBatchJob(new UnFollowUsersJob(logger, unfollowWebView, followerBotOrchestrator.serverDb, followerUtil, context));
-                    jobs.put(UnFollowUsersJob.JOBNAME, UnFollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
-                    FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, UnFollowUsersJob.JOBNAME);
+                        followerBotOrchestrator.addBatchJob(new FollowUsersJob(logger, followWebView, followerBotOrchestrator.serverDb, followerUtil, context));
+                        jobs.put(FollowUsersJob.JOBNAME, FollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
+                        FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, FollowUsersJob.JOBNAME);
+
+                        followerBotOrchestrator.addBatchJob(new UnFollowUsersJob(logger, unfollowWebView, followerBotOrchestrator.serverDb, followerUtil, context));
+                        jobs.put(UnFollowUsersJob.JOBNAME, UnFollowUsersJob.nextScheduledTime(Instant.now()).toEpochMilli());
+                        FollowBotService.triggerBroadCast(this, FollowBotService.ACTION_BOT_START, UnFollowUsersJob.JOBNAME);
+
+                    }
+                    else {
+                        jobs.put(FollowUsersViaAPIJob.JOBNAME, Instant.now().toEpochMilli());
+                    }
 
                     intent.putExtra("jobSchedules", new Gson().toJson(jobs));
                     startForegroundService(intent);

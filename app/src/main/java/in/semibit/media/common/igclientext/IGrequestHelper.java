@@ -1,7 +1,7 @@
-package in.semibit.media.postbot.poc;
+package in.semibit.media.common.igclientext;
 
 import com.github.instagram4j.instagram4j.IGClient;
-import com.github.instagram4j.instagram4j.models.IGBaseModel;
+import com.github.instagram4j.instagram4j.models.IGPayload;
 import com.github.instagram4j.instagram4j.requests.IGGetRequest;
 import com.github.instagram4j.instagram4j.requests.IGPostRequest;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
@@ -23,7 +23,7 @@ public class IGrequestHelper {
     }
 
     public String doIGGet(String path, Map<String, String> headers) {
-        if(path.charAt(0) == '/')
+        if (path.charAt(0) == '/')
             path = path.substring(1);
         String finalPath = path;
         IGGetRequest<StringIGResponse> igReq = new IGGetRequest<StringIGResponse>() {
@@ -65,11 +65,13 @@ public class IGrequestHelper {
         };
         return igReq.execute(igClient).join().getBody();
     }
+
     public String doIGPost(String path, String payload, Map<String, String> headers) {
-        return doIGPost(path,payload,true,headers);
+        return doIGPost(path, payload, true, headers);
     }
-    public String doIGPost(String path, String payload,boolean isSignedBody, Map<String, String> headers) {
-        if(path.charAt(0) == '/')
+
+    public String doIGPost(String path, String payload, boolean isSignedBody, Map<String, String> headers) {
+        if (path.charAt(0) == '/')
             path = path.substring(1);
         String finalPath = path;
         IGPostRequest<StringIGResponse> igReq = new IGPostRequest<StringIGResponse>() {
@@ -90,8 +92,11 @@ public class IGrequestHelper {
                 Request.Builder orig = super.applyHeaders(client, req);
                 if (headers != null) {
                     headers.keySet().forEach(key -> {
-                        if (headers.get(key) != null)
+                        if (headers.get(key) != null) {
+                            req.removeHeader(key);
                             req.addHeader(key, headers.get(key));
+                        }
+
                     });
                 }
                 return orig;
@@ -99,20 +104,21 @@ public class IGrequestHelper {
 
             @Override
             protected RequestBody getRequestBody(IGClient client) {
-                if (getPayload(client) == null) {
-                    return RequestBody.create("", null);
-                }
 
                 if (isSigned()) {
                     return RequestBody.create(IGUtils.generateSignature(payload),
                             MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8"));
                 } else {
-                    return RequestBody.create(payload, MediaType.parse("application/json; charset=UTF-8"));
+                    if (!payload.toLowerCase().startsWith("sig"))
+                        return RequestBody.create(payload, MediaType.parse("application/json; charset=UTF-8"));
+                    else
+                        return RequestBody.create(payload, MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8"));
+
                 }
             }
 
             @Override
-            protected IGBaseModel getPayload(IGClient client) {
+            protected IGPayload getPayload(IGClient client) {
                 return null;
             }
 
@@ -136,9 +142,5 @@ public class IGrequestHelper {
         return igReq.execute(igClient).join().getBody();
     }
 
-
-    public void clipInfoForCreation() {
-
-    }
 
 }

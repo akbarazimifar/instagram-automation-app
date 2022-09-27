@@ -190,9 +190,9 @@ public class IGClient implements Serializable {
                 .ifPresent(s -> this.encryptionId = s);
         Optional.ofNullable(res.header("ig-set-password-encryption-pub-key"))
                 .ifPresent(s -> this.encryptionKey = s);
-        if(res.header("ig-set-authorization")!= null && res.header("ig-set-authorization").length()>15){
-            this.authorization =  res.header("ig-set-authorization");
-            dynamicHeaders.put("authorization",this.authorization);
+        if (res.header("ig-set-authorization") != null && res.header("ig-set-authorization").length() > 15) {
+            this.authorization = res.header("ig-set-authorization");
+            dynamicHeaders.put("authorization", this.authorization);
         }
         for (Iterator<Pair<String, String>> it = res.headers().iterator(); it.hasNext(); ) {
             Pair<String, String> header = it.next();
@@ -249,6 +249,14 @@ public class IGClient implements Serializable {
         if (loggedIn)
             log.info("Logged into {} ({})", selfProfile.getUsername(), selfProfile.getPk());
         return this;
+    }
+
+    private transient String pigeonSessionId;
+
+    public String currentPegionSession() {
+        if (pigeonSessionId == null)
+            pigeonSessionId = "UFS-" + IGUtils.randomUuid();
+        return pigeonSessionId;
     }
 
     @Accessors(fluent = true)

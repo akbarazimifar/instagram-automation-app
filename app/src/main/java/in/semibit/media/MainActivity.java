@@ -152,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
 
         CompletableFuture<IGClient> igc = new CompletableFuture<>();
         CommonAsyncExecutor.execute(()->{
-           client =  Insta4jClient.getClient(context,forceLogin, null);
+           client =  Insta4jClient.getClient(context,SemibitMediaApp.CURRENT_TENANT,forceLogin, null);
            MainActivity.this.runOnUiThread(()->{
                progressDialog.hide();
            });

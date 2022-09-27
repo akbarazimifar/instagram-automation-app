@@ -1,13 +1,10 @@
 package in.semibit.media.common.igclientext.post;
 
 import com.github.instagram4j.instagram4j.IGClient;
-import com.github.instagram4j.instagram4j.models.IGBaseModel;
 import com.github.instagram4j.instagram4j.models.IGPayload;
 import com.github.instagram4j.instagram4j.requests.IGPostRequest;
-import com.github.instagram4j.instagram4j.requests.upload.MediaUploadFinishRequest;
-import com.github.instagram4j.instagram4j.responses.IGResponse;
 
-import in.semibit.media.postbot.poc.StringIGResponse;
+import in.semibit.media.common.igclientext.StringIGResponse;
 import lombok.Data;
 import lombok.NonNull;
 import okhttp3.Response;

@@ -21,11 +21,11 @@ public class Insta4jClient {
     private static IGClient client;
     public static File root = new File(Environment.getExternalStorageDirectory(), "instadp");
 
-    public static synchronized IGClient getClient(Context context, GenricDataCallback callback) {
-        return getClient(context, false, callback);
+    public static synchronized IGClient getClient(Context context,String tenant, GenricDataCallback callback) {
+        return getClient(context, tenant,false, callback);
     }
 
-    public static synchronized IGClient getClient(Context context, boolean forceLogin, GenricDataCallback callback) {
+    public static synchronized IGClient getClient(Context context,String tenant, boolean forceLogin, GenricDataCallback callback) {
         if (callback == null) {
             callback = (s) -> {
             };
@@ -75,6 +75,9 @@ public class Insta4jClient {
                                         .readTimeout(duration)
                                         .writeTimeout(duration)
                                         .connectTimeout(duration));
+                    }
+                    else {
+                        LogsViewModel.addToLog("IG Client. Saved login missing");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

@@ -2,12 +2,13 @@ package in.semibit.media.followerbot;
 
 import com.semibit.ezandroidutils.EzUtils;
 
+import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.database.IdentifiedModel;
 import in.semibit.media.common.igclientext.post.model.User;
 
 public class FollowUserModel implements IdentifiedModel {
 
-    public String tenant = "semibitmedia";
+    public String tenant = SemibitMediaApp.CURRENT_TENANT;
 
     public String  id;
 

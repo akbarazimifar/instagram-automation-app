@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import in.semibit.media.common.LogsViewModel;
+import in.semibit.media.common.igclientext.IGrequestHelper;
 import in.semibit.media.common.igclientext.post.MediaConfigureToClipsRequestExt;
 import in.semibit.media.common.igclientext.post.model.PostItem;
 import okhttp3.MediaType;
@@ -182,7 +183,7 @@ public class ReelRequestHelper {
             okHttpReq.addHeader("X-CM-Latency", "-1.000");
             okHttpReq.addHeader("X-IG-App-Locale", "en_US");
             okHttpReq.addHeader("X-IG-Device-Locale", "en_US");
-            okHttpReq.addHeader("X-Pigeon-Session-Id", IGUtils.randomUuid());
+            okHttpReq.addHeader("X-Pigeon-Session-Id", igClient.currentPegionSession());
             okHttpReq.addHeader("X-Pigeon-Rawclienttime", System.currentTimeMillis() + "");
             okHttpReq.addHeader("X-IG-Connection-Speed",
                     ThreadLocalRandom.current().nextInt(2000, 4000) + "kbps");
@@ -334,7 +335,7 @@ public class ReelRequestHelper {
                     .addHeader("X-CM-Latency", "-1.000")
                     .addHeader("X-IG-App-Locale", "en_US")
                     .addHeader("X-IG-Device-Locale", "en_US")
-                    .addHeader("X-Pigeon-Session-Id", IGUtils.randomUuid())
+                    .addHeader("X-Pigeon-Session-Id", igClient.currentPegionSession())
                     .addHeader("X-Pigeon-Rawclienttime", System.currentTimeMillis() + "")
                     .addHeader("X-IG-Connection-Speed",
                             ThreadLocalRandom.current().nextInt(2000, 4000) + "kbps")

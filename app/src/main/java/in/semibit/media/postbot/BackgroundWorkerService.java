@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import in.semibit.media.R;
+import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.common.LogsViewModel;
@@ -163,7 +164,11 @@ public class BackgroundWorkerService extends Service {
         videoMerger  = new VideoMerger(context);
 //        CommonAsyncExecutor.execute(()->{
         if (client == null) {
-            client = new InstagramPoster(Insta4jClient.getClient(context, null));
+            String tenant = intent.getStringExtra("tenant");
+            if(tenant == null){
+                tenant = SemibitMediaApp.CURRENT_TENANT;
+            }
+            client = new InstagramPoster(Insta4jClient.getClient(context, tenant,null));
         }
 
         if (intent == null || ACTION_STOP_SERVICE.equals(intent.getAction())) {

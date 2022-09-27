@@ -1,4 +1,4 @@
-package in.semibit.media.postbot.poc;
+package in.semibit.media.common.igclientext;
 
 import com.github.instagram4j.instagram4j.responses.IGResponse;
 
