@@ -103,6 +103,7 @@ public class FollowerBotForegroundService extends BGService {
     }
 
     public Instant triggerExecutionOfJob(String jobName) {
+
         if (jobName.equals(FollowUsersViaAPIJob.JOBNAME)) {
             FollowUsersViaAPIJob job = new FollowUsersViaAPIJob(serverDb, followerUtil);
             job.start();

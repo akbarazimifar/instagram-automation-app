@@ -3,12 +3,13 @@ package in.semibit.media.followerbot.jobs;
 import com.github.instagram4j.instagram4j.requests.friendships.FriendshipsActionRequest;
 import com.semibit.ezandroidutils.EzUtils;
 
+import org.json.JSONObject;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -107,6 +108,9 @@ public class FollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
                         newUsers = new ArrayList<>();
                     }
 
+//                    //todo remove
+//                    newUsers = List.of(newUsers.get(0));
+
                     getLogger().onStart("Added " + newUsers.size() + " from firebase to follow queue. Total = " + newUsers.size());
                     completableFutureReturn.complete(newUsers);
                 });
@@ -115,6 +119,8 @@ public class FollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
 
     @Override
     public GenericCompletableFuture<JobResult<Boolean>> processItem(FollowUserModel item) {
+
+
         getLogger().onStart("Follow User " + item.userName);
         GenericCompletableFuture<JobResult<Boolean>> onFollowCompletedFuture = new GenericCompletableFuture<>();
 
@@ -125,22 +131,37 @@ public class FollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
             return null;
         }).thenAccept(followResultStr -> {
             if (followResultStr != null && !followResultStr.isEmpty()) {
-                followerUtil.setUserAsFollowed(item).thenAccept(e -> {
+                followerUtil.setUserAsFollowed(item)
+                        .exceptionally(e -> {
+                            e.printStackTrace();
+                            return null;
+                        })
+                        .thenAccept(e -> {
 
-                    try {
-                        Thread.sleep(EzUtils.randomInt(1000,10000));
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
-                    }
-                    onFollowCompletedFuture.complete(JobResult.success());
+                            try {
+                                Thread.sleep(EzUtils.randomInt(1000, 10000));
 
-                });
+                                JSONObject jsonObject = new JSONObject(followResultStr);
+                                JSONObject friendship_status = jsonObject.getJSONObject("friendship_status");
+                                if (!friendship_status.optBoolean("is_private")) {
+                                    LikeUserPosts likeUserPosts = new LikeUserPosts(getLogger(), followerUtil.getIgClient(), item);
+                                    likeUserPosts.setOnCompletionListener(results -> {
+                                        onFollowCompletedFuture.complete(JobResult.success());
+                                    });
+                                    likeUserPosts.start();
+                                    return;
+                                }
+
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                            onFollowCompletedFuture.complete(JobResult.success());
+                        });
             } else
                 onFollowCompletedFuture.complete(JobResult.failed());
         });
         return onFollowCompletedFuture;
     }
-
 
 
     @Override

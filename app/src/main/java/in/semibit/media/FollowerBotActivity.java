@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.GenricDataCallback;
 import in.semibit.media.common.database.GenericCompletableFuture;
+import in.semibit.media.common.igclientext.likes.UserTimelineRequest;
 import in.semibit.media.databinding.ActivityFollowerBotBinding;
 import in.semibit.media.followerbot.FollowBotService;
 import in.semibit.media.followerbot.FollowerBotForegroundService;
@@ -178,7 +179,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                     }
                     else {
                         jobs.put(FollowUsersViaAPIJob.JOBNAME, Instant.now().toEpochMilli());
-                        jobs.put(UnFollowUsersViaAPIJob.JOBNAME, Instant.now().toEpochMilli());
+//                        jobs.put(UnFollowUsersViaAPIJob.JOBNAME, Instant.now().toEpochMilli());
                     }
 
                     intent.putExtra("jobSchedules", new Gson().toJson(jobs));

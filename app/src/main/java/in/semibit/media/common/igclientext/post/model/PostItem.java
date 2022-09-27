@@ -6,8 +6,10 @@ import javax.annotation.Generated;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import in.semibit.media.common.database.IdentifiedModel;
+
 @Generated("jsonschema2pojo")
-public class PostItem {
+public class PostItem implements IdentifiedModel {
 
     public ClipsMetadata getClipsMetadata() {
         return clipsMetadata;
