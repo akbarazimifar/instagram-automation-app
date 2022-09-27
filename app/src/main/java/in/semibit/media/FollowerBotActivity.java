@@ -39,6 +39,7 @@ import in.semibit.media.followerbot.jobs.FollowUsersViaAPIJob;
 import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
 import in.semibit.media.followerbot.jobs.MarkUserFromPostJob;
 import in.semibit.media.followerbot.jobs.MarkUsersFromFollowersJob;
+import in.semibit.media.followerbot.jobs.UnFollowUsersViaAPIJob;
 
 public class FollowerBotActivity extends AppCompatActivity {
 
@@ -177,6 +178,7 @@ public class FollowerBotActivity extends AppCompatActivity {
                     }
                     else {
                         jobs.put(FollowUsersViaAPIJob.JOBNAME, Instant.now().toEpochMilli());
+                        jobs.put(UnFollowUsersViaAPIJob.JOBNAME, Instant.now().toEpochMilli());
                     }
 
                     intent.putExtra("jobSchedules", new Gson().toJson(jobs));

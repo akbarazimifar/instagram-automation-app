@@ -29,6 +29,7 @@ import in.semibit.media.common.scheduler.BatchScheduler;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
 import in.semibit.media.followerbot.jobs.FollowUsersViaAPIJob;
 import in.semibit.media.followerbot.jobs.UnFollowUsersJob;
+import in.semibit.media.followerbot.jobs.UnFollowUsersViaAPIJob;
 
 public class FollowerBotForegroundService extends BGService {
 
@@ -106,7 +107,13 @@ public class FollowerBotForegroundService extends BGService {
             FollowUsersViaAPIJob job = new FollowUsersViaAPIJob(serverDb, followerUtil);
             job.start();
             return FollowUsersViaAPIJob.nextScheduledTime(Instant.now());
-        } else if (jobName.equals(FollowUsersJob.JOBNAME)) {
+        }
+        else if (jobName.equals(UnFollowUsersViaAPIJob.JOBNAME)) {
+            UnFollowUsersViaAPIJob job = new UnFollowUsersViaAPIJob(serverDb, followerUtil);
+            job.start();
+            return UnFollowUsersViaAPIJob.nextScheduledTime(Instant.now());
+        }
+        else if (jobName.equals(FollowUsersJob.JOBNAME)) {
 
             Instant nextExec = FollowUsersJob.nextScheduledTime(Instant.now());
             String msg = "Triggering " + jobName + "from BG. Next exec at " + nextExec.atZone(ZoneId.systemDefault()).toLocalDateTime().toString();

@@ -62,7 +62,7 @@ public class AccountsAPIHelper {
      * @param action     create | show | destroy
      * @return
      */
-    public CompletableFuture<String> follow(FollowUserModel targetUser, String action) {
+    public CompletableFuture<String> follow(FollowUserModel targetUser, FriendshipsActionRequest.FriendshipsAction action) {
         try {
 
 //        POST /api/v1/friendships/create/55071173026/ HTTP/2
@@ -107,7 +107,7 @@ public class AccountsAPIHelper {
 
             CompletableFuture<String> future = new CompletableFuture<String>();
             CompletableFuture<FriendshipStatusResponse> req = new FriendshipsActionRequest(Long.parseLong(targetUser.getId()),
-                    FriendshipsActionRequest.FriendshipsAction.CREATE).execute(igClient);
+                    action).execute(igClient);
             req.exceptionally(e -> {
                 e.printStackTrace();
                 LogsViewModel.addToLog("error sending friend req " + e.getMessage());
