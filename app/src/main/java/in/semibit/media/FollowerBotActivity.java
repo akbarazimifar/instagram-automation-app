@@ -151,7 +151,11 @@ public class FollowerBotActivity extends AppCompatActivity {
         });
         binding.startBot.setOnClickListener(c -> {
             if (followerBotOrchestrator != null) {
-                if (!followerBotOrchestrator.isRunning()) {
+                if (
+                        (SemibitMediaApp.FOLLOW_VIA_WEBUI &&!followerBotOrchestrator.isRunning())
+                        ||
+                                !FollowerBotForegroundService.IS_RUNNING
+                ) {
                     if (followerUtil == null) {
                         ;
                         followerBotOrchestrator.getFollowerUtil().thenAccept(futil -> {
@@ -179,14 +183,27 @@ public class FollowerBotActivity extends AppCompatActivity {
                     }
                     else {
                         jobs.put(FollowUsersViaAPIJob.JOBNAME, Instant.now().toEpochMilli());
-//                        jobs.put(UnFollowUsersViaAPIJob.JOBNAME, Instant.now().toEpochMilli());
+                        jobs.put(UnFollowUsersViaAPIJob.JOBNAME, Instant.now().toEpochMilli());
                     }
 
                     intent.putExtra("jobSchedules", new Gson().toJson(jobs));
                     startForegroundService(intent);
 
                 } else
-                    followerBotOrchestrator.killAll(null);
+                {
+                    if(SemibitMediaApp.FOLLOW_VIA_WEBUI){
+                        followerBotOrchestrator.killAll(null);
+                    }
+                    else {
+                        try {
+                            Intent stopIntent = new Intent(context, FollowerBotForegroundService.class);
+                            stopIntent.setAction(FollowerBotForegroundService.ACTION_STOP);
+                            context.stopService(stopIntent);
+                        } catch (Exception exception) {
+                            exception.printStackTrace();
+                        }
+                    }
+                }
                 new Handler().postDelayed(this::updateButtonState, 1000);
             } else {
                 logger.onStart("FollowerBotService Not Initialized yet");
@@ -295,7 +312,7 @@ public class FollowerBotActivity extends AppCompatActivity {
 
     private void updateButtonState() {
         try {
-            if (followerBotOrchestrator.isRunning()) {
+            if (SemibitMediaApp.FOLLOW_VIA_WEBUI && followerBotOrchestrator.isRunning() || FollowerBotForegroundService.IS_RUNNING) {
                 binding.startBot.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.material_red_500));
                 binding.startBot.setText("STOP");
             } else {

@@ -66,6 +66,49 @@ public class IGrequestHelper {
         return igReq.execute(igClient).join().getBody();
     }
 
+
+    public String doIGFullUrlGet(String url, Map<String, String> headers) {
+
+        IGGetRequest<StringIGResponse> igReq = new IGGetRequest<StringIGResponse>() {
+
+
+            @Override
+            public HttpUrl formUrl(IGClient client) {
+                return HttpUrl.parse(url);
+            }
+
+            @Override
+            protected Request.Builder applyHeaders(IGClient client, Request.Builder req) {
+                Request.Builder orig = super.applyHeaders(client, req);
+                if (headers != null) {
+                    headers.keySet().forEach(key -> {
+                        if (headers.get(key) != null)
+                            req.addHeader(key, headers.get(key));
+                    });
+                }
+                return orig;
+            }
+
+            @Override
+            public StringIGResponse parseResponse(kotlin.Pair<Response, String> response) {
+                StringIGResponse stringIGResponse = new StringIGResponse(response.getSecond());
+                stringIGResponse.setStatusCode(response.getFirst().code());
+                return stringIGResponse;
+            }
+
+            @Override
+            public String path() {
+                return url;
+            }
+
+            @Override
+            public Class<StringIGResponse> getResponseType() {
+                return null;
+            }
+        };
+        return igReq.execute(igClient).join().getBody();
+    }
+
     public String doIGPost(String path, String payload, Map<String, String> headers) {
         return doIGPost(path, payload, true, headers);
     }

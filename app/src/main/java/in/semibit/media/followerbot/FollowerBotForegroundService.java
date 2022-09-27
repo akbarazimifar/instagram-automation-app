@@ -14,6 +14,9 @@ import java.sql.Date;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,6 +28,7 @@ import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.database.DatabaseHelper;
+import in.semibit.media.common.scheduler.BatchJob;
 import in.semibit.media.common.scheduler.BatchScheduler;
 import in.semibit.media.followerbot.jobs.FollowUsersJob;
 import in.semibit.media.followerbot.jobs.FollowUsersViaAPIJob;
@@ -33,6 +37,7 @@ import in.semibit.media.followerbot.jobs.UnFollowUsersViaAPIJob;
 
 public class FollowerBotForegroundService extends BGService {
 
+    public static boolean IS_RUNNING = false;
     public static String ACTION_STOP = "FollowerBotForegroundService_STOP";
 
     BatchScheduler batchScheduler;
@@ -44,6 +49,7 @@ public class FollowerBotForegroundService extends BGService {
 
     @Override
     public void work(Intent entry) {
+        IS_RUNNING = true;
         String tenant = entry.getStringExtra("tenant");
         if (tenant == null) {
             tenant = SemibitMediaApp.CURRENT_TENANT;
@@ -102,16 +108,25 @@ public class FollowerBotForegroundService extends BGService {
                                 .format(Date.from(next.second));
     }
 
+    final List<BatchJob> jobsHistory = new ArrayList<>();
     public Instant triggerExecutionOfJob(String jobName) {
 
         if (jobName.equals(FollowUsersViaAPIJob.JOBNAME)) {
-            FollowUsersViaAPIJob job = new FollowUsersViaAPIJob(serverDb, followerUtil);
-            job.start();
+            CommonAsyncExecutor.execute(()->{
+                FollowUsersViaAPIJob job = new FollowUsersViaAPIJob(serverDb, followerUtil);
+                job.start();
+                jobsHistory.add(job);
+            });
+
             return FollowUsersViaAPIJob.nextScheduledTime(Instant.now());
         }
         else if (jobName.equals(UnFollowUsersViaAPIJob.JOBNAME)) {
-            UnFollowUsersViaAPIJob job = new UnFollowUsersViaAPIJob(serverDb, followerUtil);
-            job.start();
+            CommonAsyncExecutor.execute(()->{
+                UnFollowUsersViaAPIJob job = new UnFollowUsersViaAPIJob(serverDb, followerUtil);
+                job.start();
+                jobsHistory.add(job);
+
+            });
             return UnFollowUsersViaAPIJob.nextScheduledTime(Instant.now());
         }
         else if (jobName.equals(FollowUsersJob.JOBNAME)) {
@@ -131,6 +146,16 @@ public class FollowerBotForegroundService extends BGService {
 
     @Override
     public void stopWork(Intent intent) {
+        IS_RUNNING = false;
+        try{
+            jobsHistory.forEach(e->{
+                e.stop(false);
+            });
+            jobsHistory.clear();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
         if (batchScheduler != null)
             batchScheduler.stopScheduler();
     }
@@ -158,7 +183,16 @@ public class FollowerBotForegroundService extends BGService {
 
     @Override
     public void onDestroy() {
+        IS_RUNNING = false;
         batchScheduler.stopScheduler();
+        try{
+            jobsHistory.forEach(e->{
+                e.stop(false);
+            });
+            jobsHistory.clear();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         super.onDestroy();
     }
 

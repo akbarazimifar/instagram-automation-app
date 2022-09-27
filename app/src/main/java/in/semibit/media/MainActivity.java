@@ -47,6 +47,8 @@ import java.util.concurrent.CompletableFuture;
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.Insta4jClient;
+import in.semibit.media.common.igclientext.IGrequestHelper;
+import in.semibit.media.common.igclientext.StringIGResponse;
 import in.semibit.media.postbot.BackgroundWorkerService;
 import in.semibit.media.databinding.ActivityMainBinding;
 import in.semibit.media.videoprocessor.VideoMerger;
@@ -87,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
             binding.conturlOrUsername.setError(null);
 
             // if you want to get data using webview
-            processUsingWebView(binding.urlOrUsername.getText().toString());
+            processUsingAPI(binding.urlOrUsername.getText().toString());
 
 //
 //            JSONObject sampel = new JSONObject();
@@ -131,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
             getClient(true);
         });
 
-        driver();
+//        driver();
         getClient(false);
 
 
@@ -308,6 +310,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void processUsingAPI(String userOrLink){
+        String split[] = userOrLink.replace("https://", "").split("/");
+        if (userOrLink.contains("instagram.com") && split.length > 2) {
+            String shortCode = split[2];
+            Log.e("INSTAGRAMMM", shortCode);
+            String url = "https://www.instagram.com/graphql/query/?query_hash=9f8827793ef34641b2fb195d4d41151c&variables={%22shortcode%22:%22" + shortCode + "%22,%22child_comment_count%22:3,%22fetch_comment_count%22:40,%22parent_comment_count%22:24,%22has_threaded_comments%22:true}";
+
+            IGrequestHelper iGrequestHelper = new IGrequestHelper(client);
+           String response = iGrequestHelper.doIGFullUrlGet(url,null);
+            getInfo(response,isDownloadAndPost);
+
+
+        }else {
+            EzUtils.toast(context,"Invalid URL");
+        }
+    }
     public void processUsingWebView(String userOrLink) {
         String split[] = userOrLink.replace("https://", "").split("/");
         if (userOrLink.contains("instagram.com") && split.length > 2) {

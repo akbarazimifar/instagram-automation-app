@@ -378,7 +378,7 @@ public class ReelRequestHelper {
 
             Response response = okHttpClient.newCall(request).execute();
             String res = response.body().string();
-            LogsViewModel.addToLog("REEL CONFIGURE RESPONSE " + res);
+            LogsViewModel.addToLog("REEL CONFIGURE RESPONSE " + (res.contains("login_reqiured") ? res : "OK"));
             return res;
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,14 +1,12 @@
 package in.semibit.media.common.igclientext.likes;
 
 import com.github.instagram4j.instagram4j.IGClient;
-import com.github.instagram4j.instagram4j.models.media.timeline.TimelineMedia;
 import com.semibit.ezandroidutils.EzUtils;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.database.GenericCompletableFuture;
@@ -26,21 +24,24 @@ public class UserTimelineRequest {
         this.iGrequestHelper = new IGrequestHelper(client);
     }
 
-    public GenericCompletableFuture<List<PostItem>> getPosts(FollowUserModel user,int countPosts) {
+    public GenericCompletableFuture<List<PostItem>> getPosts(FollowUserModel user, int countPosts) {
         GenericCompletableFuture<List<PostItem>> future = new GenericCompletableFuture<>();
-        String response = iGrequestHelper.doIGGet("/api/v1/feed/user/"+user.getId()+"/?exclude_comment=true&count="+(countPosts),null);
+        String response = iGrequestHelper.doIGGet("/api/v1/feed/user/" + user.getId() + "/?exclude_comment=true&count=" + (countPosts), null);
 
-        try{
+        try {
             JSONObject jsonObject = new JSONObject(response);
             JSONArray items = jsonObject.getJSONArray("items");
             EzUtils.JSONParser<PostItem> postItemJSONParser = new EzUtils.JSONParser<>();
-            List<PostItem> postItems = postItemJSONParser.parseJSONArray(items.toString(),PostItem.class);
+            List<PostItem> postItems = postItemJSONParser.parseJSONArray(items.toString(), PostItem.class);
+            if (postItems.size() > countPosts) {
+                postItems = postItems.subList(0, countPosts);
+            }
             future.complete(postItems);
-            LogsViewModel.addToLog("Retrived timeline of "+user.userName+" OK "+postItems.size());
+            LogsViewModel.addToLog("Retrived timeline of " + user.userName + " OK " + postItems.size());
 
-        }catch (Exception e){
+        } catch (Exception e) {
             future.completeExceptionally(e);
-            LogsViewModel.addToLog("Retrived timeline of "+user.userName+" Fail "+response);
+            LogsViewModel.addToLog("Retrived timeline of " + user.userName + " Fail " + response);
         }
 
         return future;

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
@@ -137,25 +138,28 @@ public class FollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
                             return null;
                         })
                         .thenAccept(e -> {
+                            CommonAsyncExecutor.execute(() -> {
 
-                            try {
-                                Thread.sleep(EzUtils.randomInt(1000, 10000));
+                                try {
+                                    Thread.sleep(EzUtils.randomInt(1000, 10000));
 
-                                JSONObject jsonObject = new JSONObject(followResultStr);
-                                JSONObject friendship_status = jsonObject.getJSONObject("friendship_status");
-                                if (!friendship_status.optBoolean("is_private")) {
-                                    LikeUserPosts likeUserPosts = new LikeUserPosts(getLogger(), followerUtil.getIgClient(), item);
-                                    likeUserPosts.setOnCompletionListener(results -> {
-                                        onFollowCompletedFuture.complete(JobResult.success());
-                                    });
-                                    likeUserPosts.start();
-                                    return;
+                                    JSONObject jsonObject = new JSONObject(followResultStr);
+                                    JSONObject friendship_status = jsonObject.getJSONObject("friendship_status");
+                                    if (!friendship_status.optBoolean("is_private")) {
+                                        likeUserPostsJob = new LikeUserPostsJob(getLogger(), followerUtil.getIgClient(), item);
+                                        likeUserPostsJob.setOnCompletionListener(results -> {
+                                            onFollowCompletedFuture.complete(JobResult.success());
+                                        });
+                                        likeUserPostsJob.start();
+                                        return;
+                                    }
+
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
                                 }
+                                onFollowCompletedFuture.complete(JobResult.success());
 
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                            onFollowCompletedFuture.complete(JobResult.success());
+                            });
                         });
             } else
                 onFollowCompletedFuture.complete(JobResult.failed());
@@ -163,10 +167,20 @@ public class FollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
         return onFollowCompletedFuture;
     }
 
+    LikeUserPostsJob likeUserPostsJob;
 
     @Override
     public String getJobName() {
         return JOBNAME;
+    }
+
+    @Override
+    public void stop(boolean withResult) {
+        if (likeUserPostsJob != null) {
+            likeUserPostsJob.setOnCompletionListener(null);
+            likeUserPostsJob.stop(withResult);
+        }
+        super.stop(withResult);
     }
 
     public static Instant nextScheduledTime(Instant prevIsntant) {

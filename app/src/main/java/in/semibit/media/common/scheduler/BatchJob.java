@@ -1,5 +1,7 @@
 package in.semibit.media.common.scheduler;
 
+import android.os.AsyncTask;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -24,7 +26,7 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
     private long startTime = 0;
 
 
-    private GenericObjectCallback<Map<T, JobResult<U>>> onCompletionListener;
+    private GenericObjectCallback<Map<T, JobResult<U>> > onCompletionListener;
 
     public BatchJob(GenricDataCallback logger) {
         this.logger = logger;
@@ -82,7 +84,7 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
         if (withResult) {
             onBatchCompleted(batchResult);
         }
-        if (onCompletionListener != null) {
+        if(onCompletionListener!=null){
             onCompletionListener.onStart(batchResult);
         }
         logger.onStart(getJobName() + " Job Stopped");
@@ -126,12 +128,12 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
                             e.printStackTrace();
                             return new JobResult<U>(JobResult.FAILED_STATUS, null);
                         }).thenAccept(result -> {
-                            batchResult.put(curItem, result);
-                            postProcess(curItem).thenAccept(e -> {
-                                processNextJobItem();
-                            });
+                    batchResult.put(curItem, result);
+                    postProcess(curItem).thenAccept(e -> {
+                        processNextJobItem();
+                    });
 
-                        });
+                });
             };
 
             if (!getQueue().isEmpty()) {
@@ -139,7 +141,7 @@ public abstract class BatchJob<T extends IdentifiedModel, U> {
             } else {
                 boolean isRepeat = onBatchCompleted(batchResult);
 
-                if (onCompletionListener != null) {
+                if(onCompletionListener!=null){
                     onCompletionListener.onStart(batchResult);
                 }
 

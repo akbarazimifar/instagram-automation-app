@@ -153,13 +153,13 @@ public class UnFollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
 
     @Override
     public GenericCompletableFuture<JobResult<Boolean>> processItem(FollowUserModel item) {
-        getLogger().onStart("Follow User " + item.userName);
+        getLogger().onStart("UnFollow User " + item.userName);
         GenericCompletableFuture<JobResult<Boolean>> onFollowCompletedFuture = new GenericCompletableFuture<>();
 
         CompletableFuture<String> followResult =
                 accountsAPIHelper.follow(item, FriendshipsActionRequest.FriendshipsAction.DESTROY);
         followResult.exceptionally(e -> {
-            LogsViewModel.addToLog("Follow " + item.userName + " failed. " + e.getMessage());
+            LogsViewModel.addToLog("UnFollow " + item.userName + " failed. " + e.getMessage());
             return null;
         }).thenAccept(followResultStr -> {
             if (followResultStr != null && !followResultStr.isEmpty()) {
