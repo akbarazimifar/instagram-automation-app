@@ -60,7 +60,7 @@ public class IGChallengeUtils {
 
     public static LoginResponse resolveChallenge(@NonNull IGClient client,
             @NonNull LoginResponse response,
-            @NonNull Callable<String> inputCode, int retries) {
+            @NonNull CompletableFuture<String> inputCode, int retries) {
         Challenge challenge = response.getChallenge();
         ChallengeStateResponse stateResponse = requestState(client, challenge).join();
         String name = stateResponse.getStep_name();
@@ -72,7 +72,7 @@ public class IGChallengeUtils {
                     + (stateResponse.getStep_data().getChoice().equals("1") ? "email" : "phone"));
             do {
                 try {
-                    response = sendSecurityCode(client, challenge, inputCode.call())
+                    response = sendSecurityCode(client, challenge, inputCode.join())
                             .exceptionally(IGChallengeUtils::handleException)
                             .join();
                 } catch (Exception e) {
@@ -95,23 +95,23 @@ public class IGChallengeUtils {
 
     public static LoginResponse resolveChallenge(@NonNull IGClient client,
             @NonNull LoginResponse response,
-            @NonNull Callable<String> inputCode) {
+            @NonNull CompletableFuture<String> inputCode) {
         return resolveChallenge(client, response, inputCode, 3);
     }
 
     public static LoginResponse resolveTwoFactor(@NonNull IGClient client,
             @NonNull LoginResponse response,
-            @NonNull Callable<String> inputCode) {
+            @NonNull CompletableFuture<String> inputCode) {
         return resolveTwoFactor(client, response, inputCode, 3);
     }
 
     public static LoginResponse resolveTwoFactor(@NonNull IGClient client,
             @NonNull LoginResponse response,
-            @NonNull Callable<String> inputCode, int retries) {
+            @NonNull CompletableFuture<String> inputCode, int retries) {
         String identifier = response.getTwo_factor_info().getTwo_factor_identifier();
         do {
             try {
-                String code = inputCode.call();
+                String code = inputCode.join();
 
                 response = client.sendLoginRequest(code, identifier)
                         .exceptionally(IGChallengeUtils::handleException)

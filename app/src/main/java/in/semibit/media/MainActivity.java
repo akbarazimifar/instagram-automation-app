@@ -55,8 +55,9 @@ import in.semibit.media.videoprocessor.VideoMerger;
 
 public class MainActivity extends AppCompatActivity {
 
-    static Context context;
+    private static Context context;
     private ActivityMainBinding binding;
+    public static Activity activity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -207,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
+        activity = this;
         super.onResume();
 
     }

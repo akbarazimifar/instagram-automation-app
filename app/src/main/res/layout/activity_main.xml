@@ -99,7 +99,7 @@
            android:scrollbars="none"
            android:layout_height="match_parent">
            <TextView
-
+               android:visibility="visible"
                android:scrollbars="vertical"
                app:layout_constraintTop_toTopOf="parent"
                android:id="@+id/log"
@@ -108,6 +108,7 @@
 
        </androidx.core.widget.NestedScrollView>
         <in.semibit.media.common.AdvancedWebView
+            android:visibility="gone"
             android:id="@+id/webview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
