@@ -9,6 +9,7 @@ import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.responses.accounts.LoginResponse;
 import com.github.instagram4j.instagram4j.utils.IGChallengeUtils;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
+import com.github.instagram4j.instagram4j.utils.StringCallback;
 import com.semibit.ezandroidutils.EzUtils;
 
 import java.io.File;
@@ -111,9 +112,21 @@ public class Insta4jClient {
                             return IGChallengeUtils.resolveTwoFactor(client, loginResponse, askForInput(context, usernameFinal));
                         }
                     };
+                    IGClient.Builder.LoginHandler onChallengeHandler = new IGClient.Builder.LoginHandler() {
+                        @Override
+                        public LoginResponse accept(IGClient client, LoginResponse loginResponse) {
+                            return IGChallengeUtils.resolveChallenge(client, loginResponse, askForInput(context, usernameFinal), new StringCallback() {
+                                @Override
+                                public void onCb(String s) {
+                                    EzUtils.toast(context,s);
+                                }
+                            });
+                        }
+                    };
 
                     client = IGClient.builder()
                             .onTwoFactor(onTwoFactorHandler)
+                            .onChallenge(onChallengeHandler)
                             .client(okHttpClient)
                             .username(username)
                             .password(passwd)
@@ -142,6 +155,31 @@ public class Insta4jClient {
         }
 
         return client;
+    }
+
+
+    public static Callable<CompletableFuture<String>> askForChallenge(Context context, String username) {
+        if (MainActivity.activity == null) {
+            EzUtils.toast(context, "Activity is not running.");
+            throw new RuntimeException("Unable to get code from dialog");
+        }
+
+        Callable<CompletableFuture<String>> onGetCode = () -> {
+
+            CompletableFuture<String> onCode = new CompletableFuture<>();
+            handler.post(() -> {
+                LogsViewModel.addToLog("Trying to login using challenge");
+                EzUtils.inputDialogBottom(MainActivity.activity, "Enter challenge code for " + username, EzUtils.TYPE_DEF, new EzUtils.InputDialogCallback() {
+                    @Override
+                    public void onDone(String text) {
+                        onCode.complete(text.trim());
+                    }
+                });
+            });
+            return onCode;
+        };
+
+        return onGetCode;
     }
 
 

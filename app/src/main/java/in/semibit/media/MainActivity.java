@@ -26,7 +26,12 @@ import com.androidnetworking.AndroidNetworking;
 import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.DownloadListener;
 import com.androidnetworking.interfaces.StringRequestListener;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.instagram4j.instagram4j.IGClient;
+import com.github.instagram4j.realtime.IGRealtimeClient;
+import com.github.instagram4j.realtime.mqtt.packet.PublishPacket;
+import com.github.instagram4j.realtime.utils.PacketUtil;
+import com.github.instagram4j.realtime.utils.ZipUtil;
 import com.google.android.gms.common.util.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -43,10 +48,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.zip.DataFormatException;
 
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.Insta4jClient;
+import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.igclientext.IGrequestHelper;
 import in.semibit.media.common.igclientext.StringIGResponse;
 import in.semibit.media.postbot.BackgroundWorkerService;
@@ -159,6 +166,7 @@ public class MainActivity extends AppCompatActivity {
            MainActivity.this.runOnUiThread(()->{
                progressDialog.hide();
            });
+            //listenToMessages(client);
            igc.complete(client);
 
         });
@@ -564,4 +572,26 @@ public class MainActivity extends AppCompatActivity {
         this.moveTaskToBack(true);
     }
 
+
+
+    public void listenToMessages(IGClient client){
+            IGRealtimeClient realtime = new IGRealtimeClient(client, (packet)-> {
+                    // a packet consumer (or listener) that listens for incoming packets and then acts on it
+            try {
+                // if packet is a publish packet
+                if (packet instanceof PublishPacket) {
+                    // cast it
+                    final PublishPacket publishPacket = (PublishPacket) packet;
+                    // retrieve payload, unzip, then stringify
+                    final String payload = PacketUtil.stringify(ZipUtil.unzip(publishPacket.getPayload()));
+                    System.out.println(payload);
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            LogsViewModel.addToLog("Error while reading PublishPacket " + ex.getMessage());
+            }
+        });
+
+        realtime.connect();
+    }
 }

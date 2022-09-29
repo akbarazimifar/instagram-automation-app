@@ -11,6 +11,9 @@ import com.github.instagram4j.instagram4j.requests.challenge.ChallengeStateGetRe
 import com.github.instagram4j.instagram4j.responses.accounts.LoginResponse;
 import com.github.instagram4j.instagram4j.responses.challenge.Challenge;
 import com.github.instagram4j.instagram4j.responses.challenge.ChallengeStateResponse;
+
+import javax.annotation.Nullable;
+
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,8 +62,8 @@ public class IGChallengeUtils {
     }
 
     public static LoginResponse resolveChallenge(@NonNull IGClient client,
-            @NonNull LoginResponse response,
-            @NonNull CompletableFuture<String> inputCode, int retries) {
+                                                 @NonNull LoginResponse response,
+                                                 @NonNull Callable<CompletableFuture<String>> inputCode, int retries, StringCallback onLog) {
         Challenge challenge = response.getChallenge();
         ChallengeStateResponse stateResponse = requestState(client, challenge).join();
         String name = stateResponse.getStep_name();
@@ -70,9 +73,13 @@ public class IGChallengeUtils {
             selectVerifyMethod(client, challenge, stateResponse.getStep_data().getChoice(), false);
             log.info("select_verify_method option security code sent to "
                     + (stateResponse.getStep_data().getChoice().equals("1") ? "email" : "phone"));
+            if(onLog != null){
+                onLog.onCb("security code sent to "
+                        + (stateResponse.getStep_data().getChoice().equals("1") ? "email "+stateResponse.getStep_data().getEmail() : "phone"));
+            }
             do {
                 try {
-                    response = sendSecurityCode(client, challenge, inputCode.join())
+                    response = sendSecurityCode(client, challenge, inputCode.call().join())
                             .exceptionally(IGChallengeUtils::handleException)
                             .join();
                 } catch (Exception e) {
@@ -95,8 +102,15 @@ public class IGChallengeUtils {
 
     public static LoginResponse resolveChallenge(@NonNull IGClient client,
             @NonNull LoginResponse response,
-            @NonNull CompletableFuture<String> inputCode) {
-        return resolveChallenge(client, response, inputCode, 3);
+            @NonNull Callable<CompletableFuture<String>> inputCode) {
+        return resolveChallenge(client, response, inputCode, 3,null);
+    }
+
+    public static LoginResponse resolveChallenge(@NonNull IGClient client,
+                                                 @NonNull LoginResponse response,
+                                                 @NonNull Callable<CompletableFuture<String>> inputCode,
+                                                 @Nullable StringCallback onLog) {
+        return resolveChallenge(client, response, inputCode, 3,onLog);
     }
 
     public static LoginResponse resolveTwoFactor(@NonNull IGClient client,
