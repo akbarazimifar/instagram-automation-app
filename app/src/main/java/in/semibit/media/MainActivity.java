@@ -319,6 +319,8 @@ public class MainActivity extends AppCompatActivity {
             Log.e("INSTAGRAMMM", shortCode);
             String url = "https://www.instagram.com/graphql/query/?query_hash=9f8827793ef34641b2fb195d4d41151c&variables={%22shortcode%22:%22" + shortCode + "%22,%22child_comment_count%22:3,%22fetch_comment_count%22:40,%22parent_comment_count%22:24,%22has_threaded_comments%22:true}";
 
+            binding.log.setText("Retrieving Post Info for "+userOrLink);
+
             IGrequestHelper iGrequestHelper = new IGrequestHelper(client);
            String response = iGrequestHelper.doIGFullUrlGet(url,null);
             getInfo(response,isDownloadAndPost);
@@ -463,6 +465,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void getInfo(String bboy,boolean isDownloadAndPost) {
+
 
         HashMap<String, String> ma = new HashMap<>();
         ma.put("body", bboy);

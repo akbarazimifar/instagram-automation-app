@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import in.semibit.media.SemibitMediaApp;
+import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
@@ -153,7 +154,7 @@ public class UnFollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
 
     @Override
     public GenericCompletableFuture<JobResult<Boolean>> processItem(FollowUserModel item) {
-        getLogger().onStart("UnFollow User " + item.userName);
+        getLogger().onStart("UnFollow User try " + item.userName);
         GenericCompletableFuture<JobResult<Boolean>> onFollowCompletedFuture = new GenericCompletableFuture<>();
 
         CompletableFuture<String> followResult =
@@ -164,7 +165,17 @@ public class UnFollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
         }).thenAccept(followResultStr -> {
             if (followResultStr != null && !followResultStr.isEmpty()) {
                 followerUtil.setUserAsUnFollowed(item).thenAccept(e -> {
-                    onFollowCompletedFuture.complete(JobResult.success());
+                    CommonAsyncExecutor.execute(()->{
+                        try {
+                            getLogger().onStart("UnFollow User completed " + item.userName);
+
+                            Thread.sleep(EzUtils.randomInt(1000, 10000));
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                        onFollowCompletedFuture.complete(JobResult.success());
+
+                    });
                 });
             } else
                 onFollowCompletedFuture.complete(JobResult.failed());
