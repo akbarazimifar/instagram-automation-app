@@ -9,6 +9,7 @@ import in.semibit.media.common.database.IdentifiedModel;
 
 public class FollowersList implements IdentifiedModel {
     String id = "to_be_follow"; //ig_followers,ig_following,to_be_unfollow,to_be_follow
+    String type = "to_be_follow";
     List<String> followIds = new ArrayList<>();
 
 

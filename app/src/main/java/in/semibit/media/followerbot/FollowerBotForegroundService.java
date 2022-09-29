@@ -110,8 +110,8 @@ public class FollowerBotForegroundService extends BGService {
     public String getNext() {
         Pair<String, Instant> next = batchScheduler.getNextJobSchedule();
         return
-                next.first + " \nafter " +
-                        DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM)
+                next.first.substring(0,7) + " Job after " +
+                        DateFormat.getTimeInstance(DateFormat.SHORT)
                                 .format(Date.from(next.second));
     }
 

@@ -103,7 +103,7 @@ public class UnFollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
     @Override
     public GenericCompletableFuture<List<FollowUserModel>> getData() {
         GenericCompletableFuture<List<FollowUserModel>> completableFuture = new GenericCompletableFuture<>();
-        GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("id", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
+        GenericCompletableFuture<List<FollowersList>> onLoadedFollowMeta = serverDb.query(TableNames.FOLLOW_META, Collections.singletonList(WhereClause.of("type", GenericOperator.EQUAL, "to_be_follow")), FollowersList.class);
         onLoadedFollowMeta.exceptionally((e) -> {
             e.printStackTrace();
             return new ArrayList<>();
