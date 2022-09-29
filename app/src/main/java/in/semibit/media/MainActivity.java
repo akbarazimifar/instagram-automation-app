@@ -26,7 +26,6 @@ import com.androidnetworking.AndroidNetworking;
 import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.DownloadListener;
 import com.androidnetworking.interfaces.StringRequestListener;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.realtime.IGRealtimeClient;
 import com.github.instagram4j.realtime.mqtt.packet.PublishPacket;
@@ -38,7 +37,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.semibit.ezandroidutils.EzUtils;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -46,19 +44,20 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.zip.DataFormatException;
 
 import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.common.igclientext.IGrequestHelper;
-import in.semibit.media.common.igclientext.StringIGResponse;
 import in.semibit.media.postbot.BackgroundWorkerService;
 import in.semibit.media.databinding.ActivityMainBinding;
 import in.semibit.media.videoprocessor.VideoMerger;
+import kotlin.Pair;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -112,10 +111,10 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
-        binding.searchButton.postDelayed(()->{
+        binding.searchButton.postDelayed(() -> {
 //            binding.urlOrUsername.setText("https://www.instagram.com/p/CddSYo6jTk4/");
 //            binding.searchButton.callOnClick();
-        },3000);
+        }, 3000);
 
         binding.searchButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -126,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        binding.refresh.setOnClickListener(e->{
+        binding.refresh.setOnClickListener(e -> {
             driver();
             binding.webview.setVisibility(View.VISIBLE);
         });
@@ -137,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
         binding.startBot.setOnClickListener(v -> {
             startActivity(new Intent(context, FollowerBotActivity.class));
         });
-        binding.showHideBot.setOnClickListener(c->{
+        binding.showHideBot.setOnClickListener(c -> {
             getClient(true);
         });
 
@@ -145,31 +144,57 @@ public class MainActivity extends AppCompatActivity {
         getClient(false);
 
 
-        CommonAsyncExecutor.execute(()->{
+        CommonAsyncExecutor.execute(() -> {
             VideoMerger.load(context);
         });
 
     }
+
     IGClient client;
-    public CompletableFuture<IGClient> getClient(boolean forceLogin){
-        if(client != null && !forceLogin){
+
+    public CompletableFuture<IGClient> getClient(boolean forceLogin) {
+        if (client != null && !forceLogin) {
             return CompletableFuture.completedFuture(client);
         }
         ProgressDialog progressDialog = new ProgressDialog(MainActivity.this);
         progressDialog.setCancelable(true);
-        progressDialog.setMessage("Init IG Client...");
+        List<Pair<String, String>> tenants = Insta4jClient.getAllTenants();
+
+        progressDialog.setMessage("Init " + tenants.size() + " IG Clients...");
         progressDialog.show();
 
-        CompletableFuture<IGClient> igc = new CompletableFuture<>();
-        CommonAsyncExecutor.execute(()->{
-           client =  Insta4jClient.getClient(context,SemibitMediaApp.CURRENT_TENANT,forceLogin, null);
-           MainActivity.this.runOnUiThread(()->{
-               progressDialog.hide();
-           });
-            //listenToMessages(client);
-           igc.complete(client);
+        CompletableFuture<IGClient>[] completableFutureList = new CompletableFuture[tenants.size()];
 
+        for (int i = 0; i < tenants.size(); i++) {
+            CompletableFuture<IGClient> cur = new CompletableFuture<>();
+            completableFutureList[i] = cur;
+        }
+        CommonAsyncExecutor.execute(() -> {
+
+            for (int i = 0; i < tenants.size(); i++) {
+                Pair<String, String> tenant = tenants.get(i);
+
+                IGClient curClient = Insta4jClient.getClient(context, tenant.getFirst(), forceLogin, null);
+                if (client == null) {
+                    client = curClient;
+                }
+                completableFutureList[i].complete(curClient);
+            }
         });
+
+        CompletableFuture<IGClient> igc = new CompletableFuture<>();
+        CompletableFuture.allOf(completableFutureList)
+                .exceptionally(e -> {
+                    e.printStackTrace();
+                    LogsViewModel.addToLog("Error logging in " + e.getMessage());
+                    igc.completeExceptionally(e);
+                    return null;
+                })
+                .thenAccept(clients -> {
+                    MainActivity.this.runOnUiThread(progressDialog::hide);
+                    if (clients != null)
+                        igc.complete(client);
+                });
         return igc;
     }
 
@@ -300,7 +325,7 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         JSONObject json = new JSONObject(body);
                         binding.log.setText(json.toString(4));
-                        json.put("username",client.$username);
+                        json.put("username", client.$username);
                         toast(MainActivity.this, "Posting using strategy : " + (isDownloadAndPost ? "Local Upload" : "Remote API"));
 //                        if (isDownloadAndPost)
 //                            getInfo(body,isDownloadAndPost);
@@ -308,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
 //                        {
 //                            //post(body);
 //                        }
-                        getInfo(json.toString(),isDownloadAndPost);
+                        getInfo(json.toString(), isDownloadAndPost);
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -320,24 +345,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void processUsingAPI(String userOrLink){
+    public void processUsingAPI(String userOrLink) {
         String split[] = userOrLink.replace("https://", "").split("/");
         if (userOrLink.contains("instagram.com") && split.length > 2) {
             String shortCode = split[2];
             Log.e("INSTAGRAMMM", shortCode);
             String url = "https://www.instagram.com/graphql/query/?query_hash=9f8827793ef34641b2fb195d4d41151c&variables={%22shortcode%22:%22" + shortCode + "%22,%22child_comment_count%22:3,%22fetch_comment_count%22:40,%22parent_comment_count%22:24,%22has_threaded_comments%22:true}";
 
-            binding.log.setText("Retrieving Post Info for "+userOrLink);
+            binding.log.setText("Retrieving Post Info for " + userOrLink);
 
             IGrequestHelper iGrequestHelper = new IGrequestHelper(client);
-           String response = iGrequestHelper.doIGFullUrlGet(url,null);
-            getInfo(response,isDownloadAndPost);
+            String response = iGrequestHelper.doIGFullUrlGet(url, null);
+            getInfo(response, isDownloadAndPost);
 
 
-        }else {
-            EzUtils.toast(context,"Invalid URL");
+        } else {
+            EzUtils.toast(context, "Invalid URL");
         }
     }
+
     public void processUsingWebView(String userOrLink) {
         String split[] = userOrLink.replace("https://", "").split("/");
         if (userOrLink.contains("instagram.com") && split.length > 2) {
@@ -426,7 +452,7 @@ public class MainActivity extends AppCompatActivity {
             url = post.optString("firebaseUrl");
         }
 
-        File tmpDir = new File(Insta4jClient.root,"temp");
+        File tmpDir = new File(Insta4jClient.root, "temp");
         AndroidNetworking.download(url, tmpDir.getAbsolutePath(), fileName)
                 .build()
                 .startDownload(new DownloadListener() {
@@ -472,7 +498,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void getInfo(String bboy,boolean isDownloadAndPost) {
+    public void getInfo(String bboy, boolean isDownloadAndPost) {
 
 
         HashMap<String, String> ma = new HashMap<>();
@@ -487,11 +513,10 @@ public class MainActivity extends AppCompatActivity {
                     binding.log.setText(json.toString(4));
                     Toast.makeText(MainActivity.this, "Downloading", Toast.LENGTH_LONG).show();
 
-                    if(isDownloadAndPost){
+                    if (isDownloadAndPost) {
                         downloadFile(json);
-                    }
-                    else {
-                        EzUtils.copyToClipBoard("Caption",json.optString("text"),context);
+                    } else {
+                        EzUtils.copyToClipBoard("Caption", json.optString("text"), context);
                     }
                     binding.urlOrUsername.setText("");
 
@@ -518,11 +543,12 @@ public class MainActivity extends AppCompatActivity {
 
         binding.webview.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {Log.d("MyApplication", consoleMessage.message() + " -- From line "
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                Log.d("MyApplication", consoleMessage.message() + " -- From line "
                         + consoleMessage.lineNumber() + " of "
                         + consoleMessage.sourceId());
-                if(consoleMessage.message().contains("require_login")){
-                    EzUtils.toast(context,""+consoleMessage.message());
+                if (consoleMessage.message().contains("require_login")) {
+                    EzUtils.toast(context, "" + consoleMessage.message());
                 }
                 return super.onConsoleMessage(consoleMessage);
             }
@@ -573,10 +599,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-    public void listenToMessages(IGClient client){
-            IGRealtimeClient realtime = new IGRealtimeClient(client, (packet)-> {
-                    // a packet consumer (or listener) that listens for incoming packets and then acts on it
+    public void listenToMessages(IGClient client) {
+        IGRealtimeClient realtime = new IGRealtimeClient(client, (packet) -> {
+            // a packet consumer (or listener) that listens for incoming packets and then acts on it
             try {
                 // if packet is a publish packet
                 if (packet instanceof PublishPacket) {
@@ -588,7 +613,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
-            LogsViewModel.addToLog("Error while reading PublishPacket " + ex.getMessage());
+                LogsViewModel.addToLog("Error while reading PublishPacket " + ex.getMessage());
             }
         });
 

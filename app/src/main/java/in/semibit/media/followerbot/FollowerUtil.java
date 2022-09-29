@@ -30,7 +30,6 @@ import in.semibit.media.common.AdvancedWebView;
 import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.GenricCallback;
 import in.semibit.media.common.GenricDataCallback;
-import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.common.database.DatabaseHelper;
 import in.semibit.media.common.database.GenericCompletableFuture;
 import in.semibit.media.common.database.GenericOperator;

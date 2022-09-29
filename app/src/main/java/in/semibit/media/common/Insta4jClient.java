@@ -17,22 +17,55 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 import in.semibit.media.MainActivity;
 import in.semibit.media.R;
+import in.semibit.media.SemibitMediaApp;
 import in.semibit.media.postbot.BackgroundWorkerService;
+import kotlin.Pair;
 import okhttp3.OkHttpClient;
 
 public class Insta4jClient {
 
-    private static IGClient client;
+    private final static ConcurrentHashMap<String, IGClient> clients = new ConcurrentHashMap<String, IGClient>();
     public static File root = new File(Environment.getExternalStorageDirectory(), "instadp");
     public static Handler handler;
 
     public static synchronized IGClient getClient(Context context, String tenant, GenricDataCallback callback) {
         return getClient(context, tenant, false, callback);
+    }
+
+    public static List<Pair<String, String>> getAllTenants() {
+        List<Pair<String, String>> tenants = new ArrayList<>();
+        try {
+            if (!root.exists()) {
+                root.mkdir();
+            }
+            File file = new File(root.getAbsoluteFile(), "instagram.txt");
+            if (file.exists()) {
+                String allLines = new String(Files.readAllBytes(Paths.get(file.getPath())));
+                String[] lines = allLines.split("\n");
+                for (String split : lines) {
+                    String username = split.split(",")[0].trim();
+                    String passwd = split.split(",")[1].trim();
+                    if (!username.isEmpty() && !passwd.isEmpty()) {
+                        tenants.add(new Pair<>(username, passwd));
+                    }
+                }
+            } else {
+                return List.of(new Pair<>(SemibitMediaApp.getAppContext().getString(R.string.username),
+                        SemibitMediaApp.getAppContext().getString(R.string.password)));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return tenants;
     }
 
     public static synchronized IGClient getClient(Context context, String tenant, boolean forceLogin, GenricDataCallback callback) {
@@ -42,7 +75,8 @@ public class Insta4jClient {
         }
         String username = context.getString(R.string.username);
         String passwd = context.getString(R.string.password);
-        String backupCode = context.getString(R.string.backup_code);
+        IGClient client = clients.get(tenant);
+        String tenantPrefix = "instagram_" + tenant;
         if (client == null || forceLogin) {
             handler = new Handler(Looper.getMainLooper());
             try {
@@ -57,19 +91,24 @@ public class Insta4jClient {
                 }
                 File file = new File(root.getAbsoluteFile(), "instagram.txt");
                 if (file.exists()) {
-                    String split = new String(Files.readAllBytes(Paths.get(file.getPath())));
-                    username = split.split(",")[0].trim();
-                    passwd = split.split(",")[1].trim();
-                    backupCode = split.split(",")[2].trim();
+                    String allLines = new String(Files.readAllBytes(Paths.get(file.getPath())));
+                    String[] lines = allLines.split("\n");
+                    for (String split : lines) {
+                        username = split.split(",")[0].trim();
+                        passwd = split.split(",")[1].trim();
+                        break;
+                    }
+                } else {
+                    Files.write(Paths.get(file.getAbsolutePath()), (username + "," + passwd).getBytes());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            Duration duration = Duration.of(60000, ChronoUnit.SECONDS);
+            Duration duration = Duration.of(60, ChronoUnit.SECONDS);
 
             try {
-                File sessionFile = new File(root, "instagram_session.json");
-                File fileClient = new File(root, "instagram_client.json");
+                File sessionFile = new File(root, tenantPrefix + "_session.json");
+                File fileClient = new File(root, tenantPrefix + "_client.json");
 
                 try {
                     if (forceLogin) {
@@ -104,7 +143,6 @@ public class Insta4jClient {
                     LogsViewModel.addToLog("Logging in to " + username);
 
 
-                    String finalBackupCode = backupCode;
                     String usernameFinal = username;
                     IGClient.Builder.LoginHandler onTwoFactorHandler = new IGClient.Builder.LoginHandler() {
                         @Override
@@ -115,10 +153,10 @@ public class Insta4jClient {
                     IGClient.Builder.LoginHandler onChallengeHandler = new IGClient.Builder.LoginHandler() {
                         @Override
                         public LoginResponse accept(IGClient client, LoginResponse loginResponse) {
-                            return IGChallengeUtils.resolveChallenge(client, loginResponse, askForInput(context, usernameFinal), new StringCallback() {
+                            return IGChallengeUtils.resolveChallenge(client, loginResponse, askForChallenge(context, usernameFinal), new StringCallback() {
                                 @Override
                                 public void onCb(String s) {
-                                    EzUtils.toast(context,s);
+                                    EzUtils.toast(context, s);
                                 }
                             });
                         }
@@ -150,8 +188,9 @@ public class Insta4jClient {
             callback.onStart("Logged In");
         }
 
-        if (client.selfProfile != null) {
+        if (client != null && client.selfProfile != null) {
             LogsViewModel.addToLog("Logged in success to " + client.selfProfile.getUsername());
+            clients.put(tenant, client);
         }
 
         return client;

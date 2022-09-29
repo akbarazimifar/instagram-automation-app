@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import in.semibit.media.R;
 import in.semibit.media.SemibitMediaApp;
@@ -35,9 +36,9 @@ import in.semibit.media.common.CommonAsyncExecutor;
 import in.semibit.media.common.Insta4jClient;
 import in.semibit.media.common.LogsViewModel;
 import in.semibit.media.videoprocessor.VideoMerger;
+import kotlin.Pair;
 
 public class BackgroundWorkerService extends Service {
-    public InstagramPoster client;
     public Context context;
     public String ACTION_STOP_SERVICE = "199213";
     public static int NOTIF_ID = 1;
@@ -88,7 +89,7 @@ public class BackgroundWorkerService extends Service {
     }
 
     private File getCover(File video) throws Exception {
-        File cover = new File(root, "cover_" +video.getName() + ".jpg");
+        File cover = new File(root, "cover_" + video.getName() + ".jpg");
         ArrayList<Bitmap> frameList;
         int numeroFrameCaptured = 0;
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
@@ -111,7 +112,7 @@ public class BackgroundWorkerService extends Service {
         return cover;
     }
 
-    public void work(Intent intent) {
+    public void work(Intent intent, InstagramPoster client) {
         System.out.println("work started");
 
         client.callback = s -> {
@@ -137,17 +138,17 @@ public class BackgroundWorkerService extends Service {
         videoMerger.setOnLog(client.callback);
 
 
-        File endScreen = new File(root,"endscreen.mp4");
-        List<File> filesToJoin = List.of(videoFile,endScreen);
-        if(!endScreen.exists()){
+        File endScreen = new File(root, "endscreen.mp4");
+        List<File> filesToJoin = List.of(videoFile, endScreen);
+        if (!endScreen.exists()) {
             filesToJoin = List.of(videoFile);
         }
 
-        CompletableFuture<File> onFileProcessed = videoMerger.merge("processed_"+videoFile.getName(),filesToJoin );
+        CompletableFuture<File> onFileProcessed = videoMerger.merge("processed_" + videoFile.getName(), filesToJoin);
         File finalCover = cover;
-        onFileProcessed.exceptionally(e-> videoFile).thenAccept(outputFile->{
+        onFileProcessed.exceptionally(e -> videoFile).thenAccept(outputFile -> {
             EzUtils.l(outputFile.getAbsolutePath());
-            LogsViewModel.addToLog("Video processing done "+outputFile.getAbsolutePath());
+            LogsViewModel.addToLog("Video processing done " + outputFile.getAbsolutePath());
             client.post(outputFile, finalCover,
                     intent.getStringExtra("caption"),
                     intent.getStringExtra("mediaType"),
@@ -161,22 +162,28 @@ public class BackgroundWorkerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         context = getApplicationContext();
-        videoMerger  = new VideoMerger(context);
-//        CommonAsyncExecutor.execute(()->{
-        if (client == null) {
-            String tenant = intent.getStringExtra("tenant");
-            if(tenant == null){
-                tenant = SemibitMediaApp.CURRENT_TENANT;
-            }
-            client = new InstagramPoster(Insta4jClient.getClient(context, tenant,null));
-        }
+        videoMerger = new VideoMerger(context);
 
-        if (intent == null || ACTION_STOP_SERVICE.equals(intent.getAction())) {
+
+        if (ACTION_STOP_SERVICE.equals(intent.getAction())) {
             context.getSystemService(NotificationManager.class).cancel(NOTIF_ID);
             stopSelf();
         }
-        this.startForeground(intent);
-//        });
+        startForeground(NOTIF_ID, getMyActivityNotification(""));
+
+
+        List<String> tenants = Insta4jClient.getAllTenants().stream().map(Pair::getFirst).collect(Collectors.toList());
+        if (tenants.isEmpty()) {
+            String tenant = intent.getStringExtra("tenant");
+            if (tenant == null) {
+                tenant = SemibitMediaApp.CURRENT_TENANT;
+            }
+            this.postForTenant(intent, tenant);
+        } else {
+            for (String tenant : tenants) {
+                this.postForTenant(intent, tenant);
+            }
+        }
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -188,9 +195,9 @@ public class BackgroundWorkerService extends Service {
     }
 
 
-    public void startForeground(final Intent intent) {
-        startForeground(NOTIF_ID, getMyActivityNotification(""));
-        CommonAsyncExecutor.execute(() -> work(intent));
+    public void postForTenant(final Intent intent, String tenant) {
+        InstagramPoster client = new InstagramPoster(Insta4jClient.getClient(context, tenant, null));
+        CommonAsyncExecutor.execute(() -> work(intent, client));
     }
 
     public Notification getMyActivityNotification(String text) {
@@ -222,10 +229,12 @@ public class BackgroundWorkerService extends Service {
      */
     public void updateNotification(String text) {
 
+        LogsViewModel.addToLog(text);
         Notification notification = getMyActivityNotification(text);
 
         NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(NOTIF_ID++, notification);
+//        mNotificationManager.notify(NOTIF_ID++, notification);
+        mNotificationManager.notify(NOTIF_ID, notification);
     }
 
 }

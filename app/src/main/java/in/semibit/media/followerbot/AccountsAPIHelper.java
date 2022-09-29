@@ -63,7 +63,6 @@ public class AccountsAPIHelper {
      * @return
      */
     public CompletableFuture<String> follow(FollowUserModel targetUser, FriendshipsActionRequest.FriendshipsAction action) {
-        try {
 
 //        POST /api/v1/friendships/create/55071173026/ HTTP/2
 //        POST /api/v1/friendships/show/55071173026/ HTTP/2
@@ -105,26 +104,21 @@ public class AccountsAPIHelper {
 //            });
 //            return future;
 
-            CompletableFuture<String> future = new CompletableFuture<String>();
-            CompletableFuture<FriendshipStatusResponse> req = new FriendshipsActionRequest(Long.parseLong(targetUser.getId()),
-                    action).execute(igClient);
-            req.exceptionally(e -> {
-                e.printStackTrace();
-                LogsViewModel.addToLog("error sending friend req " + e.getMessage());
-                return null;
-            }).thenAccept(resp -> {
-                if (resp != null && resp.getStatusCode() < 300) {
-                    future.complete(EzUtils.js.toJson(resp));
-                } else {
-                    future.complete("");
-                }
-            });
-            return future;
-        } catch (Exception e) {
+        CompletableFuture<String> future = new CompletableFuture<String>();
+        CompletableFuture<FriendshipStatusResponse> req = new FriendshipsActionRequest(Long.parseLong(targetUser.getId()),
+                action).execute(igClient);
+        req.exceptionally(e -> {
             e.printStackTrace();
-            LogsViewModel.addToLog("error sending friend req " + e.getMessage());
-            return CompletableFuture.completedFuture("");
-        }
+            LogsViewModel.addToLog("error sending friend req to "+targetUser.userName+" " + e.getMessage());
+            return null;
+        }).thenAccept(resp -> {
+            if (resp != null && resp.getStatusCode() < 300) {
+                future.complete(EzUtils.js.toJson(resp));
+            } else {
+                future.complete("");
+            }
+        });
+        return future;
 
 //        Host: i.instagram.com
 //        X-Ig-App-Locale: en_US
