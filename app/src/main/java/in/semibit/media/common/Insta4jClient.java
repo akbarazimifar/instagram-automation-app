@@ -1,13 +1,9 @@
 package in.semibit.media.common;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.Html;
-
-import androidx.appcompat.app.AlertDialog;
 
 import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.responses.accounts.LoginResponse;
@@ -20,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
 import in.semibit.media.MainActivity;
@@ -31,12 +28,13 @@ public class Insta4jClient {
 
     private static IGClient client;
     public static File root = new File(Environment.getExternalStorageDirectory(), "instadp");
+    public static Handler handler;
 
-    public static synchronized IGClient getClient(Context context,String tenant, GenricDataCallback callback) {
-        return getClient(context, tenant,false, callback);
+    public static synchronized IGClient getClient(Context context, String tenant, GenricDataCallback callback) {
+        return getClient(context, tenant, false, callback);
     }
 
-    public static synchronized IGClient getClient(Context context,String tenant, boolean forceLogin, GenricDataCallback callback) {
+    public static synchronized IGClient getClient(Context context, String tenant, boolean forceLogin, GenricDataCallback callback) {
         if (callback == null) {
             callback = (s) -> {
             };
@@ -45,7 +43,7 @@ public class Insta4jClient {
         String passwd = context.getString(R.string.password);
         String backupCode = context.getString(R.string.backup_code);
         if (client == null || forceLogin) {
-
+            handler = new Handler(Looper.getMainLooper());
             try {
                 if (!root.exists()) {
                     root.mkdir();
@@ -87,14 +85,13 @@ public class Insta4jClient {
                                         .readTimeout(duration)
                                         .writeTimeout(duration)
                                         .connectTimeout(duration));
-                    }
-                    else {
+                    } else {
                         LogsViewModel.addToLog("IG Client. Saved login missing");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-               if (client == null) {
+                if (client == null) {
 
                     LogsViewModel.addToLog("IG Client WEB Login");
                     OkHttpClient okHttpClient = IGUtils.defaultHttpClientBuilder()
@@ -103,27 +100,15 @@ public class Insta4jClient {
                             .writeTimeout(duration)
                             .connectTimeout(duration).build();
 
-                    LogsViewModel.addToLog("Logging in to "+username);
+                    LogsViewModel.addToLog("Logging in to " + username);
 
 
-                   Handler handler = new Handler(Looper.getMainLooper());
-                   String finalBackupCode = backupCode;
-                   String usernameFinal = username;
+                    String finalBackupCode = backupCode;
+                    String usernameFinal = username;
                     IGClient.Builder.LoginHandler onTwoFactorHandler = new IGClient.Builder.LoginHandler() {
                         @Override
                         public LoginResponse accept(IGClient client, LoginResponse loginResponse) {
-                            CompletableFuture<String> onCode = new CompletableFuture<>();
-                            handler.post(()->{
-                                LogsViewModel.addToLog("Trying to login using 2FA");
-//                                if(finalBackupCode == null || finalBackupCode.isEmpty()){
-//                                    askForInput(context,onCode);
-//                                }
-//                                else {
-//                                    onCode.complete(finalBackupCode);
-//                                }
-                                askForInput(context,usernameFinal,onCode);
-                            });
-                            return IGChallengeUtils.resolveTwoFactor(client,loginResponse,onCode);
+                            return IGChallengeUtils.resolveTwoFactor(client, loginResponse, askForInput(context, usernameFinal));
                         }
                     };
 
@@ -145,33 +130,43 @@ public class Insta4jClient {
                 callback.onStart("Logged In");
             } catch (Exception e) {
                 e.printStackTrace();
-                LogsViewModel.addToLog("IGClient error logging in : "+e.getMessage());
+                LogsViewModel.addToLog("IGClient error logging in : " + e.getMessage());
                 callback.onStart(e.getMessage());
             }
         } else {
             callback.onStart("Logged In");
         }
 
-        if(client.selfProfile!=null){
-            LogsViewModel.addToLog("Logged in success to "+client.selfProfile.getUsername());
+        if (client.selfProfile != null) {
+            LogsViewModel.addToLog("Logged in success to " + client.selfProfile.getUsername());
         }
 
         return client;
     }
 
 
-    public static void askForInput(Context context,String username, CompletableFuture<String> cb){
-        if(MainActivity.activity == null){
-            EzUtils.toast(context,"Activity is not running.");
-            cb.completeExceptionally(new RuntimeException("Unable to get code from dialog"));
-            return;
+    public static Callable<CompletableFuture<String>> askForInput(Context context, String username) {
+        if (MainActivity.activity == null) {
+            EzUtils.toast(context, "Activity is not running.");
+            throw new RuntimeException("Unable to get code from dialog");
         }
-        EzUtils.inputDialogBottom(MainActivity.activity, "Enter two factor code for "+username, EzUtils.TYPE_DEF, new EzUtils.InputDialogCallback() {
-            @Override
-            public void onDone(String text) {
-                cb.complete(text.trim());
-            }
-        });
+
+        Callable<CompletableFuture<String>> onGetCode = () -> {
+
+            CompletableFuture<String> onCode = new CompletableFuture<>();
+            handler.post(() -> {
+                LogsViewModel.addToLog("Trying to login using 2FA");
+                EzUtils.inputDialogBottom(MainActivity.activity, "Enter two factor code for " + username, EzUtils.TYPE_DEF, new EzUtils.InputDialogCallback() {
+                    @Override
+                    public void onDone(String text) {
+                        onCode.complete(text.trim());
+                    }
+                });
+            });
+            return onCode;
+        };
+
+        return onGetCode;
     }
 
 }

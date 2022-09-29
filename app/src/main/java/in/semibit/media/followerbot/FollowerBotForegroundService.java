@@ -15,9 +15,10 @@ import java.text.DateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -79,10 +80,16 @@ public class FollowerBotForegroundService extends BGService {
         batchScheduler = new BatchScheduler() {
             @Override
             public Instant startBatchJob(String jobName) {
-                updateNotification(jobsInProgress.incrementAndGet()
-                                + " triggered. Next " + getNext()
-                        , true);
                 Instant nextExec = triggerExecutionOfJob(jobName);
+
+                new Timer().schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        updateNotification(jobsInProgress.incrementAndGet()
+                                        + " triggered. Next " + getNext()
+                                , true);
+                    }
+                }, 1000);
                 return nextExec;
             }
         };
@@ -103,33 +110,32 @@ public class FollowerBotForegroundService extends BGService {
     public String getNext() {
         Pair<String, Instant> next = batchScheduler.getNextJobSchedule();
         return
-                next.first + " after " +
+                next.first + " \nafter " +
                         DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM)
                                 .format(Date.from(next.second));
     }
 
     final List<BatchJob> jobsHistory = new ArrayList<>();
+
     public Instant triggerExecutionOfJob(String jobName) {
 
         if (jobName.equals(FollowUsersViaAPIJob.JOBNAME)) {
-            CommonAsyncExecutor.execute(()->{
+            CommonAsyncExecutor.execute(() -> {
                 FollowUsersViaAPIJob job = new FollowUsersViaAPIJob(serverDb, followerUtil);
                 job.start();
                 jobsHistory.add(job);
             });
 
             return FollowUsersViaAPIJob.nextScheduledTime(Instant.now());
-        }
-        else if (jobName.equals(UnFollowUsersViaAPIJob.JOBNAME)) {
-            CommonAsyncExecutor.execute(()->{
+        } else if (jobName.equals(UnFollowUsersViaAPIJob.JOBNAME)) {
+            CommonAsyncExecutor.execute(() -> {
                 UnFollowUsersViaAPIJob job = new UnFollowUsersViaAPIJob(serverDb, followerUtil);
                 job.start();
                 jobsHistory.add(job);
 
             });
             return UnFollowUsersViaAPIJob.nextScheduledTime(Instant.now());
-        }
-        else if (jobName.equals(FollowUsersJob.JOBNAME)) {
+        } else if (jobName.equals(FollowUsersJob.JOBNAME)) {
 
             Instant nextExec = FollowUsersJob.nextScheduledTime(Instant.now());
             String msg = "Triggering " + jobName + "from BG. Next exec at " + nextExec.atZone(ZoneId.systemDefault()).toLocalDateTime().toString();
@@ -147,12 +153,12 @@ public class FollowerBotForegroundService extends BGService {
     @Override
     public void stopWork(Intent intent) {
         IS_RUNNING = false;
-        try{
-            jobsHistory.forEach(e->{
+        try {
+            jobsHistory.forEach(e -> {
                 e.stop(false);
             });
             jobsHistory.clear();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -185,12 +191,12 @@ public class FollowerBotForegroundService extends BGService {
     public void onDestroy() {
         IS_RUNNING = false;
         batchScheduler.stopScheduler();
-        try{
-            jobsHistory.forEach(e->{
+        try {
+            jobsHistory.forEach(e -> {
                 e.stop(false);
             });
             jobsHistory.clear();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         super.onDestroy();

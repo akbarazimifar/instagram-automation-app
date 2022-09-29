@@ -101,17 +101,18 @@ public class IGChallengeUtils {
 
     public static LoginResponse resolveTwoFactor(@NonNull IGClient client,
             @NonNull LoginResponse response,
-            @NonNull CompletableFuture<String> inputCode) {
+            @NonNull Callable<CompletableFuture<String>> inputCode) {
+
         return resolveTwoFactor(client, response, inputCode, 3);
     }
 
     public static LoginResponse resolveTwoFactor(@NonNull IGClient client,
             @NonNull LoginResponse response,
-            @NonNull CompletableFuture<String> inputCode, int retries) {
+            @NonNull Callable<CompletableFuture<String>> inputCode, int retries) {
         String identifier = response.getTwo_factor_info().getTwo_factor_identifier();
         do {
             try {
-                String code = inputCode.join();
+                String code = inputCode.call().join();
 
                 response = client.sendLoginRequest(code, identifier)
                         .exceptionally(IGChallengeUtils::handleException)

@@ -122,7 +122,7 @@ public class FollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
     public GenericCompletableFuture<JobResult<Boolean>> processItem(FollowUserModel item) {
 
 
-        getLogger().onStart("Follow User " + item.userName);
+        getLogger().onStart("Follow User try " + item.userName);
         GenericCompletableFuture<JobResult<Boolean>> onFollowCompletedFuture = new GenericCompletableFuture<>();
 
         CompletableFuture<String> followResult =
@@ -139,6 +139,7 @@ public class FollowUsersViaAPIJob extends BatchJob<FollowUserModel, Boolean> {
                         })
                         .thenAccept(e -> {
                             CommonAsyncExecutor.execute(() -> {
+                                getLogger().onStart("Follow User " + item.userName+" completed");
 
                                 try {
                                     Thread.sleep(EzUtils.randomInt(1000, 10000));
